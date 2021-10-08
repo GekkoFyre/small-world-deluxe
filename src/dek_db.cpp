@@ -2515,86 +2515,6 @@ std::string GkLevelDb::removeInvalidChars(const std::string &string_to_modify)
     return "";
 }
 
-/**
- * @brief DekodeDb::read_audio_details_settings Reads all the settings concerning Audio Devices from the
- * Google LevelDB database.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_output_device Whether we are dealing with an output or input audio device.
- * @return The struct, `GekkoFyre::Database::Settings::Audio::Device`.
- */
-GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
-{
-    GkDevice audio_device;
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-
-    read_options.verify_checksums = true;
-
-    if (is_output_device) {
-        //
-        // Output audio device
-        //
-        std::string output_id;
-        std::string output_pa_host_idx; //-V808
-        std::string output_sel_channels;
-        std::string output_def_sys_device;
-        std::string output_user_activity;
-
-        status = db->Get(read_options, "AudioOutputDeviceName", &output_id);
-        status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
-        status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
-
-        bool def_sys_device = boolStr(output_def_sys_device);
-        bool user_activity = boolStr(output_user_activity);
-
-        //
-        // Test to see if the following are empty or not
-        //
-        audio_device.audio_dev_str = QString::fromStdString(output_id);
-
-        if (!output_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
-        } else {
-            audio_device.sel_channels = GkAudioChannels::Unknown;
-        }
-
-        audio_device.default_output_dev = def_sys_device;
-        audio_device.user_config_succ = user_activity;
-    } else {
-        //
-        // Input audio device
-        //
-        std::string input_id;
-        std::string input_pa_host_idx; //-V808
-        std::string input_sel_channels;
-        std::string input_def_sys_device;
-        std::string input_user_activity;
-
-        status = db->Get(read_options, "AudioInputDeviceName", &input_id);
-        status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
-        status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
-
-        bool def_sys_device = boolStr(input_def_sys_device);
-        bool user_activity = boolStr(input_user_activity);
-
-        //
-        // Test to see if the following are empty or not
-        //
-        audio_device.audio_dev_str = QString::fromStdString(input_id);
-
-        if (!input_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(input_sel_channels));
-        } else {
-            audio_device.sel_channels = GkAudioChannels::Unknown;
-        }
-
-        audio_device.default_input_dev = def_sys_device;
-        audio_device.user_config_succ = user_activity;
-    }
-
-    return audio_device;
-}
-
 QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
 {
     leveldb::Status status;
@@ -2624,7 +2544,11 @@ QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
             break;
     }
 
-    return QString::fromStdString(value);
+    if (!value.empty()) {
+        return QString::fromStdString(value);
+    }
+
+    return QString::number(-1);
 }
 
 /**
@@ -2798,7 +2722,7 @@ GkAudioChannels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel
             ret = GkAudioChannels::Right;
             break;
         case 3:
-            ret = GkAudioChannels::Both;
+            ret = GkAudioChannels::Stereo;
             break;
         case 4:
             ret = GkAudioChannels::Surround;
@@ -2827,7 +2751,7 @@ qint32 GkLevelDb::convertAudioChannelsToCount(const GkAudioChannels &channel_enu
             return 1;
         case Right:
             return 1;
-        case Both:
+        case Stereo:
             return 2;
         case Surround:
             return -2; // NOTE: This is such because it needs to be worked out via other means!
@@ -2853,7 +2777,7 @@ QString GkLevelDb::convertAudioChannelsStr(const GkAudioChannels &channel_enum)
             return tr("Left");
         case Right:
             return tr("Right");
-        case Both:
+        case Stereo:
             return tr("Stereo");
         case Surround:
             return tr("Surround");
@@ -2880,7 +2804,7 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
             return false;
         case Right:
             return false;
-        case Both:
+        case Stereo:
             return true;
         case Surround:
             return false;

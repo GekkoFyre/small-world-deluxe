@@ -79,8 +79,6 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    std::vector<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
-
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
     float vuMeterPeakAmplitude(const size_t &count, float *buffer);
@@ -91,7 +89,9 @@ public:
                                     const size_t &buf_size);
 
     static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCchar *devices, const bool &is_output_dev = false);
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
+
+    Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 
     QString rtAudioVersionNumber();
     QString rtAudioVersionText();

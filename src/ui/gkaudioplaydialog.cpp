@@ -155,8 +155,8 @@ GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
             //
             // Stereo
             //
-            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Both;
-            return GkAudioChannels::Both;
+            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Stereo;
+            return GkAudioChannels::Stereo;
         } else {
             if (gkAudioFile->getNumChannels() > 2) {
                 gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Surround;

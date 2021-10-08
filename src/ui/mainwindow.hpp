@@ -44,7 +44,6 @@
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_xmpp_client.hpp"
@@ -211,11 +210,6 @@ private slots:
     void configInputAudioDevice();
 
     //
-    // Audio related
-    //
-    void setAudioIo(const bool &use_input_audio); // True by default!
-
-    //
     // Transmission & Digital Signalling
     //
     void msgOutgoingProcess(const QString &curr_text);
@@ -278,25 +272,7 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
-    //
-    // Audio related
-    //
-    void processAudioInMain();
-    void processAudioInMainBuffer();
-    void audioInHandleStateChanged(QAudio::State changed_state);
-    void processAudioOutMain();
-    void processAudioOutMainBuffer();
-    void audioOutHandleStateChanged(QAudio::State changed_state);
-
 public slots:
-    //
-    // Audio related
-    //
-    void stopRecordingInput();
-    void stopRecordingOutput();
-    void startRecordingInput();
-    void startRecordingOutput();
-
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
     //
@@ -323,20 +299,14 @@ signals:
     //
     // Audio related
     //
-    void updateAudioIn();
     void updateAudioOut();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
-    void stopRecInput();
-    void stopRecOutput();
-    void startRecInput();
-    void startRecOutput();
 
     //
     // Audio System and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
-    void changeAudioIo(const bool &use_input_audio); // True by default!
 
 private:
     Ui::MainWindow *ui;
@@ -381,20 +351,12 @@ private:
     ALCcontext *mOutputCtx;
     ALCboolean mInputCtxCurr;
     ALCboolean mOutputCtxCurr;
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<GkVuAdjust> gkVuAdjustDlg;
-    QPointer<QBuffer> gkAudioInputBuf;
-    QPointer<QBuffer> gkAudioOutputBuf;
-    QByteArray gkAudioInputByteArrayBuf;
-    QByteArray gkAudioOutputByteArrayBuf;
 
     //
     // Audio System miscellaneous variables
     //
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> sys_output_audio_devs;
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> sys_input_audio_devs;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
 
     //
@@ -444,8 +406,6 @@ private:
     //
     // Timing and date related
     //
-    QPointer<QTimer> gkAudioInputReadySignal;
-    QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
 
     //
@@ -473,8 +433,6 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
-    void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
-    void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
 
     //
     // Spell-checking, dictionaries, etc.

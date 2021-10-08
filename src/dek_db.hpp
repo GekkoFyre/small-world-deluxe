@@ -144,7 +144,6 @@ public:
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key);
     QString read_general_settings(const Database::Settings::general_stat_cfg &key);
     QString read_audio_device_settings(const bool &is_output_device);
-    GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::GkAudioCfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
     QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);

@@ -185,9 +185,7 @@ namespace GekkoFyre {
 #define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                         // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
 #define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback.
-#define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
-#define GK_AUDIO_PEAK_MAX (32768)                               // The maximum integer/signal value possible within the QAudio system.
-#define GK_AUDIO_PEAK_MIN (-32768)                              // The minimum integer/signal value possible within the QAudio system.
+#define GK_AUDIO_OPENAL_RECORD_BUFFER_SIZE (32768)              // The recording buffer size for when initializing a new device via `alcCaptureOpenDevice()`.
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)

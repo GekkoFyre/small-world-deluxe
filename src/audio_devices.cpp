@@ -97,65 +97,6 @@ AudioDevices::~AudioDevices()
 {}
 
 /**
- * @brief AudioDevices::enumAudioDevicesCpp Enumerate out all the findable audio devices within the user's computer system.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The found audio devices and their statistics.
- * @note <https://doc.qt.io/qt-5/audiooverview.html>.
- */
-std::vector<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
-{
-    try {
-        std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-        std::vector<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
-
-        for (const auto &device: audioDeviceInfo) {
-            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-            if (!device.isNull() && !device.supportedSampleRates().empty() && !device.supportedSampleSizes().empty() && !device.supportedChannelCounts().empty()) {
-            #elif __linux__
-            if ((!device.isNull() && !device.supportedSampleRates().empty() && !device.supportedSampleSizes().empty() && !device.supportedChannelCounts().empty())
-            && (device.deviceName().contains("default") || device.deviceName().contains("pulse") || device.deviceName().contains("alsa") ||
-            device.deviceName().contains("qnx"))) {
-            #endif
-                bool at_least_mono = false; // Do we have at least a Mono channel?
-                for (const auto &channel: device.supportedChannelCounts()) {
-                    if (channel > 0) {
-                        at_least_mono = true;
-                    }
-                }
-
-                if (at_least_mono) {
-                    GkDevice gkDevice;
-                    gkDevice.audio_dev_str = device.deviceName();
-                    gkDevice.default_input_dev = false;
-                    gkDevice.default_output_dev = false;
-                    gkDevice.audio_device_info = QAudioDeviceInfo(device);
-
-                    if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
-                        gkDevice.default_input_dev = true;
-                    }
-
-                    if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultOutputDevice().deviceName()) {
-                        gkDevice.default_output_dev = true;
-                    }
-
-                    audio_devices_vec.emplace_back(std::make_pair(device, gkDevice));
-                }
-            }
-        }
-
-        return audio_devices_vec;
-    } catch (const std::exception &e) {
-        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
-    } catch (...) {
-        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
-    }
-
-    return std::vector<std::pair<QAudioDeviceInfo, GkDevice>>();
-}
-
-/**
  * @brief AudioDevices::volumeSetting
  * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
  */
@@ -270,7 +211,7 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
     case GkAudioChannels::Right:
         audio_channels = 1;
         break;
-    case GkAudioChannels::Both:
+    case GkAudioChannels::Stereo:
         audio_channels = 2;
         break;
     case GkAudioChannels::Unknown:
@@ -370,8 +311,19 @@ bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fa
  * @param is_output_dev Whether we are working with output devices or input.
  * @return The enumerated list of audio devices.
  */
-QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCchar *devices, const bool &is_output_dev) {
-    const char *ptr = devices;
+QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCenum param) {
+    //
+    // Prior to attempting an enumeration, OpenAL provides an extension querying mechanism which allows
+    // you to know whether the runtime OpenAL implementation supports a specific extension. In our case,
+    // we want to check whether OpenAL supports enumerating devices...
+    //
+    ALboolean enumeration;
+    enumeration = alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT");
+    if (enumeration == AL_FALSE) {
+        std::throw_with_nested(std::runtime_error(tr("The version of OpenAL that is currently installed is not supported! Please upgrade to a later version before continuing.").toStdString()));
+    }
+
+    const char *ptr = alcGetString(nullptr, param);
     QStringList devicesList;
     do {
         devicesList.push_back(QString::fromStdString(ptr));
@@ -381,10 +333,12 @@ QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCchar *devices, cons
     QList<GkDevice> device_list;
     for (const auto &dev: devicesList) {
         GkDevice audio;
-        if (is_output_dev) {
+        if (param == ALC_DEVICE_SPECIFIER) {
             audio.audio_src = GkAudioSource::Output;
-        } else {
+        } else if (param == ALC_CAPTURE_DEVICE_SPECIFIER) {
             audio.audio_src = GkAudioSource::Input;
+        } else {
+            std::throw_with_nested(std::runtime_error(tr("Unhandled error with regards to OpenAL audio device enumeration!").toStdString()));
         }
 
         audio.audio_dev_str = dev;
@@ -395,6 +349,27 @@ QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCchar *devices, cons
     // https://github.com/kcat/openal-soft/issues/350
 
     return device_list;
+}
+
+/**
+ * @brief AudioDevices::convAudioChannelsToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param num_channels
+ * @return
+ */
+Database::Settings::GkAudioChannels AudioDevices::convAudioChannelsToEnum(const qint32 &num_channels)
+{
+    if (num_channels == 1) {
+        return GkAudioChannels::Mono;
+    } else if (num_channels == 2) {
+        return GkAudioChannels::Stereo;
+    } else if (num_channels > 2) {
+        return GkAudioChannels::Surround;
+    } else {
+        return GkAudioChannels::Unknown;
+    }
+
+    return GkAudioChannels::Unknown;
 }
 
 /**

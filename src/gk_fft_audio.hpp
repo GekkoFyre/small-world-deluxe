@@ -86,7 +86,6 @@ private slots:
 
 public slots:
     void processAudioInFft();
-    void setAudioIo(const bool &use_input_audio); // True by default!
 
 signals:
     void recordStream();

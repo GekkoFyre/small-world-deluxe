@@ -99,14 +99,14 @@ void GkSinewaveTest::setFreq(qint32 freq)
 
     // We create a buffer with some full waves of freq,
     // therefore we need room for this many samples:
-    qint32 buflen = gkAudioDevice.chosen_sample_rate * full_waves / freq;
+    qint32 buflen = gkAudioDevice.pref_sample_rate * full_waves / freq;
 
     buffer = new qint32[buflen];
 
     // Now fill this buffer with the sine wave
     qint32 *t = buffer;
     for (qint32 i = 0; i < buflen; ++i) {
-        qint32 value = 32767.0 * std::sin(M_PI * 2 * i * freq / gkAudioDevice.chosen_sample_rate);
+        qint32 value = 32767.0 * std::sin(M_PI * 2 * i * freq / gkAudioDevice.pref_sample_rate);
         *t++ = value;
     }
 
@@ -125,7 +125,7 @@ void GkSinewaveTest::setFreq(qint32 freq)
  */
 void GkSinewaveTest::setDuration(qint32 ms)
 {
-    samples = (gkAudioDevice.chosen_sample_rate * ms) / 1000;
+    samples = (gkAudioDevice.pref_sample_rate * ms) / 1000;
     samples &= 0x7ffffffe;
     send_pos = buffer;
 
@@ -203,7 +203,7 @@ GkSinewaveOutput::GkSinewaveOutput(const GkDevice &audio_dev, QPointer<GekkoFyre
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
 
-    buffer = new char[(audio_dev.audio_device_info.preferredFormat().sampleRate() * AUDIO_SINE_WAVE_PLAYBACK_SECS) + 1];
+    buffer = new char[(audio_dev.pref_sample_rate * AUDIO_SINE_WAVE_PLAYBACK_SECS) + 1];
     gkSinewaveTest = new GkSinewaveTest(gkAudioDevice, gkEventLogger, 300, this);
 
     output = gkAudioOutput->start();

@@ -477,18 +477,18 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Audio --> Recorder
         //
         if (ui->comboBox_input_audio_dev_sample_rate->count() > 0) {
-            const qint32 input_audio_dev_chosen_sample_rate_idx = ui->comboBox_input_audio_dev_sample_rate->currentIndex();
-            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_sample_rate_idx), GkAudioCfg::AudioInputSampleRate);
+            const qint32 input_audio_dev_chosen_sample_rate_data = ui->comboBox_input_audio_dev_sample_rate->currentData().toInt();
+            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_sample_rate_data), GkAudioCfg::AudioInputSampleRate);
         }
 
         if (ui->comboBox_input_audio_dev_number_channels->count() > 0) {
-            const qint32 input_audio_dev_chosen_number_channels_idx = ui->comboBox_input_audio_dev_number_channels->currentIndex();
-            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_number_channels_idx), GkAudioCfg::AudioInputChannels);
+            const qint32 input_audio_dev_chosen_number_channels_data = ui->comboBox_input_audio_dev_number_channels->currentData().toInt();
+            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_number_channels_data), GkAudioCfg::AudioInputChannels);
         }
 
         if (ui->comboBox_input_audio_dev_bitrate->count() > 0) {
-            const qint32 input_audio_dev_chosen_format_bits_idx = ui->comboBox_input_audio_dev_bitrate->currentIndex();
-            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_format_bits_idx), GkAudioCfg::AudioInputBitrate);
+            const qint32 input_audio_dev_chosen_format_bits_data = ui->comboBox_input_audio_dev_bitrate->currentData().toInt();
+            gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_format_bits_data), GkAudioCfg::AudioInputBitrate);
         }
 
         bool rx_audio_init_start = ui->checkBox_init_rx_audio_upon_start->isChecked();
@@ -790,6 +790,24 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
  */
 void DialogSettings::prefill_audio_devices()
 {
+    //
+    // Enumerate output audio devices!
+    const QList<GkDevice> sys_output_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
+    for (const auto &output_dev: sys_output_audio_devs) {
+        if (!output_dev.audio_dev_str.isEmpty()) {
+            ui->comboBox_soundcard_output->addItem(output_dev.audio_dev_str);
+        }
+    }
+
+    //
+    // Enumerate input audio devices!
+    const QList<GkDevice> sys_input_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
+    for (const auto &input_dev: sys_input_audio_devs) {
+        if (!input_dev.audio_dev_str.isEmpty()) {
+            ui->comboBox_soundcard_input->addItem(input_dev.audio_dev_str);
+        }
+    }
+
     return;
 }
 
@@ -801,23 +819,23 @@ void DialogSettings::prefill_audio_encode_comboboxes()
 {
     //
     // Prefill QComboBox for sample rates!
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_8000_IDX, tr("8,000"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_11025_IDX, tr("11,025"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_22050_IDX, tr("22,050"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_32000_IDX, tr("32,000"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_44100_IDX, tr("44,100"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_48000_IDX, tr("48,000"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_88200_IDX, tr("88,200"));
-    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_96000_IDX, tr("96,000"));
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_8000_IDX, tr("8,000"), 8000);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_11025_IDX, tr("11,025"), 11025);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_22050_IDX, tr("22,050"), 22050);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_32000_IDX, tr("32,000"), 32000);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_44100_IDX, tr("44,100"), 44100);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_48000_IDX, tr("48,000"), 48000);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_88200_IDX, tr("88,200"), 88200);
+    ui->comboBox_input_audio_dev_sample_rate->insertItem(GK_AUDIO_SAMPLE_RATE_96000_IDX, tr("96,000"), 96000);
 
     //
     // Prefill QComboBox for bit-rates!
-    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_8_IDX, "8");
-    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_16_IDX, "16");
-    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_24_IDX, "24");
+    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_8_IDX, "8", 8);
+    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_16_IDX, "16", 16);
+    ui->comboBox_input_audio_dev_bitrate->insertItem(GK_AUDIO_BITRATE_24_IDX, "24", 24);
 
-    ui->comboBox_input_audio_dev_number_channels->insertItem(GK_AUDIO_CHANNELS_MONO, tr("Mono"));
-    ui->comboBox_input_audio_dev_number_channels->insertItem(GK_AUDIO_CHANNELS_STEREO, tr("Stereo"));
+    ui->comboBox_input_audio_dev_number_channels->insertItem(GK_AUDIO_CHANNELS_MONO, tr("Mono"), 1);
+    ui->comboBox_input_audio_dev_number_channels->insertItem(GK_AUDIO_CHANNELS_STEREO, tr("Stereo"), 2);
 
     return;
 }
@@ -1577,20 +1595,29 @@ bool DialogSettings::read_settings()
         //
         // Audio --> Recorder
         //
-        const qint32 input_audio_dev_chosen_sample_rate_idx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate).toInt();
-        const qint32 input_audio_dev_chosen_number_channels_idx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt();
-        const qint32 input_audio_dev_chosen_format_bits_idx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
+        const qint32 input_audio_dev_chosen_sample_rate_data = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate).toInt();
+        const qint32 input_audio_dev_chosen_number_channels_data = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt();
+        const qint32 input_audio_dev_chosen_format_bits_data = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
 
-        if (input_audio_dev_chosen_sample_rate_idx >= 0 && input_audio_dev_chosen_sample_rate_idx < ui->comboBox_input_audio_dev_sample_rate->count()) {
-            ui->comboBox_input_audio_dev_sample_rate->setCurrentIndex(input_audio_dev_chosen_sample_rate_idx);
+        if (input_audio_dev_chosen_sample_rate_data != -1) {
+            const qint32 input_audio_dev_chosen_sample_rate_idx = ui->comboBox_input_audio_dev_sample_rate->findData(QString::number(input_audio_dev_chosen_sample_rate_data));
+            if (input_audio_dev_chosen_sample_rate_idx != -1) {
+                ui->comboBox_input_audio_dev_sample_rate->setCurrentIndex(input_audio_dev_chosen_sample_rate_idx);
+            }
         }
 
-        if (input_audio_dev_chosen_number_channels_idx >= 0 && input_audio_dev_chosen_number_channels_idx < ui->comboBox_input_audio_dev_number_channels->count()) {
-            ui->comboBox_input_audio_dev_number_channels->setCurrentIndex(input_audio_dev_chosen_number_channels_idx);
+        if (input_audio_dev_chosen_number_channels_data != -1) {
+            const qint32 input_audio_dev_chosen_channels_idx = ui->comboBox_input_audio_dev_number_channels->findData(QString::number(input_audio_dev_chosen_number_channels_data));
+            if (input_audio_dev_chosen_channels_idx != -1) {
+                ui->comboBox_input_audio_dev_number_channels->setCurrentIndex(input_audio_dev_chosen_channels_idx);
+            }
         }
 
-        if (input_audio_dev_chosen_format_bits_idx >= 0 && input_audio_dev_chosen_format_bits_idx < ui->comboBox_input_audio_dev_bitrate->count()) {
-            ui->comboBox_input_audio_dev_bitrate->setCurrentIndex(input_audio_dev_chosen_format_bits_idx);
+        if (input_audio_dev_chosen_format_bits_data != -1) {
+            const qint32 input_audio_dev_chosen_bits_idx = ui->comboBox_input_audio_dev_bitrate->findData(QString::number(input_audio_dev_chosen_format_bits_data));
+            if (input_audio_dev_chosen_bits_idx != -1) {
+                ui->comboBox_input_audio_dev_bitrate->setCurrentIndex(input_audio_dev_chosen_bits_idx);
+            }
         }
 
         //

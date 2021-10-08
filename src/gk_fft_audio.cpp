@@ -91,7 +91,7 @@ GkFFTAudio::GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioIn
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
-    gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
+    // gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
     gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
 
     QObject::connect(this, SIGNAL(recordStream()), this, SLOT(recordAudioStream()));
@@ -128,7 +128,7 @@ void GkFFTAudio::processAudioInFft()
             s = ba.at(b_pos++);
             s |= ba.at(b_pos++) << 8;
             if (s != 0) {
-                audioSamples.push_back((double)s / gkStringFuncs->getPeakValue(pref_input_audio_device.audio_device_info.preferredFormat()));
+                // audioSamples.push_back((double)s / gkStringFuncs->getPeakValue(pref_input_audio_device.audio_device_info.preferredFormat()));
             } else {
                 audioSamples.push_back(0);
             }
@@ -136,8 +136,7 @@ void GkFFTAudio::processAudioInFft()
 
         samplesUpdated();
     } else {
-        gkEventLogger->publishEvent(tr("Audio input, %1, has changed to an interrupted state.").arg(pref_input_audio_device.audio_device_info.deviceName()), GkSeverity::Info,
-                                    "", true, true, false, false);
+        // gkEventLogger->publishEvent(tr("Audio input, %1, has changed to an interrupted state.").arg(pref_input_audio_device.audio_device_info.deviceName()), GkSeverity::Info, "", true, true, false, false);
     }
 
     return;
@@ -146,57 +145,6 @@ void GkFFTAudio::processAudioInFft()
 void GkFFTAudio::refreshGraphTrue()
 {
     emit refreshGraph(true);
-    return;
-}
-
-void GkFFTAudio::setAudioIo(const bool &use_input_audio)
-{
-    try {
-        if (use_input_audio) {
-            if (!gkAudioInput.isNull()) {
-                //
-                // Input Audio
-                //
-                if (audioStreamProc) {
-                    enableAudioStreamProc = true;
-                }
-
-                if (audioFileStreamProc) {
-                    enableAudioFileStreamProc = true;
-                }
-
-                if (enableAudioStreamProc) {
-                    emit recordStream();
-                    enableAudioStreamProc = false;
-                }
-
-                // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
-            }
-        } else {
-            if (!gkAudioOutput.isNull()) {
-                //
-                // Output Audio
-                //
-                if (audioStreamProc) {
-                    enableAudioStreamProc = true;
-                }
-
-                if (audioFileStreamProc) {
-                    enableAudioFileStreamProc = true;
-                }
-
-                if (enableAudioStreamProc) {
-                    emit recordStream();
-                    enableAudioStreamProc = false;
-                }
-
-                // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
-            }
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
-    }
-
     return;
 }
 
