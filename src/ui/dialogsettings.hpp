@@ -210,6 +210,8 @@ private slots:
     void on_comboBox_input_audio_dev_number_channels_currentIndexChanged(int index);
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
+    void on_pushButton_input_sound_configure_clicked();
+    void on_pushButton_output_sound_default_clicked();
 
     //
     // XMPP Settings

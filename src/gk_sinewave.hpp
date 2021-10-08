@@ -51,45 +51,15 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
-#include <QIODevice>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
-
-class GkSinewaveTest : public QIODevice {
-    Q_OBJECT
-
-public:
-    explicit GkSinewaveTest(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                            qint32 freq, QObject *parent = nullptr);
-    ~GkSinewaveTest() override;
-
-    void setFreq(qint32 freq);
-    void setDuration(qint32 ms);
-
-    qint64 readData(char *data, qint64 max_length) Q_DECL_OVERRIDE;
-    qint64 writeData(const char *data, qint64 length) Q_DECL_OVERRIDE;
-
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
-
-    qint32 frequency;
-    qint32 samples;             // Samples to play for desired duration
-    qint32 *end;                // The last position within the circular buffer, for faster comparisons
-    qint32 *buffer;             // Sinewave buffer itself
-    qint32 *send_pos;           // The current position within the circular buffer
-
-};
 
 class GkSinewaveOutput : public QObject {
     Q_OBJECT
 
 public:
     explicit GkSinewaveOutput(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                              QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, QObject *parent = nullptr);
+                              QObject *parent = nullptr);
     ~GkSinewaveOutput() override;
 
 public slots:
@@ -99,15 +69,10 @@ private slots:
     void writeMore();
 
 private:
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
-    QPointer<GkSinewaveTest> gkSinewaveTest;
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QIODevice *output;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
+
     QTimer *timer;
-    char *buffer;
 
 };
 };

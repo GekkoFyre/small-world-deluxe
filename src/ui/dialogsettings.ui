@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1524</width>
+    <width>1600</width>
     <height>1326</height>
    </rect>
   </property>
@@ -125,7 +125,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>1372</width>
+                      <width>1448</width>
                       <height>997</height>
                      </rect>
                     </property>
@@ -3638,7 +3638,7 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>1372</width>
+                         <width>1448</width>
                          <height>997</height>
                         </rect>
                        </property>
@@ -3684,7 +3684,13 @@ Thanks.</string>
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QFrame" name="frame_16">
+                               <widget class="QFrame" name="frame_input_sound_combobox">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                  <horstretch>66</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="frameShape">
                                  <enum>QFrame::NoFrame</enum>
                                 </property>
@@ -3711,7 +3717,13 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QFrame" name="frame_17">
+                               <widget class="QFrame" name="frame_input_sound_pushbuttons">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                  <horstretch>34</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="frameShape">
                                  <enum>QFrame::NoFrame</enum>
                                 </property>
@@ -3734,12 +3746,12 @@ Thanks.</string>
                                  <item>
                                   <widget class="QPushButton" name="pushButton_input_sound_test">
                                    <property name="text">
-                                    <string>Audio Test</string>
+                                    <string>Test</string>
                                    </property>
                                   </widget>
                                  </item>
                                  <item>
-                                  <widget class="QPushButton" name="pushButton_3">
+                                  <widget class="QPushButton" name="pushButton_input_sound_configure">
                                    <property name="text">
                                     <string>Configure</string>
                                    </property>
@@ -3786,7 +3798,13 @@ Thanks.</string>
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QFrame" name="frame_19">
+                               <widget class="QFrame" name="frame_output_sound_combobox">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                  <horstretch>66</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="frameShape">
                                  <enum>QFrame::NoFrame</enum>
                                 </property>
@@ -3813,7 +3831,13 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QFrame" name="frame_18">
+                               <widget class="QFrame" name="frame_output_sound_pushbuttons">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                  <horstretch>34</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="frameShape">
                                  <enum>QFrame::NoFrame</enum>
                                 </property>
@@ -3836,12 +3860,12 @@ Thanks.</string>
                                  <item>
                                   <widget class="QPushButton" name="pushButton_output_sound_test">
                                    <property name="text">
-                                    <string>Audio Test</string>
+                                    <string>Test</string>
                                    </property>
                                   </widget>
                                  </item>
                                  <item>
-                                  <widget class="QPushButton" name="pushButton_2">
+                                  <widget class="QPushButton" name="pushButton_output_sound_default">
                                    <property name="text">
                                     <string>Default</string>
                                    </property>
@@ -4112,8 +4136,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>1372</width>
-                      <height>997</height>
+                      <width>1030</width>
+                      <height>792</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4897,7 +4921,7 @@ p, li { white-space: pre-wrap; }
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>1344</width>
+                         <width>1420</width>
                          <height>1297</height>
                         </rect>
                        </property>

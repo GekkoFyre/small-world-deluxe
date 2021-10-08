@@ -470,11 +470,23 @@ void GkLevelDb::write_audio_device_settings(const QString &value, const bool &is
         if (is_output_device) {
             // Output audio device
             batch.Put("AudioOutputDeviceName", value.toStdString());
-            return;
         } else {
             // Input audio device
             batch.Put("AudioInputDeviceName", value.toStdString());
-            return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -507,13 +519,13 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
                 batch.Put("AudioRecSaveLoc", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputChannels:
-                batch.Put("AudioOutputChannels", value.toStdString());
+                batch.Put("AudioInputChannels", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputSampleRate:
-                batch.Put("AudioOutputSampleRate", value.toStdString());
+                batch.Put("AudioInputSampleRate", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputBitrate:
-                batch.Put("AudioOutputBitrate", value.toStdString());
+                batch.Put("AudioInputBitrate", value.toStdString());
                 break;
         }
 

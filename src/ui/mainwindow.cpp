@@ -770,13 +770,23 @@ MainWindow::~MainWindow()
         vu_meter_thread.join();
     }
 
-    alcCall(alcDestroyContext, mOutputDevice, mOutputCtx);
-    alcCall(alcDestroyContext, mInputDevice, mInputCtx);
+    if (mOutputCtx) {
+        alcCall(alcDestroyContext, mOutputDevice, mOutputCtx);
+    }
 
-    ALCboolean audio_output_closed;
-    ALCboolean audio_input_closed;
-    alcCall(alcCloseDevice, audio_output_closed, mOutputDevice, mOutputDevice);
-    alcCall(alcCloseDevice, audio_input_closed, mInputDevice, mInputDevice);
+    if (mInputCtx) {
+        alcCall(alcDestroyContext, mInputDevice, mInputCtx);
+    }
+
+    if (mOutputDevice) {
+        ALCboolean audio_output_closed;
+        alcCall(alcCloseDevice, audio_output_closed, mOutputDevice, mOutputDevice);
+    }
+
+    if (mInputDevice) {
+        ALCboolean audio_input_closed;
+        alcCall(alcCloseDevice, audio_input_closed, mInputDevice, mInputDevice);
+    }
 
     // delete db;
     // TODO: Must fix SEGFAULT's that occur with the aforementioned line of code...

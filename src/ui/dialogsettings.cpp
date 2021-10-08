@@ -49,7 +49,6 @@
 #include <QStandardPaths>
 #include <QTableWidgetItem>
 #include <QRegularExpression>
-#include <QMutableListIterator>
 #include <exception>
 #include <set>
 #include <iomanip>
@@ -462,15 +461,15 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Audio --> Configuration
         //
-        const QString input_audio_dev = ui->comboBox_soundcard_input->currentText();
-        const QString output_audio_dev = ui->comboBox_soundcard_output->currentText();
+        const QString input_audio_dev = ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString();
+        const QString output_audio_dev = ui->comboBox_soundcard_output->itemData(ui->comboBox_soundcard_output->currentIndex()).toString();
 
         if (!input_audio_dev.isEmpty()) { // Save input audio device name to Google LevelDB database!
-            gkDekodeDb->write_audio_device_settings(input_audio_dev, false);
+            gkDekodeDb->write_audio_device_settings(input_audio_dev, false); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
         }
 
         if (!output_audio_dev.isEmpty()) { // Save output audio device name to Google LevelDB database!
-            gkDekodeDb->write_audio_device_settings(output_audio_dev, true);
+            gkDekodeDb->write_audio_device_settings(output_audio_dev, true); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
         }
 
         //
@@ -795,7 +794,8 @@ void DialogSettings::prefill_audio_devices()
     const QList<GkDevice> sys_output_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
     for (const auto &output_dev: sys_output_audio_devs) {
         if (!output_dev.audio_dev_str.isEmpty()) {
-            ui->comboBox_soundcard_output->addItem(output_dev.audio_dev_str);
+            ui->comboBox_soundcard_output->addItem(gkStringFuncs->trimStrToCharLength(output_dev.audio_dev_str, GK_AUDIO_DEVS_STR_LENGTH, true),
+                                                   output_dev.audio_dev_str);
         }
     }
 
@@ -804,7 +804,8 @@ void DialogSettings::prefill_audio_devices()
     const QList<GkDevice> sys_input_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
     for (const auto &input_dev: sys_input_audio_devs) {
         if (!input_dev.audio_dev_str.isEmpty()) {
-            ui->comboBox_soundcard_input->addItem(input_dev.audio_dev_str);
+            ui->comboBox_soundcard_input->addItem(gkStringFuncs->trimStrToCharLength(input_dev.audio_dev_str, GK_AUDIO_DEVS_STR_LENGTH, true),
+                                                  input_dev.audio_dev_str);
         }
     }
 
@@ -1592,6 +1593,32 @@ bool DialogSettings::read_settings()
         const QString input_audio_dev = gkDekodeDb->read_audio_device_settings(false);
         const QString output_audio_dev = gkDekodeDb->read_audio_device_settings(true);
 
+        if (!input_audio_dev.isEmpty()) {
+            const qint32 saved_input_idx = ui->comboBox_soundcard_input->findData(input_audio_dev);
+            if (saved_input_idx != -1) {
+                ui->comboBox_soundcard_input->setCurrentIndex(saved_input_idx);
+            }
+        } else {
+            const ALCchar *defaultInputDeviceName = alcGetString(nullptr, ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
+            const qint32 def_input_idx = ui->comboBox_soundcard_input->findData(QString::fromStdString(defaultInputDeviceName));
+            if (def_input_idx != -1) {
+                ui->comboBox_soundcard_input->setCurrentIndex(def_input_idx);
+            }
+        }
+
+        if (!output_audio_dev.isEmpty()) {
+            const qint32 saved_output_idx = ui->comboBox_soundcard_input->findData(output_audio_dev);
+            if (saved_output_idx != -1) {
+                ui->comboBox_soundcard_output->setCurrentIndex(saved_output_idx);
+            }
+        } else {
+            const ALCchar *defaultOutputDeviceName = alcGetString(nullptr, ALC_DEFAULT_DEVICE_SPECIFIER);
+            const qint32 def_output_idx = ui->comboBox_soundcard_output->findData(QString::fromStdString(defaultOutputDeviceName));
+            if (def_output_idx != -1) {
+                ui->comboBox_soundcard_output->setCurrentIndex(def_output_idx);
+            }
+        }
+
         //
         // Audio --> Recorder
         //
@@ -2130,7 +2157,7 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == "") {
+        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
             switch (index) {
                 case GK_AUDIO_SAMPLE_RATE_8000_IDX:
                     it->pref_sample_rate = 8000;
@@ -2177,7 +2204,7 @@ void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == "") {
+        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
             if (it->sel_channels == GkAudioChannels::Mono) {
                 switch (index) {
                     case GK_AUDIO_BITRATE_8_IDX:
@@ -2226,7 +2253,7 @@ void DialogSettings::on_comboBox_input_audio_dev_number_channels_currentIndexCha
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == "") {
+        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
             switch (index) {
                 case GK_AUDIO_CHANNELS_MONO:
                     it->sel_channels = GkAudioChannels::Mono;
@@ -2297,6 +2324,32 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
     } catch (...) {
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_pushButton_input_sound_configure_clicked navigates to a new tab window.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_pushButton_input_sound_configure_clicked()
+{
+    ui->tabWidget_audio->setCurrentWidget(ui->tab_audio_encoding_settings);
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_pushButton_output_sound_default_clicked chooses the default audio device applicable to the
+ * output.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_pushButton_output_sound_default_clicked()
+{
+    const ALCchar *defaultOutputDeviceName = alcGetString(nullptr, ALC_DEFAULT_DEVICE_SPECIFIER);
+    const qint32 def_output_idx = ui->comboBox_soundcard_output->findData(QString::fromStdString(defaultOutputDeviceName));
+    if (def_output_idx != -1) {
+        ui->comboBox_soundcard_output->setCurrentIndex(def_output_idx);
     }
 
     return;

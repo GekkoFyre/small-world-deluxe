@@ -98,11 +98,7 @@
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
 #include <QSystemTrayIcon>
-#include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
 namespace Ui {
