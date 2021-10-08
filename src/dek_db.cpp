@@ -527,6 +527,9 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
             case GkAudioCfg::AudioInputBitrate:
                 batch.Put("AudioInputBitrate", value.toStdString());
                 break;
+            case GkAudioCfg::AudioInputFormat:
+                batch.Put("AudioInputFormat", value.toStdString());
+                break;
         }
 
         std::time_t curr_time = std::time(nullptr);
@@ -2553,6 +2556,9 @@ QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
             break;
         case GkAudioCfg::AudioInputBitrate:
             status = db->Get(read_options, "AudioInputBitrate", &value);
+            break;
+        case GkAudioCfg::AudioInputFormat:
+            status = db->Get(read_options, "AudioInputFormat", &value);
             break;
     }
 

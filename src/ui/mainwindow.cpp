@@ -500,10 +500,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             try {
                 //
                 // Initialize output device!
+                gkSysOutputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
+
                 if (!output_audio_device_saved.isEmpty()) {
                     //
                     // Enumerate output audio devices!
-                    gkSysOutputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
                     QList<GkDevice>::iterator it = gkSysOutputAudioDevs.begin();
                     while (it != gkSysOutputAudioDevs.end()) {
                         if (it->audio_dev_str == output_audio_device_saved) {
@@ -537,19 +538,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             try {
                 //
                 // Initialize input device!
+                gkSysInputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
+
                 if (!input_audio_device_saved.isEmpty()) {
-                    const qint32 input_audio_dev_chosen_sample_rate_idx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate).toInt();
-                    const qint32 input_audio_dev_chosen_number_channels_idx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt();
-                    const qint32 input_audio_dev_chosen_format_bits_idx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
+                    const qint32 input_audio_dev_chosen_sample_rate = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate).toInt();
+                    const qint32 input_audio_dev_chosen_number_channels = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt();
+                    // const qint32 input_audio_dev_chosen_bitrate = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
+                    const ALenum input_audio_dev_pref_audio_format = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputFormat).toInt();
 
                     //
                     // Enumerate input audio devices!
-                    gkSysInputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
                     QList<GkDevice>::iterator it = gkSysInputAudioDevs.begin();
                     while (it != gkSysInputAudioDevs.end()) {
                         if (it->audio_dev_str == input_audio_device_saved) {
-                            it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate_idx); // Convert qint32 to unsigned-int!
-                            it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels_idx);
+                            it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
+                            it->pref_audio_format = input_audio_dev_pref_audio_format;
+                            it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
                             it->is_enabled = true;
 
                             break;

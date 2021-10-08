@@ -78,8 +78,8 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             QPointer<GekkoFyre::AudioDevices> audioDevices,
-                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> &sysInputDevs,
-                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> &sysOutputDevs,
+                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
+                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
@@ -205,6 +205,7 @@ private slots:
 
     //
     // Audio System & Multimedia related
+    void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_input_audio_dev_sample_rate_currentIndexChanged(int index);
     void on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int index);
     void on_comboBox_input_audio_dev_number_channels_currentIndexChanged(int index);

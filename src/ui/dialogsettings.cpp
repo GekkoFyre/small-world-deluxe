@@ -89,8 +89,8 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                QPointer<AudioDevices> audioDevices,
-                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> &sysInputDevs,
-                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> &sysOutputDevs,
+                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
+                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::vector<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -490,6 +490,15 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             gkDekodeDb->write_misc_audio_settings(QString::number(input_audio_dev_chosen_format_bits_data), GkAudioCfg::AudioInputBitrate);
         }
 
+        //
+        // Audio Format for input device!
+        for (const auto &input_dev: gkSysInputDevs) {
+            if (input_dev.audio_dev_str == ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString()) {
+                gkDekodeDb->write_misc_audio_settings(QString::number(input_dev.pref_audio_format), GkAudioCfg::AudioInputFormat);
+                break;
+            }
+        }
+
         bool rx_audio_init_start = ui->checkBox_init_rx_audio_upon_start->isChecked();
 
         //
@@ -791,8 +800,7 @@ void DialogSettings::prefill_audio_devices()
 {
     //
     // Enumerate output audio devices!
-    const QList<GkDevice> sys_output_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
-    for (const auto &output_dev: sys_output_audio_devs) {
+    for (const auto &output_dev: gkSysOutputDevs) {
         if (!output_dev.audio_dev_str.isEmpty()) {
             ui->comboBox_soundcard_output->addItem(gkStringFuncs->trimStrToCharLength(output_dev.audio_dev_str, GK_AUDIO_DEVS_STR_LENGTH, true),
                                                    output_dev.audio_dev_str);
@@ -801,8 +809,7 @@ void DialogSettings::prefill_audio_devices()
 
     //
     // Enumerate input audio devices!
-    const QList<GkDevice> sys_input_audio_devs = gkAudioDevices->enumerateAudioDevices(ALC_CAPTURE_DEVICE_SPECIFIER);
-    for (const auto &input_dev: sys_input_audio_devs) {
+    for (const auto &input_dev: gkSysInputDevs) {
         if (!input_dev.audio_dev_str.isEmpty()) {
             ui->comboBox_soundcard_input->addItem(gkStringFuncs->trimStrToCharLength(input_dev.audio_dev_str, GK_AUDIO_DEVS_STR_LENGTH, true),
                                                   input_dev.audio_dev_str);
@@ -2149,6 +2156,20 @@ void DialogSettings::on_pushButton_audio_save_loc_clicked()
 }
 
 /**
+ * @brief DialogSettings::on_comboBox_soundcard_input_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
+{
+    on_comboBox_input_audio_dev_sample_rate_currentIndexChanged(ui->comboBox_input_audio_dev_sample_rate->currentIndex());
+    on_comboBox_input_audio_dev_bitrate_currentIndexChanged(ui->comboBox_input_audio_dev_bitrate->currentIndex());
+    on_comboBox_input_audio_dev_number_channels_currentIndexChanged(ui->comboBox_input_audio_dev_number_channels->currentIndex());
+
+    return;
+}
+
+/**
  * @brief DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
@@ -2157,38 +2178,43 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
-            switch (index) {
-                case GK_AUDIO_SAMPLE_RATE_8000_IDX:
-                    it->pref_sample_rate = 8000;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_11025_IDX:
-                    it->pref_sample_rate = 11025;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_22050_IDX:
-                    it->pref_sample_rate = 22050;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_32000_IDX:
-                    it->pref_sample_rate = 32000;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_44100_IDX:
-                    it->pref_sample_rate = 44100;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_48000_IDX:
-                    it->pref_sample_rate = 48000;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_88200_IDX:
-                    it->pref_sample_rate = 88200;
-                    return;
-                case GK_AUDIO_SAMPLE_RATE_96000_IDX:
-                    it->pref_sample_rate = 96000;
-                    return;
-                default:
-                    std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine sample rate for input audio device!").toStdString()));
+        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+        if (!curr_sel_input_dev.isEmpty()) {
+            if (it->audio_dev_str == curr_sel_input_dev) {
+                switch (index) {
+                    case GK_AUDIO_SAMPLE_RATE_8000_IDX:
+                        it->pref_sample_rate = 8000;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_11025_IDX:
+                        it->pref_sample_rate = 11025;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_22050_IDX:
+                        it->pref_sample_rate = 22050;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_32000_IDX:
+                        it->pref_sample_rate = 32000;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_44100_IDX:
+                        it->pref_sample_rate = 44100;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_48000_IDX:
+                        it->pref_sample_rate = 48000;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_88200_IDX:
+                        it->pref_sample_rate = 88200;
+                        return;
+                    case GK_AUDIO_SAMPLE_RATE_96000_IDX:
+                        it->pref_sample_rate = 96000;
+                        return;
+                    default:
+                        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine sample rate for input audio device!").toStdString()));
+                }
+            } else {
+                ++it;
             }
-        } else {
-            ++it;
         }
+
+        break;
     }
 
     return;
@@ -2204,41 +2230,44 @@ void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
-            if (it->sel_channels == GkAudioChannels::Mono) {
-                switch (index) {
-                    case GK_AUDIO_BITRATE_8_IDX:
-                        it->pref_audio_format = AL_FORMAT_MONO8;
-                        return;
-                    case GK_AUDIO_BITRATE_16_IDX:
-                        it->pref_audio_format = AL_FORMAT_MONO16;
-                        return;
-                    case GK_AUDIO_BITRATE_24_IDX:
-                        it->pref_audio_format = AL_FORMAT_MONO_FLOAT32;
-                        return;
-                    default:
-                        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
-                }
-            } else if (it->sel_channels == GkAudioChannels::Stereo) {
-                switch (index) {
-                    case GK_AUDIO_BITRATE_8_IDX:
-                        it->pref_audio_format = AL_FORMAT_STEREO8;
-                        return;
-                    case GK_AUDIO_BITRATE_16_IDX:
-                        it->pref_audio_format = AL_FORMAT_STEREO16;
-                        return;
-                    case GK_AUDIO_BITRATE_24_IDX:
-                        it->pref_audio_format = AL_FORMAT_STEREO_FLOAT32;
-                        return;
-                    default:
-                        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+        if (!curr_sel_input_dev.isEmpty()) {
+            if (it->audio_dev_str == curr_sel_input_dev) {
+                if (it->sel_channels == GkAudioChannels::Mono) {
+                    switch (index) {
+                        case GK_AUDIO_BITRATE_8_IDX:
+                            it->pref_audio_format = AL_FORMAT_MONO8;
+                            return;
+                        case GK_AUDIO_BITRATE_16_IDX:
+                            it->pref_audio_format = AL_FORMAT_MONO16;
+                            return;
+                        case GK_AUDIO_BITRATE_24_IDX:
+                            it->pref_audio_format = AL_FORMAT_MONO_FLOAT32;
+                            return;
+                        default:
+                            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+                    }
+                } else if (it->sel_channels == GkAudioChannels::Stereo) {
+                    switch (index) {
+                        case GK_AUDIO_BITRATE_8_IDX:
+                            it->pref_audio_format = AL_FORMAT_STEREO8;
+                            return;
+                        case GK_AUDIO_BITRATE_16_IDX:
+                            it->pref_audio_format = AL_FORMAT_STEREO16;
+                            return;
+                        case GK_AUDIO_BITRATE_24_IDX:
+                            it->pref_audio_format = AL_FORMAT_STEREO_FLOAT32;
+                            return;
+                        default:
+                            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+                    }
                 }
             } else {
-                std::throw_with_nested(std::runtime_error(tr("Only Mono or Stereo are supported at this time with regards to %1!").arg(General::productName).toStdString()));
+                ++it;
             }
-        } else {
-            ++it;
         }
+
+        break;
     }
 
     return;
@@ -2253,18 +2282,25 @@ void DialogSettings::on_comboBox_input_audio_dev_number_channels_currentIndexCha
 {
     QList<GkDevice>::iterator it = gkSysInputDevs.begin();
     while (it != gkSysInputDevs.end()) {
-        if (it->audio_dev_str == ui->comboBox_input_audio_dev_bitrate->itemData(index).toString()) {
-            switch (index) {
-                case GK_AUDIO_CHANNELS_MONO:
-                    it->sel_channels = GkAudioChannels::Mono;
-                    return;
-                case GK_AUDIO_CHANNELS_STEREO:
-                    it->sel_channels = GkAudioChannels::Stereo;
-                    return;
-                default:
-                    std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
+        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+        if (!curr_sel_input_dev.isEmpty()) {
+            if (it->audio_dev_str == curr_sel_input_dev) {
+                switch (index) {
+                    case GK_AUDIO_CHANNELS_MONO:
+                        it->sel_channels = GkAudioChannels::Mono;
+                        return;
+                    case GK_AUDIO_CHANNELS_STEREO:
+                        it->sel_channels = GkAudioChannels::Stereo;
+                        return;
+                    default:
+                        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
+                }
+            } else {
+                ++it;
             }
         }
+
+        break;
     }
 
     return;

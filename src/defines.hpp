@@ -784,7 +784,8 @@ namespace Database {
             AudioRecLoc,
             AudioInputChannels,
             AudioInputSampleRate,
-            AudioInputBitrate
+            AudioInputBitrate,
+            AudioInputFormat
         };
 
         enum GkAudioChannels {
