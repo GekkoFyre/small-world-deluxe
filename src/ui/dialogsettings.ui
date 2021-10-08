@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>768</height>
+    <width>1524</width>
+    <height>1326</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -125,8 +125,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>600</height>
+                      <width>1372</width>
+                      <height>997</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -351,8 +351,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>302</width>
-                      <height>424</height>
+                      <width>655</width>
+                      <height>894</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -602,8 +602,8 @@
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>500</width>
-                          <height>1130</height>
+                          <width>1216</width>
+                          <height>2223</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2301,8 +2301,8 @@ Thanks.</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>382</width>
-                          <height>109</height>
+                          <width>884</width>
+                          <height>220</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_69">
@@ -2404,8 +2404,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>428</width>
-                      <height>612</height>
+                      <width>1004</width>
+                      <height>1276</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_60">
@@ -3465,8 +3465,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>338</width>
-                      <height>80</height>
+                      <width>775</width>
+                      <height>163</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -3638,8 +3638,8 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>944</width>
-                         <height>600</height>
+                         <width>1372</width>
+                         <height>997</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -3684,97 +3684,68 @@ Thanks.</string>
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QComboBox" name="comboBox_soundcard_input">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>35</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
+                               <widget class="QFrame" name="frame_16">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
-                                <property name="toolTip">
-                                 <string>The input channel for your soundcard, which can be anything from a microphone or in this case, possibly a radio rig.</string>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
                                 </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_63">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item>
+                                  <widget class="QComboBox" name="comboBox_soundcard_input"/>
+                                 </item>
+                                </layout>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QPushButton" name="pushButton_input_sound_test">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>13</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
+                               <widget class="QFrame" name="frame_17">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
-                                <property name="toolTip">
-                                 <string>Play an audio sample.</string>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
                                 </property>
-                                <property name="text">
-                                 <string>Audio Test</string>
-                                </property>
-                                <property name="autoDefault">
-                                 <bool>false</bool>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_audio_input_bit_rate">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>15</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>Choose the bit-rate of your selected, input audio device.</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_audio_input_sample_rate">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>20</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>The desired sampling rate of your chosen, input audio device.</string>
-                                </property>
-                                <property name="maxVisibleItems">
-                                 <number>12</number>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_soundcard_input_channels">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>12</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>Whether you wish for this input audio device to be Mono, Stereo, or something else in how it handles channels.</string>
-                                </property>
-                                <item>
-                                 <property name="text">
-                                  <string>Mono</string>
+                                <layout class="QHBoxLayout" name="horizontalLayout_64">
+                                 <property name="leftMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Left</string>
+                                 <property name="topMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Right</string>
+                                 <property name="rightMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Both</string>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
+                                 <item>
+                                  <widget class="QPushButton" name="pushButton_input_sound_test">
+                                   <property name="text">
+                                    <string>Audio Test</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QPushButton" name="pushButton_3">
+                                   <property name="text">
+                                    <string>Configure</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                </layout>
                                </widget>
                               </item>
                              </layout>
@@ -3815,94 +3786,68 @@ Thanks.</string>
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QComboBox" name="comboBox_soundcard_output">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>35</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
+                               <widget class="QFrame" name="frame_19">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
-                                <property name="toolTip">
-                                 <string>The output channel to your soundcard, where sounds produced from your computer are sent outwards to an external device, whether it be speakers or possibly in this case, a radio rig for transmission.</string>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
                                 </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_66">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item>
+                                  <widget class="QComboBox" name="comboBox_soundcard_output"/>
+                                 </item>
+                                </layout>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QPushButton" name="pushButton_output_sound_test">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>13</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
+                               <widget class="QFrame" name="frame_18">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
-                                <property name="toolTip">
-                                 <string>Play an audio sample.</string>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
                                 </property>
-                                <property name="text">
-                                 <string>Audio Test</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_audio_output_bit_rate">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>15</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>Choose the bit-rate of your selected, output audio device.</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_audio_output_sample_rate">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>20</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>The desired sampling rate of your chosen, output audio device.</string>
-                                </property>
-                                <property name="maxVisibleItems">
-                                 <number>12</number>
-                                </property>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QComboBox" name="comboBox_soundcard_output_channels">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                  <horstretch>12</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="toolTip">
-                                 <string>Whether you wish for this output audio device to be Mono, Stereo, or something else in how it handles channels.</string>
-                                </property>
-                                <item>
-                                 <property name="text">
-                                  <string>Mono</string>
+                                <layout class="QHBoxLayout" name="horizontalLayout_65">
+                                 <property name="leftMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Left</string>
+                                 <property name="topMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Right</string>
+                                 <property name="rightMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
-                                <item>
-                                 <property name="text">
-                                  <string>Both</string>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
                                  </property>
-                                </item>
+                                 <item>
+                                  <widget class="QPushButton" name="pushButton_output_sound_test">
+                                   <property name="text">
+                                    <string>Audio Test</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QPushButton" name="pushButton_2">
+                                   <property name="text">
+                                    <string>Default</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                </layout>
                                </widget>
                               </item>
                              </layout>
@@ -4167,8 +4112,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>432</width>
-                      <height>349</height>
+                      <width>1372</width>
+                      <height>997</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4181,6 +4126,9 @@ Thanks.</string>
                         <enum>QFrame::Plain</enum>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_27">
+                        <property name="spacing">
+                         <number>12</number>
+                        </property>
                         <property name="leftMargin">
                          <number>0</number>
                         </property>
@@ -4194,6 +4142,93 @@ Thanks.</string>
                          <number>0</number>
                         </property>
                         <item>
+                         <widget class="QGroupBox" name="groupBox_input_audio_dev_settings">
+                          <property name="title">
+                           <string>Input Audio Device</string>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_62">
+                           <item>
+                            <widget class="QFrame" name="frame_input_audio_dev_settings_left">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_30">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_input_audio_dev_sample_rate">
+                                <property name="text">
+                                 <string>Sample Rate (Hz): </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QComboBox" name="comboBox_input_audio_dev_sample_rate"/>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_input_audio_dev_number_channels">
+                                <property name="text">
+                                 <string>No. Channels: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QComboBox" name="comboBox_input_audio_dev_number_channels"/>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_input_audio_dev_settings_right">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_45">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_input_audio_dev_bitrate">
+                                <property name="text">
+                                 <string>Format (bits): </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QComboBox" name="comboBox_input_audio_dev_bitrate"/>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
                          <widget class="QGroupBox" name="groupBox_encoding_settings">
                           <property name="title">
                            <string>Encoding</string>
@@ -4203,23 +4238,6 @@ Thanks.</string>
                             <widget class="QLabel" name="label_encoding_audio_quality">
                              <property name="text">
                               <string>Audio Quality: </string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="0">
-                            <widget class="QLabel" name="label_encoding_audio_bitrate">
-                             <property name="text">
-                              <string>Bitrate: </string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="1">
-                            <widget class="QComboBox" name="comboBox_encoding_audio_bitrate">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
                              </property>
                             </widget>
                            </item>
@@ -4279,6 +4297,23 @@ Thanks.</string>
                              </layout>
                             </widget>
                            </item>
+                           <item row="1" column="0">
+                            <widget class="QLabel" name="label_encoding_audio_bitrate">
+                             <property name="text">
+                              <string>Bitrate: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QComboBox" name="comboBox_encoding_audio_bitrate">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                            </widget>
+                           </item>
                           </layout>
                          </widget>
                         </item>
@@ -4327,9 +4362,9 @@ Thanks.</string>
                                  <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;title&gt;The&lt;/title&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.875pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                                 </property>
                                </widget>
                               </item>
@@ -4726,7 +4761,7 @@ p, li { white-space: pre-wrap; }
                              <bool>true</bool>
                             </property>
                             <property name="plainText">
-                             <string>&lt;PortAudio version and API information&gt;.</string>
+                             <string>&lt;OpenAL version and further API information&gt;.</string>
                             </property>
                            </widget>
                           </item>
@@ -4862,8 +4897,8 @@ p, li { white-space: pre-wrap; }
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>930</width>
-                         <height>644</height>
+                         <width>1344</width>
+                         <height>1297</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -5918,8 +5953,8 @@ p, li { white-space: pre-wrap; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>239</width>
-                      <height>202</height>
+                      <width>516</width>
+                      <height>401</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -6232,16 +6267,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>groupBox_2</tabstop>
   <tabstop>tabWidget_audio</tabstop>
   <tabstop>scrollArea_audio_config</tabstop>
-  <tabstop>comboBox_soundcard_input</tabstop>
-  <tabstop>comboBox_soundcard_output</tabstop>
-  <tabstop>pushButton_input_sound_test</tabstop>
-  <tabstop>pushButton_output_sound_test</tabstop>
-  <tabstop>comboBox_audio_input_bit_rate</tabstop>
-  <tabstop>comboBox_audio_output_bit_rate</tabstop>
-  <tabstop>comboBox_audio_input_sample_rate</tabstop>
-  <tabstop>comboBox_audio_output_sample_rate</tabstop>
-  <tabstop>comboBox_soundcard_input_channels</tabstop>
-  <tabstop>comboBox_soundcard_output_channels</tabstop>
   <tabstop>pushButton_refresh_audio_devices</tabstop>
   <tabstop>checkBox_init_rx_audio_upon_start</tabstop>
   <tabstop>lineEdit_audio_save_loc</tabstop>

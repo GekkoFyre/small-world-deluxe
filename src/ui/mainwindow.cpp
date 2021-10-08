@@ -491,12 +491,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             mInputCtxCurr = false;
             mOutputCtxCurr = false;
 
+            const QString output_audio_device_saved = gkDb->read_audio_device_settings(true);
+            const QString input_audio_device_saved = gkDb->read_audio_device_settings(false);
+
             //
             // Output audio device
             try {
                 //
+                // Enumerate output audio devices!
+                sys_output_audio_devs = gkAudioDevices->enumerateAudioDevices(alcGetString(nullptr, ALC_DEVICE_SPECIFIER), true);
+
+                //
                 // Initialize output device!
-                mOutputDevice = alcOpenDevice(nullptr);
+                if (!output_audio_device_saved.isEmpty()) {
+                    mOutputDevice = alcOpenDevice(output_audio_device_saved.toStdString().c_str());
+                } else {
+                    mOutputDevice = alcOpenDevice(nullptr); // Initialize with the default audio device!
+                }
 
                 //
                 // Create OpenAL context for output audio device!
@@ -515,8 +526,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // Input audio device
             try {
                 //
+                // Enumerate input audio devices!
+                sys_input_audio_devs = gkAudioDevices->enumerateAudioDevices(alcGetString(nullptr, ALC_CAPTURE_DEVICE_SPECIFIER), false);
+
+                //
                 // Initialize input device!
-                mInputDevice = alcOpenDevice(nullptr);
+                if (!input_audio_device_saved.isEmpty()) {
+                    ALCint srate;
+                    alcGetIntegerv(device, ALC_FREQUENCY, 1, &srate);
+                    mInputDevice = alcCaptureOpenDevice(input_audio_device_saved.toStdString().c_str());
+                } else {
+                    mInputDevice = alcCaptureOpenDevice(nullptr); // Initialize with the default audio device!
+                }
 
                 //
                 // Create OpenAL context for input audio device!
@@ -558,7 +579,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             }
 
             //
-            // Initialize any QAudioSystem libraries and associated buffers!
+            // Initialize any Audio System libraries and associated buffers!
             //
             const QString input_audio_device_settings = gkDb->read_audio_device_settings(false);
             const QString output_audio_device_settings = gkDb->read_audio_device_settings(true);
@@ -981,9 +1002,8 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, gkFileIo, gkAudioDevices, gkAudioInput,
-                                                               gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
-                                                               pref_input_device, pref_output_device, gkRadioLibs,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, gkFileIo, gkAudioDevices,
+                                                               sys_input_audio_devs, sys_output_audio_devs, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
                                                                gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
@@ -1000,7 +1020,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
     QObject::connect(dlg_settings, SIGNAL(updateXmppConfig()), this, SLOT(readXmppSettings()));
 
     //
-    // QAudioSystem related
+    // Audio System related
     //
     QObject::connect(dlg_settings, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                      this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));

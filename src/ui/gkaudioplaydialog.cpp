@@ -135,11 +135,11 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 }
 
 /**
- * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the QAudioSystem
+ * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the Audio System
  * data buffer for audio playback and possibly recording as well.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file_info The information we have on the audio playback file.
- * @return The number or type of audio channel(s) we should be initializing the QAudioSystem buffer with.
+ * @return The number or type of audio channel(s) we should be initializing the Audio System buffer with.
  */
 GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {

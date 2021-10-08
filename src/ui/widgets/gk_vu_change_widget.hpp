@@ -68,7 +68,7 @@ private:
     Ui::GkVuAdjust *ui;
 
     //
-    // QAudioSystem and related
+    // Audio System and related
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;

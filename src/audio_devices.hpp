@@ -91,7 +91,7 @@ public:
                                     const size_t &buf_size);
 
     static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(ALCdevice *device, const ALCchar *devices, const bool &is_output_dev = false);
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCchar *devices, const bool &is_output_dev = false);
 
     QString rtAudioVersionNumber();
     QString rtAudioVersionText();

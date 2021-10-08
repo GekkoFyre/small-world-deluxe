@@ -461,47 +461,20 @@ void GkLevelDb::write_general_settings(const QString &value, const general_stat_
  * @param value
  * @param is_output_device
  */
-void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const QString &value, const bool &is_output_device)
 {
     try {
         leveldb::WriteBatch batch;
         leveldb::Status status;
 
         if (is_output_device) {
-            // Unique identifier for the chosen output audio device
-            batch.Put("AudioOutputDeviceName", value.audio_dev_str.toStdString());
-
-            // Determine if this is the default output device for the system and if so, convert
-            // the boolean value to a std::string suitable for database storage.
-            std::string is_default = boolEnum(value.default_output_dev);
-            batch.Put("AudioOutputDefSysDevice", is_default);
-
-            // Modifier to let SWD know if this audio input device was configured as the result of
-            // user activity and not by the part of default activity/settings.
-            std::string user_activity = boolEnum(value.user_config_succ);
-            batch.Put("AudioOutputCfgUsrActivity", user_activity);
+            // Output audio device
+            batch.Put("AudioOutputDeviceName", value.toStdString());
+            return;
         } else {
-            // Unique identifier for the chosen input audio device
-            batch.Put("AudioInputDeviceName", value.audio_dev_str.toStdString());
-
-            // Determine if this is the default input device for the system and if so, convert
-            // the boolean value to a std::string suitable for database storage.
-            std::string is_default = boolEnum(value.default_input_dev);
-            batch.Put("AudioInputDefSysDevice", is_default);
-
-            // Modifier to let SWD know if this audio input device was configured as the result of
-            // user activity and not by the part of default activity/settings.
-            std::string user_activity = boolEnum(value.user_config_succ);
-            batch.Put("AudioInputCfgUsrActivity", user_activity);
-        }
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            // Input audio device
+            batch.Put("AudioInputDeviceName", value.toStdString());
+            return;
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -534,21 +507,12 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
                 batch.Put("AudioRecSaveLoc", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputChannels:
-                batch.Put("AudioInputChannels", value.toStdString());
-                break;
-            case GkAudioCfg::AudioOutputChannels:
                 batch.Put("AudioOutputChannels", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputSampleRate:
-                batch.Put("AudioInputSampleRate", value.toStdString());
-                break;
-            case GkAudioCfg::AudioOutputSampleRate:
                 batch.Put("AudioOutputSampleRate", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputBitrate:
-                batch.Put("AudioInputBitrate", value.toStdString());
-                break;
-            case GkAudioCfg::AudioOutputBitrate:
                 batch.Put("AudioOutputBitrate", value.toStdString());
                 break;
         }
@@ -2652,20 +2616,11 @@ QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
         case GkAudioCfg::AudioInputChannels:
             status = db->Get(read_options, "AudioInputChannels", &value);
             break;
-        case GkAudioCfg::AudioOutputChannels:
-            status = db->Get(read_options, "AudioOutputChannels", &value);
-            break;
         case GkAudioCfg::AudioInputSampleRate:
             status = db->Get(read_options, "AudioInputSampleRate", &value);
             break;
-        case GkAudioCfg::AudioOutputSampleRate:
-            status = db->Get(read_options, "AudioOutputSampleRate", &value);
-            break;
         case GkAudioCfg::AudioInputBitrate:
             status = db->Get(read_options, "AudioInputBitrate", &value);
-            break;
-        case GkAudioCfg::AudioOutputBitrate:
-            status = db->Get(read_options, "AudioOutputBitrate", &value);
             break;
     }
 
@@ -2938,7 +2893,7 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
 
 /**
  * @brief GkLevelDb::convAudioBitRateToEnum converts a given bit-rate to the nearest, or rather, the most
- * appropriate Sample Type as per under QAudioSystem.
+ * appropriate Sample Type as per under Audio System.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bit_rate Whether we are using 8-bits, 16-bits, etc.
  * @return For 8-bit samples, you would use QAudioFormat::UnsignedInt, whilst for 16-bit samples, QAudioFormat:SignedInt is

@@ -197,7 +197,7 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> gkAudioInputBuf;

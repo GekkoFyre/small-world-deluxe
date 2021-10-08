@@ -216,6 +216,25 @@ namespace GekkoFyre {
 #define AUDIO_RECORDING_SOURCE_OUTPUT_IDX (1)
 
 //
+// Settings Dialog
+//
+#define GK_AUDIO_SAMPLE_RATE_8000_IDX (7)
+#define GK_AUDIO_SAMPLE_RATE_11025_IDX (6)
+#define GK_AUDIO_SAMPLE_RATE_22050_IDX (5)
+#define GK_AUDIO_SAMPLE_RATE_32000_IDX (4)
+#define GK_AUDIO_SAMPLE_RATE_44100_IDX (0)
+#define GK_AUDIO_SAMPLE_RATE_48000_IDX (1)
+#define GK_AUDIO_SAMPLE_RATE_88200_IDX (3)
+#define GK_AUDIO_SAMPLE_RATE_96000_IDX (2)
+
+#define GK_AUDIO_BITRATE_8_IDX (1)
+#define GK_AUDIO_BITRATE_16_IDX (0)
+#define GK_AUDIO_BITRATE_24_IDX (2)
+
+#define GK_AUDIO_CHANNELS_MONO (0)
+#define GK_AUDIO_CHANNELS_STEREO (1)
+
+//
 // Mostly regarding FFTW functions
 //
 #define GK_FFT_SIZE (4096)
@@ -764,18 +783,15 @@ namespace Database {
             LogsDirLoc,
             AudioRecLoc,
             AudioInputChannels,
-            AudioOutputChannels,
             AudioInputSampleRate,
-            AudioOutputSampleRate,
-            AudioInputBitrate,
-            AudioOutputBitrate
+            AudioInputBitrate
         };
 
         enum GkAudioChannels {
             Mono,
             Left,
             Right,
-            Both,
+            Stereo,
             Surround,
             Unknown
         };
@@ -903,9 +919,9 @@ namespace Database {
             };
 
             struct GkAudioDeviceInfo {
-                QList<qint32> supported_sample_rates;
+                QList<ALuint> supported_sample_rates;
                 QList<qint32> supported_channel_counts;
-                QList<qint32> supported_sample_sizes;
+                QList<ALuint> supported_sample_sizes;
                 QList<Endian> supported_byte_orders;
                 QList<SampleType> supported_sample_types;
             };
@@ -913,13 +929,13 @@ namespace Database {
             struct GkDevice {
                 QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
                 GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
-                bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
-                bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
+                bool is_enabled;                                                    // Whether this device (as the `output` or `input`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
+                ALuint pref_sample_rate;                                            // The desired sample rate to use with this device (namely if it is an input device!), as chosen by the end-user.
+                ALenum pref_audio_format;                                           // The desired audio format to use with this device (namely if it is an input device!), as chosen by the end-user.
                 GkFormat user_settings;                                             // The user defined settings for this particular audio device.
-                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user. TODO: Replace this with `user_settings` instead!
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }

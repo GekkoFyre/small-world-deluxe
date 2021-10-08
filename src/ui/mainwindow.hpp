@@ -333,7 +333,7 @@ signals:
     void startRecOutput();
 
     //
-    // QAudioSystem and related
+    // Audio System and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeAudioIo(const bool &use_input_audio); // True by default!
@@ -373,7 +373,7 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // QAudioSystem initialization, buffers, and event-loops
+    // Audio System initialization, buffers, and event-loops
     //
     ALCdevice *mInputDevice;
     ALCdevice *mOutputDevice;
@@ -390,12 +390,10 @@ private:
     QByteArray gkAudioOutputByteArrayBuf;
 
     //
-    // QAudioSystem miscellaneous variables
+    // Audio System miscellaneous variables
     //
-    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
-    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> sys_output_audio_devs;
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> sys_input_audio_devs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
 

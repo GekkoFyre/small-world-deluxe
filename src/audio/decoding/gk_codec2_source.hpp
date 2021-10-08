@@ -82,7 +82,7 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     qint64 m_totalUncompBytesRead;
     qint64 m_totalCompBytesWritten;
 

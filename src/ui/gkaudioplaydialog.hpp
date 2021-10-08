@@ -81,7 +81,7 @@ public:
     ~GkAudioPlayDialog() override;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
@@ -130,7 +130,7 @@ private:
     bool audio_out_skip_bck;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device

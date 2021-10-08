@@ -370,11 +370,7 @@ bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fa
  * @param is_output_dev Whether we are working with output devices or input.
  * @return The enumerated list of audio devices.
  */
-QList<GkDevice> AudioDevices::enumerateAudioDevices(ALCdevice *device, const ALCchar *devices, const bool &is_output_dev) {
-    if (!alcCall(alcGetString, devices, device, nullptr, ALC_DEVICE_SPECIFIER)) {
-        return QList<GkDevice>();
-    }
-
+QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCchar *devices, const bool &is_output_dev) {
     const char *ptr = devices;
     QStringList devicesList;
     do {
@@ -394,6 +390,9 @@ QList<GkDevice> AudioDevices::enumerateAudioDevices(ALCdevice *device, const ALC
         audio.audio_dev_str = dev;
         device_list.push_back(audio);
     }
+
+    // TODO:
+    // https://github.com/kcat/openal-soft/issues/350
 
     return device_list;
 }

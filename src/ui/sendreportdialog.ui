@@ -9,9 +9,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>480</width>
+    <width>800</width>
     <height>640</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
@@ -69,8 +75,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>458</width>
-           <height>583</height>
+           <width>764</width>
+           <height>541</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">

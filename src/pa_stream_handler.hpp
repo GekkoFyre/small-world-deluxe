@@ -170,7 +170,7 @@ private:
     std::mutex m_createRecordMediaFileDirMutex;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QMap<QString, AudioFile<double>> gkSounds;
