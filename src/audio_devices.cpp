@@ -465,6 +465,40 @@ ALCuint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
 }
 
 /**
+ * @brief AudioDevices::fwrite16le
+ * @author OpenAL soft <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>
+ * @param val The value to be worked upon.
+ * @param f The file handler.
+ */
+void AudioDevices::fwrite16le(ALushort val, FILE *f)
+{
+    ALubyte data[2];
+    data[0] = (ALubyte)(val&0xff);
+    data[1] = (ALubyte)(val>>8);
+    fwrite(data, 1, 2, f);
+
+    return;
+}
+
+/**
+ * @brief AudioDevices::fwrite32le
+ * @author OpenAL soft <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>
+ * @param val The value to be worked upon.
+ * @param f The file handler.
+ */
+void AudioDevices::fwrite32le(ALuint val, FILE *f)
+{
+    ALubyte data[4];
+    data[0] = (ALubyte)(val&0xff);
+    data[1] = (ALubyte)((val>>8)&0xff);
+    data[2] = (ALubyte)((val>>16)&0xff);
+    data[3] = (ALubyte)(val>>24);
+    fwrite(data, 1, 4, f);
+
+    return;
+}
+
+/**
  * @brief AudioDevices::convAudioChannelsToEnum
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param num_channels

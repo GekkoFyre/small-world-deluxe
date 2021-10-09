@@ -65,6 +65,17 @@
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <stdio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #define alCall(function, ...) AudioDevices::alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
 #define alcCall(function, device, ...) AudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
 
@@ -94,6 +105,9 @@ public:
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
+
+    static void fwrite16le(ALushort val, FILE *f);
+    static void fwrite32le(ALuint val, FILE *f);
 
     Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 
