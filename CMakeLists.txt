@@ -783,6 +783,7 @@ set(GALAXY_UI_CPP
     src/gk_pcm_file_stream.cpp
     src/pa_stream_handler.cpp
     src/gk_sinewave.cpp
+	src/gk_exception.cpp
     src/pa_audio_player.cpp
 	src/audio/encoding/gk_pcm_wav_sink.cpp
 	src/audio/encoding/gk_ogg_opus_sink.cpp
@@ -894,6 +895,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_pcm_file_stream.hpp
     src/pa_stream_handler.hpp
     src/gk_sinewave.hpp
+	src/gk_exception.hpp
     src/gk_waterfall_data.hpp
     src/pa_audio_player.hpp
 	src/audio/encoding/gk_pcm_wav_sink.hpp

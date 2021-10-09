@@ -42,52 +42,23 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include "src/audio_devices.hpp"
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <memory>
-#include <vector>
 #include <string>
-#include <QTimer>
-#include <QObject>
 #include <QString>
-#include <QPointer>
 
 namespace GekkoFyre {
 
-class GkSinewaveOutput : public QObject {
-    Q_OBJECT
+class GkException {
 
 public:
-    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
-                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkSinewaveOutput() override;
+    explicit GkException(const QString &err_msg, const qint32 err);
+    explicit GkException(const qint32 err);
+    explicit GkException(const QString &err_msg);
+    virtual ~GkException();
 
-public slots:
-    void setPlayLength(quint32 milliseconds);
-    void play();
+    QString message;
+    qint32 error_no;
 
-private slots:
-    void setBufferLength();
-    void setSampleRate();
-
-private:
-    QString gkOutputDevName;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    QTimer *timer;
-    ALCdevice *mTestDevice;     // Audio device under test; regards OpenAL.
-    ALCcontext *mTestCtx;       // Context; regards OpenAL.
-    ALCboolean mTestCtxCurr;    // Current context; regards OpenAL.
-    quint32 playLength;         // The amount of time for which to play the artificially created sinewave audio sample.
-    quint32 bufferLength;       // The buffer size/length to use for storing the sinewave audio data.
-    ALuint sampleRate;          // The preferred sample rate by the given audio device.
-
-    quint32 calcBufferLength();
-    std::vector<ALshort> generateSineWaveData();
+    void print() const;
 
 };
 };

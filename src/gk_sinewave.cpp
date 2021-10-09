@@ -41,6 +41,7 @@
 
 #include "src/gk_sinewave.hpp"
 #include <cmath>
+#include <cstdlib>
 #include <utility>
 #include <exception>
 
@@ -124,6 +125,7 @@ void GkSinewaveOutput::setPlayLength(quint32 milliseconds)
  */
 void GkSinewaveOutput::setBufferLength()
 {
+    setSampleRate();
     bufferLength = calcBufferLength();
     return;
 }
@@ -142,31 +144,35 @@ void GkSinewaveOutput::setSampleRate()
 /**
  * @brief GkSinewaveOutput::play will play the sinewave audio sample over the given end-user's chosen audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
  */
 void GkSinewaveOutput::play()
 {
     try {
+        if (!mTestDevice) {
+            throw std::runtime_error(tr("").toStdString());
+        }
+
         setBufferLength();
         ALuint buffer;
         ALuint source;
 
         alCall(alGenBuffers, 1, &buffer);
-        ALshort *sinewave_data = generateSineWaveData();
-        alCall(alBufferData, buffer, AL_FORMAT_STEREO16, sinewave_data, sizeof(sinewave_data), bufferLength * 2);
+        const auto sinewave_data = generateSineWaveData();
+        alCall(alBufferData, buffer, AL_FORMAT_STEREO16, sinewave_data.data(), sinewave_data.size(), sampleRate);
         alCall(alGenSources, 1, &source);
-        alCall(alSourcei, source, AL_BUFFER, buffer);
         alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
+        alCall(alSourcei, source, AL_BUFFER, buffer);
+
         alCall(alSourcePlay, source);
+        ALint state = AL_PLAYING;
+        while (state == AL_PLAYING) {
+            alCall(alGetSourcei, source, AL_SOURCE_STATE, &state);
+        }
 
         alCall(alSourceStop, source);
         alCall(alDeleteSources, 1, &source);
         alCall(alDeleteBuffers, 1, &buffer);
-
-        //
-        // Finally, delete the generated sinewave data!
-        if (sinewave_data) {
-            delete[] sinewave_data;
-        }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }
@@ -179,10 +185,11 @@ void GkSinewaveOutput::play()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return Required audio buffer length/size.
  */
-qint32 GkSinewaveOutput::calcBufferLength()
+quint32 GkSinewaveOutput::calcBufferLength()
 {
-    if (playLength > 0) {
-        qint32 buf_length = playLength * sampleRate;
+    const quint32 play_length_secs = playLength / 1000; // Convert from milliseconds to seconds!
+    if (play_length_secs > 0) {
+        quint32 buf_length = play_length_secs * sampleRate;
         return buf_length;
     }
 
@@ -192,15 +199,16 @@ qint32 GkSinewaveOutput::calcBufferLength()
 /**
  * @brief GkSinewaveOutput::generateSineWaveData creates the actual sinewave data, via mathematical functions.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The generated sinewave data.
+ * @return The generated sinewave data, as a standard library vector.
+ * @note Hide Takei <https://github.com/hideyuki/openal-sine-wave/blob/master/sine_wave/sine_wave.c>
  */
-ALshort *GkSinewaveOutput::generateSineWaveData()
+std::vector<ALshort> GkSinewaveOutput::generateSineWaveData()
 {
-    ALshort *data = new ALshort[bufferLength * 2];
+    std::vector<ALshort> out_data;
     for (qint32 i = 0; i < bufferLength; ++i) {
-        data[i * 2] += std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX;
-        data[i * 2 + 1] += -1 * std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX; // Anti-phase component...
+        out_data.insert(out_data.begin() + (i * 2), std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX);
+        out_data.insert(out_data.begin() + (i * 2 + 1), -1 * std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX); // Anti-phase component...
     }
 
-    return data;
+    return out_data;
 }

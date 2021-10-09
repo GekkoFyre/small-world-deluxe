@@ -39,55 +39,61 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_exception.hpp"
+#include <utility>
+#include <iostream>
+#include <exception>
 
-#include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include "src/audio_devices.hpp"
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <memory>
-#include <vector>
-#include <string>
-#include <QTimer>
-#include <QObject>
-#include <QString>
-#include <QPointer>
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
-namespace GekkoFyre {
+/**
+ * @brief GkException::GkException
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err_msg
+ * @param err
+ */
+GkException::GkException(const QString &err_msg, const qint32 err)
+{
+    return;
+}
 
-class GkSinewaveOutput : public QObject {
-    Q_OBJECT
+/**
+ * @brief GkException::GkException
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err
+ */
+GkException::GkException(const qint32 err)
+{
+    return;
+}
 
-public:
-    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
-                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkSinewaveOutput() override;
+/**
+ * @brief GkException::GkException
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err_msg
+ */
+GkException::GkException(const QString &err_msg)
+{
+    return;
+}
 
-public slots:
-    void setPlayLength(quint32 milliseconds);
-    void play();
+GkException::~GkException() {}
 
-private slots:
-    void setBufferLength();
-    void setSampleRate();
-
-private:
-    QString gkOutputDevName;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    QTimer *timer;
-    ALCdevice *mTestDevice;     // Audio device under test; regards OpenAL.
-    ALCcontext *mTestCtx;       // Context; regards OpenAL.
-    ALCboolean mTestCtxCurr;    // Current context; regards OpenAL.
-    quint32 playLength;         // The amount of time for which to play the artificially created sinewave audio sample.
-    quint32 bufferLength;       // The buffer size/length to use for storing the sinewave audio data.
-    ALuint sampleRate;          // The preferred sample rate by the given audio device.
-
-    quint32 calcBufferLength();
-    std::vector<ALshort> generateSineWaveData();
-
-};
-};
+/**
+ * @brief GkException::print
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkException::print() const
+{
+    std::cerr << "Error with SWD: " << message.toStdString() << std::endl;
+    return;
+}
