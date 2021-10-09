@@ -1027,8 +1027,7 @@ void DialogSettings::createXmppConnectionFromSettings()
  */
 void DialogSettings::print_exception(const std::exception &e, int level)
 {
-    QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-
+    gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     try {
         std::rethrow_if_nested(e);
     } catch (const std::exception &e) {
@@ -2318,9 +2317,17 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         msgBox.setIcon(QMessageBox::Icon::Warning);
         int ret = msgBox.exec();
 
+        QString curr_sel_output_dev_str;
         if (ret == QMessageBox::Ok) {
-            // QPointer<GkSinewaveOutput> gkSinewaveTest = new GkSinewaveOutput(chosen_output_audio_dev, gkEventLogger, gkAudioInput, gkAudioOutput, this);
-            // gkSinewaveTest->playSound(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000);
+            for (const auto &output_dev: gkSysOutputDevs) {
+                if (output_dev.audio_dev_str == ui->comboBox_soundcard_output->itemData(ui->comboBox_soundcard_output->currentIndex()).toString()) {
+                    curr_sel_output_dev_str = output_dev.audio_dev_str;
+                }
+            }
+
+            QPointer<GkSinewaveOutput> gkOutputSinewaveTest = new GkSinewaveOutput(curr_sel_output_dev_str, gkAudioDevices, gkEventLogger, this);
+            gkOutputSinewaveTest->setPlayLength(GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS * 1000); // The playback length is measured in milliseconds!
+            gkOutputSinewaveTest->play();
 
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
@@ -2329,11 +2336,7 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
             return;
         }
     } catch (const std::exception &e) {
-        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
-    } catch (...) {
-        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
+        print_exception(e);
     }
 
     return;

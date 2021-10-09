@@ -194,7 +194,6 @@ namespace GekkoFyre {
 #define AUDIO_OPUS_DEFAULT_SAMPLE_RATE (48000)                  // The default sampling rate to use when encoding/decoding with Ogg Opus audio (measured in kHz).
 #define AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS (1000)         // The amount of time to wait for (in milliseconds) while the buffers prime themselves, before continuing with the rest of the encoding functions!
 
-#define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
@@ -217,6 +216,9 @@ namespace GekkoFyre {
 // Settings Dialog
 //
 #define GK_AUDIO_DEVS_STR_LENGTH (40)
+#define GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS (3)                // Play the sine wave test sample for three seconds!
+#define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)
+#define GK_AUDIO_SINEWAVE_TEST_DEFAULT_SAMPLE_RATE (44100)      // The default sample rate to use, if it cannot be calculated any other way, successfully.
 
 #define GK_AUDIO_SAMPLE_RATE_8000_IDX (0)
 #define GK_AUDIO_SAMPLE_RATE_11025_IDX (1)

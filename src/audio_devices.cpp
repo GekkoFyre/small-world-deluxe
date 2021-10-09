@@ -456,7 +456,7 @@ ALenum AudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_c
  * @param device The output audio device to query in question.
  * @return The sampling rate of the given output audio device.
  */
-ALCint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
+ALCuint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
 {
     ALCint srate = 0;
     alcGetIntegerv(device, ALC_FREQUENCY, 1, &srate);

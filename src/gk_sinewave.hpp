@@ -42,9 +42,11 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/audio_devices.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <memory>
 #include <vector>
 #include <string>
@@ -59,21 +61,33 @@ class GkSinewaveOutput : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSinewaveOutput(ALCdevice *input_dev, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_info,
-                              QPointer<GekkoFyre::AudioDevices> audioDevices, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                              QObject *parent = nullptr);
+    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
+                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkSinewaveOutput() override;
 
 public slots:
-    void playSound(quint32 milliseconds);
+    void setPlayLength(quint32 milliseconds);
+    void play();
+
+private slots:
+    void setBufferLength();
+    void setSampleRate();
 
 private:
+    QString gkOutputDevName;
     QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioInfo;
 
-    ALCdevice *mInputDevice;
     QTimer *timer;
+    ALCdevice *mTestDevice;     // Audio device under test; regards OpenAL.
+    ALCcontext *mTestCtx;       // Context; regards OpenAL.
+    ALCboolean mTestCtxCurr;    // Current context; regards OpenAL.
+    quint32 playLength;         // The amount of time for which to play the artificially created sinewave audio sample.
+    qint32 bufferLength;        // The buffer size/length to use for storing the sinewave audio data.
+    ALuint sampleRate;          // The preferred sample rate by the given audio device.
+
+    qint32 calcBufferLength();
+    ALshort *generateSineWaveData();
 
 };
 };

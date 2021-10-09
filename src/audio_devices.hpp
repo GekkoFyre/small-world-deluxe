@@ -93,7 +93,7 @@ public:
     static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
-    ALCint getAudioDevSampleRate(ALCdevice *device);
+    ALCuint getAudioDevSampleRate(ALCdevice *device);
 
     Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 

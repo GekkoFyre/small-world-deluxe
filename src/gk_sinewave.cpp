@@ -60,26 +60,147 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkSinewaveOutput::GkSinewaveOutput(ALCdevice *input_dev, const GkDevice &audio_info, QPointer<GekkoFyre::AudioDevices> audioDevices,
+GkSinewaveOutput::GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
-    mInputDevice = input_dev;
-    gkAudioDevices = std::move(audioDevices);
+    gkAudioDevices = std::move(audio_devs);
     gkEventLogger = std::move(eventLogger);
-    gkAudioInfo = audio_info;
+    gkOutputDevName = output_audio_dev_name;
 
-    ALuint buffer;
-    alCall(alGenBuffers, 1, &buffer);
+    //
+    // Set a default sample rate; useful for if it cannot otherwise be calculated!
+    sampleRate = GK_AUDIO_SINEWAVE_TEST_DEFAULT_SAMPLE_RATE;
+
+    //
+    // Set a default amount of time for which to play the Sinewave Test!
+    playLength = 3000;
+
+    try {
+        //
+        // Need to create new OpenAL device and context in order to perform a sinewave test!
+        mTestDevice = alcOpenDevice(gkOutputDevName.toStdString().c_str());
+
+        //
+        // Create OpenAL context for audio device under test!
+        if (!alcCall(alcCreateContext, mTestCtx, mTestDevice, mTestDevice, nullptr) || !mTestCtx) {
+            throw std::runtime_error(tr("ERROR: Could not create audio context for device under sinewave test!").toStdString());
+        }
+
+        if (!alcCall(alcMakeContextCurrent, mTestCtxCurr, mTestDevice, mTestCtx) || mTestCtxCurr != ALC_TRUE) {
+            throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for output device!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 }
 
 GkSinewaveOutput::~GkSinewaveOutput()
-{}
+{
+    if (mTestCtx) {
+        alcCall(alcDestroyContext, mTestDevice, mTestCtx);
+    }
+
+    if (mTestDevice) {
+        ALCboolean audio_test_dev_closed;
+        alcCall(alcCloseDevice, audio_test_dev_closed, mTestDevice, mTestDevice);
+    }
+}
 
 /**
- * @brief GkSinewaveOutput::playSound
- * @param milliseconds
+ * @brief GkSinewaveOutput::setPlayLength sets the amount of time, in milliseconds, to play the sinewave sound test for
+ * until it is ceased.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param milliseconds The amount of time, in milliseconds, to play the sinewave test for.
  */
-void GkSinewaveOutput::playSound(quint32 milliseconds)
+void GkSinewaveOutput::setPlayLength(quint32 milliseconds)
 {
+    playLength = milliseconds;
     return;
+}
+
+/**
+ * @brief GkSinewaveOutput::setBufferLength sets the length and size of the needed audio buffer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSinewaveOutput::setBufferLength()
+{
+    bufferLength = calcBufferLength();
+    return;
+}
+
+/**
+ * @brief GkSinewaveOutput::setSampleRate works out the sample rate that's applicable to the given audio device under
+ * test for the sinewave signal playback.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSinewaveOutput::setSampleRate()
+{
+    sampleRate = gkAudioDevices->getAudioDevSampleRate(mTestDevice);
+    return;
+}
+
+/**
+ * @brief GkSinewaveOutput::play will play the sinewave audio sample over the given end-user's chosen audio device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSinewaveOutput::play()
+{
+    try {
+        setBufferLength();
+        ALuint buffer;
+        ALuint source;
+
+        alCall(alGenBuffers, 1, &buffer);
+        ALshort *sinewave_data = generateSineWaveData();
+        alCall(alBufferData, buffer, AL_FORMAT_STEREO16, sinewave_data, sizeof(sinewave_data), bufferLength * 2);
+        alCall(alGenSources, 1, &source);
+        alCall(alSourcei, source, AL_BUFFER, buffer);
+        alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
+        alCall(alSourcePlay, source);
+
+        alCall(alSourceStop, source);
+        alCall(alDeleteSources, 1, &source);
+        alCall(alDeleteBuffers, 1, &buffer);
+
+        //
+        // Finally, delete the generated sinewave data!
+        if (sinewave_data) {
+            delete[] sinewave_data;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkSinewaveOutput::calcBufferLength calculates the length and size of the needed audio buffer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return Required audio buffer length/size.
+ */
+qint32 GkSinewaveOutput::calcBufferLength()
+{
+    if (playLength > 0) {
+        qint32 buf_length = playLength * sampleRate;
+        return buf_length;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief GkSinewaveOutput::generateSineWaveData creates the actual sinewave data, via mathematical functions.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The generated sinewave data.
+ */
+ALshort *GkSinewaveOutput::generateSineWaveData()
+{
+    ALshort *data = new ALshort[bufferLength * 2];
+    for (qint32 i = 0; i < bufferLength; ++i) {
+        data[i * 2] += std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX;
+        data[i * 2 + 1] += -1 * std::sin(2 * M_PI * GK_AUDIO_SINEWAVE_TEST_FREQ_HZ * i / bufferLength) * SHRT_MAX; // Anti-phase component...
+    }
+
+    return data;
 }

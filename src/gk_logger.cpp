@@ -79,6 +79,88 @@ std::mutex setEventNoMutex;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
+qint64 GkEventTimestamps::millisecsSinceEpoch = -1;
+
+/**
+ * @brief GkEventTimestamps::GkEventTimestamps manages the timestamping of event logs and other, important data
+ * monitoring and/or recording activities.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkEventTimestamps::GkEventTimestamps(QObject *parent) : QObject(parent)
+{
+    return;
+}
+
+GkEventTimestamps::~GkEventTimestamps()
+{}
+
+/**
+ * @brief GkEventTimestamps::timestamp outputs a timestamp that is both verified as being valid and (hopefully!)
+ * up-to-date, provided everything works according to plan.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return A raw version of the timestamp, as milliseconds since the (usually UNIX) epoch.
+ * @see GkEventTimestamps::formatted()
+ */
+qint64 GkEventTimestamps::timestamp(const bool &refresh_timestamp)
+{
+    if (refresh_timestamp) {
+        setTimestamp();
+    }
+
+    if (isValid()) {
+        return millisecsSinceEpoch;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkEventTimestamps::formatted outputs a formatted text-string of the QDateTime timestamp instead.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return A formatted QDateTime version of the timestamp.
+ * @see GkEventTimestamps::timestamp()
+ */
+QString GkEventTimestamps::formatted(const bool &refresh_timestamp)
+{
+    if (refresh_timestamp) {
+        setTimestamp();
+    }
+
+    if (isValid()) {
+        QDateTime timestamp;
+        timestamp.setMSecsSinceEpoch(millisecsSinceEpoch);
+        QString form_output = timestamp.toString(tr("hh:mm:ss"));
+        return form_output;
+    }
+
+    return QString();
+}
+
+/**
+ * @brief GkEventTimestamps::isValid
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool GkEventTimestamps::isValid()
+{
+    if (millisecsSinceEpoch > 0 && millisecsSinceEpoch <= QDateTime::currentMSecsSinceEpoch()) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkEventTimestamps::setTimestamp
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkEventTimestamps::setTimestamp()
+{
+    millisecsSinceEpoch = QDateTime::currentMSecsSinceEpoch();
+    return;
+}
+
 /**
  * @brief GkEventLogger::GkEventLogger
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
