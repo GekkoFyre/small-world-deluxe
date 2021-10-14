@@ -493,14 +493,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize output device!
                 gkSysOutputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
+                QString output_audio_dev_str;
                 for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
                     if (!output_audio_device_saved.isEmpty()) {
                         //
                         // Enumerate output audio devices!
                         if (it->audio_dev_str == output_audio_device_saved) {
+                            output_audio_dev_str = it->audio_dev_str;
                             it->pref_sample_rate = GK_AUDIO_OUTPUT_DEVICE_INIT_SAMPLE_RATE; // Use a default, hopefully universal value until we are able to initialize the device and therefore detect what is actually supported!
                             it->al_error = 0;
-                            it->is_enabled = true;
+                            it->isEnabled = true;
+                            it->isStreaming = false;
                         }
 
                         it->alDevice = alcOpenDevice(output_audio_device_saved.toStdString().c_str());
@@ -525,6 +528,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // Start the audio output thread!
                 gkAudioOutputThread.start();
                 QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
+                if (!output_audio_dev_str.isEmpty()) {
+                    gkEventLogger->publishEvent(tr("Output audio device, \"%1\", has been initialized successfully!").arg(output_audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
+                } else {
+                    gkEventLogger->publishEvent(tr("The default output audio device has been initialized successfully!").arg(output_audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
+                }
             } catch (const std::exception &e) {
                 gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
             }
@@ -550,11 +558,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             it->pref_audio_format = input_audio_dev_pref_audio_format;
                             it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
                             it->al_error = 0;
-                            it->is_enabled = true;
+                            it->isEnabled = true;
+                            it->isStreaming = false;
 
                             break;
                         } else {
-                            it->is_enabled = false;
+                            it->isEnabled = false;
+                            it->isStreaming = false;
                         }
                     }
 
@@ -567,31 +577,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     circBufSize = audioFrameSampleCountTotal * bytesPerSample * safetyFactor;
 
                     for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-                        if (it->is_enabled) {
-                            it->alDevice = alcCaptureOpenDevice(it->audio_dev_str.toStdString().c_str(), it->pref_sample_rate, it->pref_audio_format, circBufSize);;
+                        if (it->isEnabled) {
+                            it->alDevice = alcCaptureOpenDevice(it->audio_dev_str.toStdString().c_str(), it->pref_sample_rate, it->pref_audio_format, circBufSize);
 
                             //
-                            // Create OpenAL context for input audio device!
+                            // Begin capture of audio stream from given audio device!
+                            // NOTE: A 'context' is not required in this instance unlike an output audio device...
                             if (it->alDevice) {
-                                if (!alcCall(alcCreateContext, it->alDeviceCtx, it->alDevice, it->alDevice, nullptr) || !it->alDeviceCtx) {
-                                    it->alc_error = alcGetError(it->alDevice);
-                                    throw std::runtime_error(tr("ERROR: Could not create audio context for input device!").toStdString());
-                                }
-
-                                if (!alcCall(alcMakeContextCurrent, it->alDeviceCtxCurr, it->alDevice, it->alDeviceCtx) || it->alDeviceCtxCurr != ALC_TRUE) {
-                                    it->alc_error = alcGetError(it->alDevice);
-                                    throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for input device!").toStdString());
-                                }
-
-                                mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(); // Initialize the `std::vector`!
+                                mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(audioFrameSampleCountTotal); // Initialize the `std::vector`!
                                 alcCaptureStart(it->alDevice);
-                                gkAudioDevices->captureAlSamples(it->alDevice, mInputDeviceBuf->data(),
-                                                                 audioFrameSampleCountPerChannel);
-                                gkAudioDevices->applyGain(mInputDeviceBuf->data(), audioFrameSampleCountTotal, GK_AUDIO_GAIN_FACTOR);
+                                it->alc_error = alcGetError(it->alDevice);
+                                if (it->alc_error != AL_NO_ERROR) {
+                                    throw std::runtime_error(tr("An issue was encountered with the capturing of data from audio device: %1").arg(it->audio_dev_str).toStdString());
+                                }
+
+                                gkAudioDevices->captureAlcSamples(it->alDevice, mInputDeviceBuf->data(),
+                                                                  audioFrameSampleCountPerChannel);
+
+                                //
+                                // We are now officially capturing data!
+                                it->isStreaming = true;
 
                                 //
                                 // Start the audio input thread!
                                 gkAudioInputThread.start();
+                                gkEventLogger->publishEvent(tr("Input audio device, \"%1\", has been initialized successfully!").arg(it->audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
                             } else {
                                 throw std::runtime_error(tr("Failed at initializing the audio input device!").toStdString());
                             }
@@ -613,7 +623,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         #ifndef ENBL_VALGRIND_SUPPORT
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         for (const auto &input_audio_dev: gkSysInputAudioDevs) {
-            if (input_audio_dev.is_enabled) {
+            if (input_audio_dev.isEnabled) {
                 gkFftAudio = new GekkoFyre::GkFFTAudio(mInputDeviceBuf, input_audio_dev, gkAudioDevices,
                                                        gkSpectroWaterfall, gkStringFuncs, gkEventLogger,
                                                        &gkAudioInputThread);
@@ -625,8 +635,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
 
         //
-        // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
-        QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
+        // Initialize all the SIGNALs and SLOTs for gkFftAudio!
+        QObject::connect(this, SIGNAL(initSpectrograph()), gkFftAudio, SIGNAL(startRecording()), Qt::QueuedConnection);
+
+        for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+            if (it->isEnabled && it->isStreaming) {
+                //
+                // Begin FFT & Spectrograph data capture!
+                emit initSpectrograph();
+                it->isGraphing = true;
+            }
+        }
 
         gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
         gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
@@ -790,24 +809,20 @@ MainWindow::~MainWindow()
     }
 
     for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
-        if (it->alDeviceCtx && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+        if (it->alDeviceCtx && it->alc_error == AL_NO_ERROR) { // Confirm that the pointer exists and that there have been no errors otherwise!
             alcCall(alcDestroyContext, it->alDevice, it->alDeviceCtx);
         }
 
-        if (it->alDevice && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+        if (it->alDevice && it->alc_error == AL_NO_ERROR) { // Confirm that the pointer exists and that there have been no errors otherwise!
             ALCboolean audio_output_closed;
             alcCall(alcCloseDevice, audio_output_closed, it->alDevice, it->alDevice);
         }
     }
 
     for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-        if (it->alDeviceCtx && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
-            alcCall(alcDestroyContext, it->alDevice, it->alDeviceCtx);
-        }
-
-        if (it->alDevice && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+        if (it->alDevice && it->alc_error == AL_NO_ERROR) { // Confirm that the pointer exists and that there have been no errors otherwise!
             ALCboolean audio_input_closed;
-            alcCall(alcCloseDevice, audio_input_closed, it->alDevice, it->alDevice);
+            alcCall(alcCaptureCloseDevice, audio_input_closed, it->alDevice, it->alDevice);
         }
     }
 

@@ -511,13 +511,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Now make the sound-device selection official throughout the running Small World Deluxe application!
         //
         for (const auto &input_dev: gkSysInputDevs) {
-            if (input_dev.is_enabled) {
+            if (input_dev.isEnabled) {
                 emit changeInputAudioInterface(input_dev);
             }
         }
 
         for (const auto &output_dev: gkSysOutputDevs) {
-            if (output_dev.is_enabled) {
+            if (output_dev.isEnabled) {
                 emit changeOutputAudioInterface(output_dev);
             }
         }

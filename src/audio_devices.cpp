@@ -530,13 +530,13 @@ qreal GkAudioDevices::getPeakValue(const ALenum &audio_format, const qint32 &bit
 }
 
 /**
- * @brief GkAudioDevices::captureAlSamples for the capturing/recording of audio samples.
+ * @brief GkAudioDevices::captureAlcSamples for the capturing/recording of audio samples.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param device
  * @param buffer
  * @param samples
  */
-void GkAudioDevices::captureAlSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples)
+void GkAudioDevices::captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples)
 {
     alcCaptureSamples(device, buffer, samples);
     return;

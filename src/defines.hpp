@@ -942,7 +942,9 @@ namespace Database {
                 GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
-                bool is_enabled;                                                    // Whether this device (as the `output` or `input`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
+                bool isEnabled;                                                     // Whether this device (as the `output` or `input`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
+                bool isStreaming;                                                   // Is the audio device in question currently recording, streaming, outputting sound, etc.?
+                bool isGraphing;                                                    // Are we recording any data captured from this device to the spectrograph on the QMainWindow of this application (i.e. Small World Deluxe)?
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 ALuint pref_sample_rate;                                            // The desired sample rate to use with this device (namely if it is an input device!), as chosen by the end-user.
                 ALenum pref_audio_format;                                           // The desired audio format to use with this device (namely if it is an input device!), as chosen by the end-user.

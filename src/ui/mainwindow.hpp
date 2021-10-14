@@ -280,8 +280,6 @@ public slots:
 
 signals:
     void updatePaVol(const int &percentage);
-    void updateAudioIn();
-    void updatePlot();
     void gkExitApp();
 
     //
@@ -291,6 +289,11 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+
+    //
+    // FFT & Spectrograph related
+    //
+    void initSpectrograph();
 
     //
     // Audio related
