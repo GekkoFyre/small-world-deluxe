@@ -78,8 +78,8 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             QPointer<GekkoFyre::GkAudioDevices> audioDevices,
-                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
-                            const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
+                            const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
+                            const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
@@ -317,8 +317,8 @@ private:
     // Audio System and related
     // The key corresponds to the position within the QComboBoxes
     //
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputDevs;
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputDevs;
 
     //
     // QXmpp and XMPP related

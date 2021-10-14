@@ -102,7 +102,7 @@ public:
 
     static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line);
     static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
     qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);

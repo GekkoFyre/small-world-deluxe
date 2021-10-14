@@ -373,7 +373,7 @@ bool GkAudioDevices::checkAlcErrors(const std::string &filename, const std::uint
  * @param is_output_dev Whether we are working with output devices or input.
  * @return The enumerated list of audio devices.
  */
-QList<GkDevice> GkAudioDevices::enumerateAudioDevices(const ALCenum param) {
+std::vector<GkDevice> GkAudioDevices::enumerateAudioDevices(const ALCenum param) {
     //
     // Prior to attempting an enumeration, OpenAL provides an extension querying mechanism which allows
     // you to know whether the runtime OpenAL implementation supports a specific extension. In our case,
@@ -392,7 +392,7 @@ QList<GkDevice> GkAudioDevices::enumerateAudioDevices(const ALCenum param) {
         ptr += devicesList.back().size() + 1;
     } while(*(ptr + 1) != '\0');
 
-    QList<GkDevice> device_list;
+    std::vector<GkDevice> device_list;
     for (const auto &dev: devicesList) {
         GkDevice audio;
         if (param == ALC_DEVICE_SPECIFIER) {
@@ -423,30 +423,28 @@ QList<GkDevice> GkAudioDevices::enumerateAudioDevices(const ALCenum param) {
 ALenum GkAudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx)
 {
     if (audio_channels == GkAudioChannels::Mono) {
-        switch (audio_bitrate_idx) {
-            case GK_AUDIO_BITRATE_8_IDX:
-                return AL_FORMAT_MONO8;
-            case GK_AUDIO_BITRATE_16_IDX:
-                return AL_FORMAT_MONO16;
-            case GK_AUDIO_BITRATE_24_IDX:
-                return AL_FORMAT_MONO_FLOAT32;
-            default:
-                std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+        if (audio_bitrate_idx == GK_AUDIO_BITRATE_8_IDX) {
+            return AL_FORMAT_MONO8;
+        } else if (audio_bitrate_idx == GK_AUDIO_BITRATE_16_IDX) {
+            return AL_FORMAT_MONO16;
+        } else if (audio_bitrate_idx == GK_AUDIO_BITRATE_24_IDX) {
+            return AL_FORMAT_MONO_FLOAT32;
+        } else {
+            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
         }
     } else if (audio_channels == GkAudioChannels::Stereo) {
-        switch (audio_bitrate_idx) {
-            case GK_AUDIO_BITRATE_8_IDX:
-                return AL_FORMAT_STEREO8;
-            case GK_AUDIO_BITRATE_16_IDX:
-                return AL_FORMAT_STEREO16;
-            case GK_AUDIO_BITRATE_24_IDX:
-                return AL_FORMAT_STEREO_FLOAT32;
-            default:
-                std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+        if (audio_bitrate_idx == GK_AUDIO_BITRATE_8_IDX) {
+            return AL_FORMAT_STEREO8;
+        } else if (audio_bitrate_idx == GK_AUDIO_BITRATE_16_IDX) {
+            return AL_FORMAT_STEREO16;
+        } else if (audio_bitrate_idx == GK_AUDIO_BITRATE_24_IDX) {
+            return AL_FORMAT_STEREO_FLOAT32;
+        } else {
+            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
         }
     }
 
-    return 0;
+    return -1;
 }
 
 /**

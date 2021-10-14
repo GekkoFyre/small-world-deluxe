@@ -505,14 +505,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 if (!output_audio_device_saved.isEmpty()) {
                     //
                     // Enumerate output audio devices!
-                    QList<GkDevice>::iterator it = gkSysOutputAudioDevs.begin();
-                    while (it != gkSysOutputAudioDevs.end()) {
+                    for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
                         if (it->audio_dev_str == output_audio_device_saved) {
                             it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(mOutputDevice);
                             it->is_enabled = true;
                             break;
-                        } else {
-                            ++it;
                         }
                     }
 
@@ -554,8 +551,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     //
                     // Enumerate input audio devices!
-                    QList<GkDevice>::iterator it = gkSysInputAudioDevs.begin();
-                    while (it != gkSysInputAudioDevs.end()) {
+                    for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
                         if (it->audio_dev_str == input_audio_device_saved) {
                             it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
                             it->pref_audio_format = input_audio_dev_pref_audio_format;
@@ -565,7 +561,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             break;
                         } else {
                             it->is_enabled = false;
-                            ++it;
                         }
                     }
 

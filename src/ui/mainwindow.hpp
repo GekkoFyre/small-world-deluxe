@@ -352,8 +352,8 @@ private:
     //
     // Audio System miscellaneous variables
     //
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
-    QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
     qint32 audioFrameSampleCountPerChannel;
     qint32 audioFrameSampleCountTotal;

@@ -89,8 +89,8 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                QPointer<GkAudioDevices> audioDevices,
-                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
-                               const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
+                               const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
+                               const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::vector<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -2175,9 +2175,8 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
  */
 void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged(int index)
 {
-    QList<GkDevice>::iterator it = gkSysInputDevs.begin();
-    while (it != gkSysInputDevs.end()) {
-        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+    for (auto it = gkSysInputDevs.begin(), end = gkSysInputDevs.end(); it != end; ++it) {
+        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString();
         if (!curr_sel_input_dev.isEmpty()) {
             if (it->audio_dev_str == curr_sel_input_dev) {
                 switch (index) {
@@ -2208,12 +2207,10 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
                     default:
                         std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine sample rate for input audio device!").toStdString()));
                 }
-            } else {
-                ++it;
+
+                break;
             }
         }
-
-        break;
     }
 
     return;
@@ -2227,22 +2224,17 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
  */
 void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int index)
 {
-    on_comboBox_input_audio_dev_number_channels_currentIndexChanged(ui->comboBox_input_audio_dev_number_channels->currentIndex());
-    if (!gkSysInputDevs.isEmpty()) {
-        QList<GkDevice>::iterator it = gkSysInputDevs.begin();
-        while (it != gkSysInputDevs.end()) {
-            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+    if (!gkSysInputDevs.empty()) {
+        for (auto it = gkSysInputDevs.begin(), end = gkSysInputDevs.end(); it != end; ++it) {
+            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString();
             if (!curr_sel_input_dev.isEmpty()) {
-                if (it->audio_dev_str == curr_sel_input_dev) {
+                if (it->audio_dev_str == curr_sel_input_dev) { // Reference currently selected Input Audio device!
+                    on_comboBox_input_audio_dev_number_channels_currentIndexChanged(ui->comboBox_input_audio_dev_number_channels->currentIndex());
                     const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(it->sel_channels, index);
                     it->pref_audio_format = input_audio_dev_format;
                     return;
-                } else {
-                    ++it;
                 }
             }
-
-            break;
         }
     }
 
@@ -2256,27 +2248,25 @@ void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int
  */
 void DialogSettings::on_comboBox_input_audio_dev_number_channels_currentIndexChanged(int index)
 {
-    if (!gkSysInputDevs.isEmpty()) {
-        QList<GkDevice>::iterator it = gkSysInputDevs.begin();
-        while (it != gkSysInputDevs.end()) {
-            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+    if (!gkSysInputDevs.empty()) {
+        for (auto it = gkSysInputDevs.begin(), end = gkSysInputDevs.end(); it != end; ++it) {
+            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString();
             if (!curr_sel_input_dev.isEmpty()) {
-                if (it->audio_dev_str == curr_sel_input_dev) {
+                if (it->audio_dev_str == curr_sel_input_dev) { // Reference currently selected Input Audio device!
                     switch (index) {
                         case GK_AUDIO_CHANNELS_MONO:
                             it->sel_channels = GkAudioChannels::Mono;
                             return;
                         case GK_AUDIO_CHANNELS_STEREO:
+                            it->sel_channels = GkAudioChannels::Stereo;
                             return;
                         default:
                             std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
                     }
-                } else {
-                    ++it;
+
+                    break;
                 }
             }
-
-            break;
         }
     }
 
