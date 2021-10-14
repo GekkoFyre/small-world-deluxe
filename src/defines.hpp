@@ -218,6 +218,7 @@ namespace GekkoFyre {
 #define GK_AUDIO_DEVS_STR_LENGTH (40)
 #define GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS (3)                // Play the sine wave test sample for three seconds!
 #define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)
+#define GK_AUDIO_OUTPUT_DEVICE_INIT_SAMPLE_RATE (11025)         // The default sample rate to initialize with, which will hopefully be a universal value, at least and until we can initialize the device and then therefore probe it for a supported value!
 #define GK_AUDIO_SINEWAVE_TEST_DEFAULT_SAMPLE_RATE (44100)      // The default sample rate to use, if it cannot be calculated any other way, successfully.
 
 #define GK_AUDIO_FRAME_DURATION (20)
@@ -934,7 +935,10 @@ namespace Database {
             };
 
             struct GkDevice {
-                QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
+                ALCdevice *alDevice;                                                // The pointer to the openAL device itself.
+                ALCcontext *alDeviceCtx;                                            // The pointer to the openAL device's context.
+                ALCboolean alDeviceCtxCurr;                                         // The current context of the openAL device.
+                QString audio_dev_str;                                              // The referred towards name of the device, as a formatted string.
                 GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
@@ -942,6 +946,8 @@ namespace Database {
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 ALuint pref_sample_rate;                                            // The desired sample rate to use with this device (namely if it is an input device!), as chosen by the end-user.
                 ALenum pref_audio_format;                                           // The desired audio format to use with this device (namely if it is an input device!), as chosen by the end-user.
+                ALenum al_error;                                                    // The last error message received in regards to openAL.
+                ALCenum alc_error;                                                  // The last error message received in regards to openALC.
                 GkFormat user_settings;                                             // The user defined settings for this particular audio device.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };

@@ -207,8 +207,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
-        mInputDevice = nullptr;
-        mOutputDevice = nullptr;
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
@@ -486,12 +484,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkFreqList->publishFreqList();
             gkAudioDevices = new GekkoFyre::GkAudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
-            //
-            // Set default values! NOTE: Setting just a context isn't enough, as you also need to make it 'current'. More
-            // to follow!
-            mInputCtxCurr = false;
-            mOutputCtxCurr = false;
-
             const QString output_audio_device_saved = gkDb->read_audio_device_settings(true);
             const QString input_audio_device_saved = gkDb->read_audio_device_settings(false);
 
@@ -501,31 +493,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize output device!
                 gkSysOutputAudioDevs = gkAudioDevices->enumerateAudioDevices(ALC_DEVICE_SPECIFIER);
-
-                if (!output_audio_device_saved.isEmpty()) {
-                    //
-                    // Enumerate output audio devices!
-                    for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
+                for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
+                    if (!output_audio_device_saved.isEmpty()) {
+                        //
+                        // Enumerate output audio devices!
                         if (it->audio_dev_str == output_audio_device_saved) {
-                            it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(mOutputDevice);
+                            it->pref_sample_rate = GK_AUDIO_OUTPUT_DEVICE_INIT_SAMPLE_RATE; // Use a default, hopefully universal value until we are able to initialize the device and therefore detect what is actually supported!
+                            it->al_error = 0;
                             it->is_enabled = true;
-                            break;
                         }
+
+                        it->alDevice = alcOpenDevice(output_audio_device_saved.toStdString().c_str());
+                    } else {
+                        it->alDevice = alcOpenDevice(nullptr); // Initialize with the default audio device!
                     }
 
-                    mOutputDevice = alcOpenDevice(output_audio_device_saved.toStdString().c_str());
-                } else {
-                    mOutputDevice = alcOpenDevice(nullptr); // Initialize with the default audio device!
-                }
+                    //
+                    // Create OpenAL context for output audio device!
+                    if (!alcCall(alcCreateContext, it->alDeviceCtx, it->alDevice, it->alDevice, nullptr) || !it->alDeviceCtx) {
+                        it->alc_error = alcGetError(it->alDevice);
+                        throw std::runtime_error(tr("ERROR: Could not create audio context for output device!").toStdString());
+                    }
 
-                //
-                // Create OpenAL context for output audio device!
-                if (!alcCall(alcCreateContext, mOutputCtx, mOutputDevice, mOutputDevice, nullptr) || !mOutputCtx) {
-                    throw std::runtime_error(tr("ERROR: Could not create audio context for output device!").toStdString());
-                }
-
-                if (!alcCall(alcMakeContextCurrent, mOutputCtxCurr, mOutputDevice, mOutputCtx) || mOutputCtxCurr != ALC_TRUE) {
-                    throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for output device!").toStdString());
+                    if (!alcCall(alcMakeContextCurrent, it->alDeviceCtxCurr, it->alDevice, it->alDeviceCtx) || it->alDeviceCtxCurr != ALC_TRUE) {
+                        it->alc_error = alcGetError(it->alDevice);
+                        throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for output device!").toStdString());
+                    }
                 }
 
                 //
@@ -556,6 +549,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
                             it->pref_audio_format = input_audio_dev_pref_audio_format;
                             it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
+                            it->al_error = 0;
                             it->is_enabled = true;
 
                             break;
@@ -572,35 +566,38 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     audioFrameSampleCountTotal = audioFrameSampleCountPerChannel * input_audio_dev_chosen_number_channels;
                     circBufSize = audioFrameSampleCountTotal * bytesPerSample * safetyFactor;
 
-                    for (const auto &input_dev: gkSysInputAudioDevs) {
-                        if (input_dev.is_enabled) {
-                            mInputDevice = alcCaptureOpenDevice(input_dev.audio_dev_str.toStdString().c_str(), input_dev.pref_sample_rate, input_dev.pref_audio_format, circBufSize);
+                    for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+                        if (it->is_enabled) {
+                            it->alDevice = alcCaptureOpenDevice(it->audio_dev_str.toStdString().c_str(), it->pref_sample_rate, it->pref_audio_format, circBufSize);;
+
+                            //
+                            // Create OpenAL context for input audio device!
+                            if (it->alDevice) {
+                                if (!alcCall(alcCreateContext, it->alDeviceCtx, it->alDevice, it->alDevice, nullptr) || !it->alDeviceCtx) {
+                                    it->alc_error = alcGetError(it->alDevice);
+                                    throw std::runtime_error(tr("ERROR: Could not create audio context for input device!").toStdString());
+                                }
+
+                                if (!alcCall(alcMakeContextCurrent, it->alDeviceCtxCurr, it->alDevice, it->alDeviceCtx) || it->alDeviceCtxCurr != ALC_TRUE) {
+                                    it->alc_error = alcGetError(it->alDevice);
+                                    throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for input device!").toStdString());
+                                }
+
+                                mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(); // Initialize the `std::vector`!
+                                alcCaptureStart(it->alDevice);
+                                gkAudioDevices->captureAlSamples(it->alDevice, mInputDeviceBuf->data(),
+                                                                 audioFrameSampleCountPerChannel);
+                                gkAudioDevices->applyGain(mInputDeviceBuf->data(), audioFrameSampleCountTotal, GK_AUDIO_GAIN_FACTOR);
+
+                                //
+                                // Start the audio input thread!
+                                gkAudioInputThread.start();
+                            } else {
+                                throw std::runtime_error(tr("Failed at initializing the audio input device!").toStdString());
+                            }
+
                             break;
                         }
-                    }
-
-                    //
-                    // Create OpenAL context for input audio device!
-                    if (mInputDevice) {
-                        if (!alcCall(alcCreateContext, mInputCtx, mInputDevice, mInputDevice, nullptr) || !mInputCtx) {
-                            throw std::runtime_error(tr("ERROR: Could not create audio context for input device!").toStdString());
-                        }
-
-                        if (!alcCall(alcMakeContextCurrent, mInputCtxCurr, mInputDevice, mInputCtx) || mInputCtxCurr != ALC_TRUE) {
-                            throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for input device!").toStdString());
-                        }
-
-                        mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(); // Initialize the `std::vector`!
-                        alcCaptureStart(mInputDevice);
-                        gkAudioDevices->captureAlSamples(mInputDevice, mInputDeviceBuf->data(),
-                                                         audioFrameSampleCountPerChannel);
-                        gkAudioDevices->applyGain(mInputDeviceBuf->data(), audioFrameSampleCountTotal, GK_AUDIO_GAIN_FACTOR);
-
-                        //
-                        // Start the audio input thread!
-                        gkAudioInputThread.start();
-                    } else {
-                        throw std::runtime_error(tr("Failed at initializing the audio input device!").toStdString());
                     }
                 }
             } catch (const std::exception &e) {
@@ -792,22 +789,26 @@ MainWindow::~MainWindow()
         vu_meter_thread.join();
     }
 
-    if (mOutputCtx) {
-        alcCall(alcDestroyContext, mOutputDevice, mOutputCtx);
+    for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
+        if (it->alDeviceCtx && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+            alcCall(alcDestroyContext, it->alDevice, it->alDeviceCtx);
+        }
+
+        if (it->alDevice && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+            ALCboolean audio_output_closed;
+            alcCall(alcCloseDevice, audio_output_closed, it->alDevice, it->alDevice);
+        }
     }
 
-    if (mInputCtx) {
-        alcCall(alcDestroyContext, mInputDevice, mInputCtx);
-    }
+    for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+        if (it->alDeviceCtx && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+            alcCall(alcDestroyContext, it->alDevice, it->alDeviceCtx);
+        }
 
-    if (mOutputDevice) {
-        ALCboolean audio_output_closed;
-        alcCall(alcCloseDevice, audio_output_closed, mOutputDevice, mOutputDevice);
-    }
-
-    if (mInputDevice) {
-        ALCboolean audio_input_closed;
-        alcCall(alcCloseDevice, audio_input_closed, mInputDevice, mInputDevice);
+        if (it->alDevice && it->alc_error == 0) { // Confirm that the pointer exists and that there have been no errors otherwise!
+            ALCboolean audio_input_closed;
+            alcCall(alcCloseDevice, audio_input_closed, it->alDevice, it->alDevice);
+        }
     }
 
     // delete db;

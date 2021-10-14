@@ -341,12 +341,6 @@ private:
     //
     // Audio System initialization, buffers, and event-loops
     //
-    ALCdevice *mInputDevice;
-    ALCdevice *mOutputDevice;
-    ALCcontext *mInputCtx;
-    ALCcontext *mOutputCtx;
-    ALCboolean mInputCtxCurr;
-    ALCboolean mOutputCtxCurr;
     std::shared_ptr<std::vector<ALshort>> mInputDeviceBuf; // `ALshort` should be equivalent to `int16_t`!
 
     //

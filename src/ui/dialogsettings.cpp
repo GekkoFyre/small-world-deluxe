@@ -2255,10 +2255,22 @@ void DialogSettings::on_comboBox_input_audio_dev_number_channels_currentIndexCha
                 if (it->audio_dev_str == curr_sel_input_dev) { // Reference currently selected Input Audio device!
                     switch (index) {
                         case GK_AUDIO_CHANNELS_MONO:
-                            it->sel_channels = GkAudioChannels::Mono;
+                        {
+                            const GkAudioChannels audio_channel = GkAudioChannels::Mono;
+                            it->sel_channels = audio_channel;
+                            const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(audio_channel, ui->comboBox_input_audio_dev_bitrate->currentIndex());
+                            it->pref_audio_format = input_audio_dev_format;
+                        }
+
                             return;
                         case GK_AUDIO_CHANNELS_STEREO:
-                            it->sel_channels = GkAudioChannels::Stereo;
+                        {
+                            const GkAudioChannels audio_channel = GkAudioChannels::Stereo;
+                            it->sel_channels = audio_channel;
+                            const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(audio_channel, ui->comboBox_input_audio_dev_bitrate->currentIndex());
+                            it->pref_audio_format = input_audio_dev_format;
+                        }
+
                             return;
                         default:
                             std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
