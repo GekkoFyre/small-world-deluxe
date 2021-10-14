@@ -42,72 +42,23 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include <sndfile.h>
-#include <sndfile.hh>
-#include <mutex>
-#include <thread>
-#include <cstdio>
-#include <memory>
 #include <string>
-#include <QObject>
-#include <QBuffer>
-#include <QPointer>
-#include <QSaveFile>
-#include <QIODevice>
-#include <QByteArray>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
+#include <QString>
 
 namespace GekkoFyre {
 
-class GkFlacSource : public QIODevice {
-    Q_OBJECT
+class GkException {
 
 public:
-    explicit GkFlacSource(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
-                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkFlacSource() override;
+    explicit GkException(const QString &err_msg, const qint32 err);
+    explicit GkException(const qint32 err);
+    explicit GkException(const QString &err_msg);
+    virtual ~GkException();
 
-    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
-    qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
+    QString message;
+    qint32 error_no;
 
-public slots:
-    void start();
-    void stop();
-
-signals:
-    void volume(qint32 vol);
-
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    //
-    // QAudioSystem initialization and buffers
-    qint64 m_totalUncompBytesRead;
-    qint64 m_totalCompBytesWritten;
-
-    //
-    // Status variables
-    GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
-
-    //
-    // Encoder variables
-    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
-    QString m_fileLoc;                                          // The filename to write-out the encoded data towards!
-
-    //
-    // Filesystem and related
-    QPointer<QSaveFile> file;                                   // The file that the encoded data is to be saved towards.
-    QPointer<QSaveFile> file_pcm;                               // If the user desires so, then a PCM WAV file can be created as an adjunct too!
-
-    //
-    // Miscellaneous
-    QAudioFormat m_audioFormat;
-    bool m_failed;
-    bool m_done;
-    quint32 m_maxAmplitude;
+    void print() const;
 
 };
 };

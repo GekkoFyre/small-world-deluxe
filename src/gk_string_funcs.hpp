@@ -102,7 +102,6 @@ public:
     QString trimStrToCharLength(const QString &value, const qint32 &places, const bool &ellipsis = false);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
-    qreal getPeakValue(const QAudioFormat &format);
 
     QString convSecondsToMinutes(const double &seconds);
     qint32 randomNumGen(qint32 lower_bound = std::numeric_limits<qint32>::min(), qint32 upper_bound = std::numeric_limits<qint32>::max());

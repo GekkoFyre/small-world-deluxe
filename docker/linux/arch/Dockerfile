@@ -245,6 +245,7 @@ RUN pacman -S libusb-compat --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
+RUN pacman -S openal --noconfirm
 
 USER devel
 RUN yay -S conan --noconfirm

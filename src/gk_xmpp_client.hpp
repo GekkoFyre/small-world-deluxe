@@ -130,6 +130,7 @@ public:
     [[nodiscard]] GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
     [[nodiscard]] bool isJidExist(const QString &bareJid);
     [[nodiscard]] bool isJidOnline(const QString &bareJid);
+    [[nodiscard]] bool isAvatarImgScaleOk(const QByteArray &avatar_img, const QString &img_type);
 
     //
     // Date & Time Management
@@ -147,7 +148,7 @@ public:
     [[nodiscard]] QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
     [[nodiscard]] QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
-    [[nodiscard]] QString obtainAvatarFilePath();
+    [[nodiscard]] QString obtainAvatarFilePath(const QString &set_dir_path = "");
 
     //
     // Message and QXmppMamManager handling
@@ -155,7 +156,8 @@ public:
 
     //
     // vCard management
-    [[nodiscard]] QByteArray processImgToByteArray(const QString &filePath);
+    [[nodiscard]] QByteArray processImgToByteArray(const QFileInfo &filePath);
+    [[nodiscard]] QPixmap rescaleAvatarImg(const QByteArray &avatar_img, const QString &img_type);
 
     [[nodiscard]] QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 

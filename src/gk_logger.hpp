@@ -61,6 +61,28 @@
 
 namespace GekkoFyre {
 
+class GkEventTimestamps : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkEventTimestamps(QObject *parent = nullptr);
+    ~GkEventTimestamps() override;
+
+    [[nodiscard]] static qint64 timestamp(const bool &refresh_timestamp = true);
+    [[nodiscard]] static QString formatted(const bool &refresh_timestamp = false);
+    [[nodiscard]] static bool isValid();
+
+private:
+    //
+    // Variables
+    static qint64 millisecsSinceEpoch;
+
+    //
+    // Miscellaneous
+    static void setTimestamp();
+
+};
+
 class GkEventLogger : public QObject {
     Q_OBJECT
 

@@ -401,61 +401,6 @@ QString StringFuncs::fileSizeHumanReadable(const qint64 &file_size)
 }
 
 /**
- * @brief StringFuncs::getPeakValue
- * @author thibsc <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>.
- * @param format
- * @return
- * @note The byte-sample, 24-bits, is not supported!
- */
-qreal StringFuncs::getPeakValue(const QAudioFormat &format)
-{
-    qreal ret(0);
-    if (format.isValid()) {
-        switch (format.sampleType()) {
-            case QAudioFormat::Unknown:
-                break;
-            case QAudioFormat::Float:
-                if (format.sampleSize() != 32) { // Other sample formats are not supported!
-                    ret = 0;
-                } else {
-                    ret = 1.00003;
-                }
-
-                break;
-            case QAudioFormat::SignedInt:
-                if (format.sampleSize() == 32) {
-                    #ifdef Q_OS_WIN
-                    ret = INT_MAX;
-                    #endif
-                    #ifdef Q_OS_UNIX
-                    ret = SHRT_MAX;
-                    #endif
-                } else if (format.sampleSize() == 16) {
-                    ret = SHRT_MAX;
-                } else if (format.sampleSize() == 8) {
-                    ret = CHAR_MAX;
-                }
-
-                break;
-            case QAudioFormat::UnSignedInt:
-                if (format.sampleSize() == 32) {
-                    ret = UINT_MAX;
-                } else if (format.sampleSize() == 16) {
-                    ret = USHRT_MAX;
-                } else if (format.sampleSize() == 8) {
-                    ret = UCHAR_MAX;
-                }
-
-                break;
-            default:
-                break;
-        }
-    }
-
-    return ret;
-}
-
-/**
  * @brief StringFuncs::convSecondsToMinutes is a helper function that converts seconds to minutes, provided that the given seconds
  * are longer than a single minute in length, otherwise the value remains as seconds for ease-of-reading.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
