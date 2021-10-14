@@ -59,55 +59,47 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
-GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
-                                     const GkDevice &input_device, const GkDevice &output_device,
-                                     QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
-                                     QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                     QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                     QWidget *parent) : QDialog(parent), ui(new Ui::GkAudioPlayDialog)
+GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, const GkDevice &input_device,
+                                     const GkDevice &output_device, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) : QDialog(parent),
+                                     ui(new Ui::GkAudioPlayDialog)
 {
     ui->setupUi(this);
 
     gkDb = std::move(database);
-    gkAudioInput = std::move(audioInput);
-    gkAudioOutput = std::move(audioOutput);
     gkStringFuncs = std::move(stringFuncs);
-    gkAudioEncoding = std::move(audioEncoding);
     gkEventLogger = std::move(eventLogger);
 
     //
     // Create SIGNALS and SLOTS
-    QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
-                     gkAudioEncoding, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
+    /*
     QObject::connect(gkAudioEncoding, SIGNAL(bytesRead(const qint64 &, const bool &)),
                      this, SLOT(setBytesRead(const const qint64 &, const bool &)));
     QObject::connect(this, SIGNAL(cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &)),
                      this, SLOT(clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &)));
+    */
 
     //
     // Initialize variables
     //
     gkAudioFileInfo = {};
-    pref_input_device = input_device;
-    pref_output_device = output_device;
+    gkAudioInputDev = input_device;
+    gkAudioOutputDev = output_device;
     m_rec_codec_chosen = CodecSupport::Codec2;
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
-    gkPaAudioPlayer->moveToThread(parent->thread());
+    // gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
+    // gkPaAudioPlayer->moveToThread(parent->thread());
 
     //
     // QPushButtons, etc.
     //
-    audio_out_play = false;
-    audio_out_stop = false;
     m_audioRecReady = false;
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
-    pref_input_device.audio_src = GkAudioSource::Input;
-    pref_output_device.audio_src = GkAudioSource::Output;
+    gkAudioInputDev.audio_src = GkAudioSource::Input;
+    gkAudioOutputDev.audio_src = GkAudioSource::Output;
 
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Codec2);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
@@ -121,16 +113,6 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
-    if (audio_out_play) {
-        if (!m_recordDirPath.isEmpty()) {
-            gkPaAudioPlayer->stop(m_recordDirPath.canonicalPath(), GkAudioSource()); // Directory path to where recordings are saved!
-        } else {
-            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource()); // Path to file that is being played!
-        }
-
-        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
-    }
-
     delete ui;
 }
 
@@ -199,6 +181,7 @@ void GkAudioPlayDialog::on_pushButton_close_clicked()
 
 void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
+    /*
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
         if (!m_recordDirPath.isEmpty()) {
@@ -216,6 +199,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
         audio_out_stop = false;
     }
+     */
 
     return;
 }
@@ -227,6 +211,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
+    /*
     try {
         if (!audio_out_play) {
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
@@ -304,6 +289,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
     }
+     */
 
     return;
 }
@@ -315,6 +301,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
+    /*
     try {
         if (m_recordDirPath.path().isEmpty() || !m_audioRecReady) { // We first need to choose a destination to record towards!
             auto def_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
@@ -365,12 +352,12 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
                             recordLockSettings(false);
-                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_input_device.audio_src);
+                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), gkAudioInputDev.audio_src);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
                             recordLockSettings(false);
-                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_output_device.audio_src);
+                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), gkAudioOutputDev.audio_src);
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
@@ -396,6 +383,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
     }
+    */
 
     return;
 }
@@ -507,10 +495,10 @@ void GkAudioPlayDialog::setBytesRead(const qint64 &bytes, const bool &uncompress
 void GkAudioPlayDialog::resetStopButtonColor()
 {
     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
-    audio_out_stop = false;
+    // audio_out_stop = false;
 
     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
-    audio_out_play = false;
+    // audio_out_play = false;
 
     return;
 }
@@ -578,10 +566,10 @@ void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &m_rec_codec_chos
     try {
         switch (ui->comboBox_playback_rec_source->currentIndex()) {
             case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, pref_input_device.audio_src);
+                // gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, gkAudioInputDev.audio_src);
                 break;
             case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, pref_output_device.audio_src);
+                // gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, gkAudioOutputDev.audio_src);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting playback!").toStdString());
@@ -634,8 +622,8 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
  */
 void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
 {
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(pref_input_device.audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(pref_output_device.audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(gkAudioInputDev.audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(gkAudioOutputDev.audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
 
     return;
 }

@@ -61,7 +61,7 @@ class GkSinewaveOutput : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
+    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::GkAudioDevices> audio_devs,
                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkSinewaveOutput() override;
 
@@ -75,7 +75,7 @@ private slots:
 
 private:
     QString gkOutputDevName;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     QTimer *timer;

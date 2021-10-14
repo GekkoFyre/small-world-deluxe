@@ -220,6 +220,10 @@ namespace GekkoFyre {
 #define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)
 #define GK_AUDIO_SINEWAVE_TEST_DEFAULT_SAMPLE_RATE (44100)      // The default sample rate to use, if it cannot be calculated any other way, successfully.
 
+#define GK_AUDIO_FRAME_DURATION (20)
+#define GK_AUDIO_GAIN_FACTOR (1)
+#define GK_AUDIO_DEFAULT_BITRATE (16)                           // The default bitrate is 16-bits, especially when concerning output audio devices.
+
 #define GK_AUDIO_SAMPLE_RATE_8000_IDX (0)
 #define GK_AUDIO_SAMPLE_RATE_11025_IDX (1)
 #define GK_AUDIO_SAMPLE_RATE_22050_IDX (2)

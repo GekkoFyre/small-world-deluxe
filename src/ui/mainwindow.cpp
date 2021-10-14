@@ -484,7 +484,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                              this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
             gkFreqList->publishFreqList();
-            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+            gkAudioDevices = new GekkoFyre::GkAudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             //
             // Set default values! NOTE: Setting just a context isn't enough, as you also need to make it 'current'. More
@@ -530,6 +530,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 if (!alcCall(alcMakeContextCurrent, mOutputCtxCurr, mOutputDevice, mOutputCtx) || mOutputCtxCurr != ALC_TRUE) {
                     throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for output device!").toStdString());
                 }
+
+                //
+                // Start the audio output thread!
+                gkAudioOutputThread.start();
+                QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
             } catch (const std::exception &e) {
                 gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
             }
@@ -559,13 +564,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                             break;
                         } else {
+                            it->is_enabled = false;
                             ++it;
                         }
                     }
 
+                    //
+                    // Calculate required variables and constants!
+                    const qint32 bytesPerSample = 2;
+                    const qint32 safetyFactor = 2; // In order to prevent buffer overruns! Must be larger than inputBuffer to avoid the circular buffer from overwriting itself between captures...
+                    audioFrameSampleCountPerChannel = GK_AUDIO_FRAME_DURATION * input_audio_dev_chosen_sample_rate / 1000;
+                    audioFrameSampleCountTotal = audioFrameSampleCountPerChannel * input_audio_dev_chosen_number_channels;
+                    circBufSize = audioFrameSampleCountTotal * bytesPerSample * safetyFactor;
+
                     for (const auto &input_dev: gkSysInputAudioDevs) {
                         if (input_dev.is_enabled) {
-                            mInputDevice = alcCaptureOpenDevice(input_dev.audio_dev_str.toStdString().c_str(), input_dev.pref_sample_rate, input_dev.pref_audio_format, GK_AUDIO_OPENAL_RECORD_BUFFER_SIZE);
+                            mInputDevice = alcCaptureOpenDevice(input_dev.audio_dev_str.toStdString().c_str(), input_dev.pref_sample_rate, input_dev.pref_audio_format, circBufSize);
                             break;
                         }
                     }
@@ -580,6 +594,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                         if (!alcCall(alcMakeContextCurrent, mInputCtxCurr, mInputDevice, mInputCtx) || mInputCtxCurr != ALC_TRUE) {
                             throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for input device!").toStdString());
                         }
+
+                        mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(); // Initialize the `std::vector`!
+                        alcCaptureStart(mInputDevice);
+                        gkAudioDevices->captureAlSamples(mInputDevice, mInputDeviceBuf->data(),
+                                                         audioFrameSampleCountPerChannel);
+                        gkAudioDevices->applyGain(mInputDeviceBuf->data(), audioFrameSampleCountTotal, GK_AUDIO_GAIN_FACTOR);
+
+                        //
+                        // Start the audio input thread!
+                        gkAudioInputThread.start();
+                    } else {
+                        throw std::runtime_error(tr("Failed at initializing the audio input device!").toStdString());
                     }
                 }
             } catch (const std::exception &e) {
@@ -594,17 +620,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         #ifndef ENBL_VALGRIND_SUPPORT
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
+        for (const auto &input_audio_dev: gkSysInputAudioDevs) {
+            if (input_audio_dev.is_enabled) {
+                gkFftAudio = new GekkoFyre::GkFFTAudio(mInputDeviceBuf, input_audio_dev, gkAudioDevices,
+                                                       gkSpectroWaterfall, gkStringFuncs, gkEventLogger,
+                                                       &gkAudioInputThread);
+                break;
+            }
+        }
 
-        /**
-        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInputBuf, gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device,
-                                               gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkFftAudio->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
-
-        if (!gkAudioOutput.isNull()) {
-            QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
-        }
-         **/
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
@@ -622,10 +648,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Add the spectrograph / waterfall to the QMainWindow!
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
         #endif
-
-        //
-        // Start the audio input thread!
-        gkAudioInputThread.start();
 
         //
         // Sound & Audio Devices
@@ -968,7 +990,7 @@ void MainWindow::setIcon()
 void MainWindow::launchAudioPlayerWin()
 {
     /*
-    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, pref_input_device, pref_output_device, gkAudioInput, gkAudioOutput,
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkAudioInputDev, gkAudioOutputDev, gkAudioInput, gkAudioOutput,
                                                                        gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1687,7 +1709,7 @@ void MainWindow::spectroSamplesUpdated()
     /*
     const qint32 n = waterfall_samples_vec.length();
     if (n > 96000) {
-        waterfall_samples_vec.mid(n - pref_input_device.audio_device_info.preferredFormat().sampleRate(), -1);
+        waterfall_samples_vec.mid(n - gkAudioInputDev.audio_device_info.preferredFormat().sampleRate(), -1);
     }
      */
 

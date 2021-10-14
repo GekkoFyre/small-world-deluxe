@@ -77,7 +77,7 @@ class DialogSettings : public QDialog
 public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
-                            QPointer<GekkoFyre::AudioDevices> audioDevices,
+                            QPointer<GekkoFyre::GkAudioDevices> audioDevices,
                             const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
                             const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
@@ -278,7 +278,7 @@ private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
 
     //

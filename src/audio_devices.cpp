@@ -74,14 +74,14 @@ using namespace Logging;
 std::mutex enum_audio_dev_mtx;
 
 /**
- * @brief AudioDevices::AudioDevices
+ * @brief GkAudioDevices::GkAudioDevices
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
-                           QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<StringFuncs> stringFuncs,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                           QObject *parent) : QObject(parent)
+GkAudioDevices::GkAudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
+                               QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<StringFuncs> stringFuncs,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                               QObject *parent) : QObject(parent)
 {
     setParent(parent);
 
@@ -93,18 +93,18 @@ AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
     gkSystem = std::move(systemPtr);
 }
 
-AudioDevices::~AudioDevices()
+GkAudioDevices::~GkAudioDevices()
 {}
 
 /**
- * @brief AudioDevices::volumeSetting
+ * @brief GkAudioDevices::volumeSetting
  * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
  */
-void AudioDevices::systemVolumeSetting()
+void GkAudioDevices::systemVolumeSetting()
 {}
 
 /**
- * @brief AudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
+ * @brief GkAudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param channels How many audio channels there are, since they are interleaved. The first byte is the first channel, second
  * byte is the second channel, etc.
@@ -114,7 +114,7 @@ void AudioDevices::systemVolumeSetting()
  * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
  * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, float *buffer)
+float GkAudioDevices::vuMeter(const int &channels, const int &count, float *buffer)
 {
     float dB_val = 0.0f;
     if (buffer != nullptr) {
@@ -139,14 +139,14 @@ float AudioDevices::vuMeter(const int &channels, const int &count, float *buffer
 }
 
 /**
- * @brief AudioDevices::vuMeterPeakAmplitude traverses the buffered data array and compares every element with the current
+ * @brief GkAudioDevices::vuMeterPeakAmplitude traverses the buffered data array and compares every element with the current
  * maximum to see if there's a new maximum value to be had.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param count The size of the audio data buffer.
  * @param buffer The given audio data buffer.
  * @return The maximum, peak audio signal for a given lot of buffered data.
  */
-float AudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
+float GkAudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
 {
     float peak_signal = 0;
     if (buffer != nullptr) {
@@ -165,7 +165,7 @@ float AudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
 }
 
 /**
- * @brief AudioDevices::vuMeterRMS gathers averages from a given audio data buffer by doing a root-mean-square (i.e. RMS) on all the
+ * @brief GkAudioDevices::vuMeterRMS gathers averages from a given audio data buffer by doing a root-mean-square (i.e. RMS) on all the
  * given samples.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param count The size of the audio data buffer.
@@ -173,7 +173,7 @@ float AudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
  * @return The averaged RMS of a given data buffer of audio samples.
  * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
  */
-float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
+float GkAudioDevices::vuMeterRMS(const size_t &count, float *buffer)
 {
     float sample = 0;
     if (buffer != nullptr) {
@@ -187,7 +187,7 @@ float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
 }
 
 /**
- * @brief AudioDevices::calcAudioBufferTimeNeeded will calculate the maximum time required before an update is next required
+ * @brief GkAudioDevices::calcAudioBufferTimeNeeded will calculate the maximum time required before an update is next required
  * from a circular buffer.
  * @param num_channels The number of audio channels we are dealing with regarding the stream in question.
  * @param fft_samples_per_line The number of FFT Samples per Line.
@@ -195,9 +195,9 @@ float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
  * @param buf_size The total size of the buffer in question.
  * @return The amount of seconds you have in total before an update is next required from the circular buffer.
  */
-float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channels, const size_t &fft_num_lines,
-                                              const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
-                                              const size_t &buf_size)
+float GkAudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channels, const size_t &fft_num_lines,
+                                                const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
+                                                const size_t &buf_size)
 {
     int audio_channels = 0;
 
@@ -238,14 +238,14 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
 }
 
 /**
- * @brief AudioDevices::checkAlErrors A function to make OpenAL error detection a little bit easier.
+ * @brief GkAudioDevices::checkAlErrors A function to make OpenAL error detection a little bit easier.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
  * @param filename
  * @param line
  * @return
  */
-bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fast32_t line)
+bool GkAudioDevices::checkAlErrors(const std::string &filename, const std::uint_fast32_t line)
 {
     ALenum error = alGetError();
     if (error != AL_NO_ERROR) {
@@ -302,14 +302,14 @@ bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fa
 }
 
 /**
- * @brief AudioDevices::checkAlcErrors A function to make OpenAL error detection a little bit easier.
+ * @brief GkAudioDevices::checkAlcErrors A function to make OpenAL error detection a little bit easier.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
  * @param filename
  * @param line
  * @return
  */
-bool AudioDevices::checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device)
+bool GkAudioDevices::checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device)
 {
     ALCenum error = alcGetError(device);
     if (error != ALC_NO_ERROR) {
@@ -366,14 +366,14 @@ bool AudioDevices::checkAlcErrors(const std::string &filename, const std::uint_f
 }
 
 /**
- * @brief AudioDevices::enumerateAudioDevices will list/enumerate the audio devices (both input and output as specified)
+ * @brief GkAudioDevices::enumerateAudioDevices will list/enumerate the audio devices (both input and output as specified)
  * for the given end-user's computer system, as provided by the OpenAL audio library.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param devices The OpenAL audio library pointer to use.
  * @param is_output_dev Whether we are working with output devices or input.
  * @return The enumerated list of audio devices.
  */
-QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCenum param) {
+QList<GkDevice> GkAudioDevices::enumerateAudioDevices(const ALCenum param) {
     //
     // Prior to attempting an enumeration, OpenAL provides an extension querying mechanism which allows
     // you to know whether the runtime OpenAL implementation supports a specific extension. In our case,
@@ -414,13 +414,13 @@ QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCenum param) {
 }
 
 /**
- * @brief AudioDevices::calcAudioDevFormat will calculate an audio format that's applicable to the given audio device.
+ * @brief GkAudioDevices::calcAudioDevFormat will calculate an audio format that's applicable to the given audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_channels The number of audio channels (i.e. typically either Mono or Stereo).
  * @param audio_bitrate_idx See, `ui->comboBox_input_audio_dev_bitrate()`, under, `Ui::DialogSettings()`.
  * @return The calculated audio format applicable to the given audio device.
  */
-ALenum AudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx)
+ALenum GkAudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx)
 {
     if (audio_channels == GkAudioChannels::Mono) {
         switch (audio_bitrate_idx) {
@@ -450,13 +450,13 @@ ALenum AudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_c
 }
 
 /**
- * @brief AudioDevices::getAudioDevSampleRate obtains the sampling rate for the (usually output) audio device, with the
+ * @brief GkAudioDevices::getAudioDevSampleRate obtains the sampling rate for the (usually output) audio device, with the
  * latter being either chosen by the end-user or appropriated from the system as the default device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param device The output audio device to query in question.
  * @return The sampling rate of the given output audio device.
  */
-ALCuint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
+ALCuint GkAudioDevices::getAudioDevSampleRate(ALCdevice *device)
 {
     ALCint srate = 0;
     alcGetIntegerv(device, ALC_FREQUENCY, 1, &srate);
@@ -465,12 +465,92 @@ ALCuint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
 }
 
 /**
- * @brief AudioDevices::fwrite16le
+ * @brief GkAudioDevices::getPeakValue
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_format
+ * @param bitrate
+ * @return
+ * @note thibsc <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>
+ */
+qreal GkAudioDevices::getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed)
+{
+    qreal ret(0);
+    switch (audio_format) {
+        case AL_FORMAT_MONO8:
+            if (is_signed) {
+                ret = CHAR_MAX;
+            } else {
+                ret = UCHAR_MAX;
+            }
+
+            break;
+        case AL_FORMAT_MONO16:
+            if (is_signed) {
+                ret = SHRT_MAX;
+            } else {
+                ret = USHRT_MAX;
+            }
+
+            break;
+        case AL_FORMAT_MONO_FLOAT32:
+            if (bitrate != 32) {
+                ret = 0;
+            } else {
+                ret = 1.00003;
+            }
+
+            break;
+        case AL_FORMAT_STEREO8:
+            if (is_signed) {
+                ret = CHAR_MAX;
+            } else {
+                ret = UCHAR_MAX;
+            }
+
+            break;
+        case AL_FORMAT_STEREO16:
+            if (is_signed) {
+                ret = SHRT_MAX;
+            } else {
+                ret = USHRT_MAX;
+            }
+
+            break;
+        case AL_FORMAT_STEREO_FLOAT32:
+            if (bitrate != 32) {
+                ret = 0;
+            } else {
+                ret = 1.00003;
+            }
+
+            break;
+        default:
+            std::throw_with_nested(std::runtime_error(tr("Unable to determine audio format and thusly peak value!").toStdString()));
+    }
+
+    return ret;
+}
+
+/**
+ * @brief GkAudioDevices::captureAlSamples for the capturing/recording of audio samples.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device
+ * @param buffer
+ * @param samples
+ */
+void GkAudioDevices::captureAlSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples)
+{
+    alcCaptureSamples(device, buffer, samples);
+    return;
+}
+
+/**
+ * @brief GkAudioDevices::fwrite16le
  * @author OpenAL soft <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>
  * @param val The value to be worked upon.
  * @param f The file handler.
  */
-void AudioDevices::fwrite16le(ALushort val, FILE *f)
+void GkAudioDevices::fwrite16le(ALushort val, FILE *f)
 {
     ALubyte data[2];
     data[0] = (ALubyte)(val&0xff);
@@ -481,12 +561,12 @@ void AudioDevices::fwrite16le(ALushort val, FILE *f)
 }
 
 /**
- * @brief AudioDevices::fwrite32le
+ * @brief GkAudioDevices::fwrite32le
  * @author OpenAL soft <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>
  * @param val The value to be worked upon.
  * @param f The file handler.
  */
-void AudioDevices::fwrite32le(ALuint val, FILE *f)
+void GkAudioDevices::fwrite32le(ALuint val, FILE *f)
 {
     ALubyte data[4];
     data[0] = (ALubyte)(val&0xff);
@@ -499,12 +579,30 @@ void AudioDevices::fwrite32le(ALuint val, FILE *f)
 }
 
 /**
- * @brief AudioDevices::convAudioChannelsToEnum
+ * @brief GkAudioDevices::applyGain
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param buffer
+ * @param buffer_size
+ * @param gain_factor
+ */
+void GkAudioDevices::applyGain(ALshort *buffer, const quint32 &buffer_size, const qreal &gain_factor)
+{
+    //
+    // NOTE: Clipping with regard to 16-bit boundaries!
+    for (quint32 i = 0; i < buffer_size; ++i) {
+        buffer[i] = qBound<ALshort>(std::numeric_limits<ALshort>::min(), qRound(buffer[i] * gain_factor), std::numeric_limits<ALshort>::max());
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioDevices::convAudioChannelsToEnum
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param num_channels
  * @return
  */
-Database::Settings::GkAudioChannels AudioDevices::convAudioChannelsToEnum(const qint32 &num_channels)
+Database::Settings::GkAudioChannels GkAudioDevices::convAudioChannelsToEnum(const qint32 &num_channels)
 {
     if (num_channels == 1) {
         return GkAudioChannels::Mono;
@@ -520,24 +618,24 @@ Database::Settings::GkAudioChannels AudioDevices::convAudioChannelsToEnum(const 
 }
 
 /**
- * @brief AudioDevices::rtAudioVersionNumber returns the actual version of PortAudio
+ * @brief GkAudioDevices::rtAudioVersionNumber returns the actual version of PortAudio
  * itself, as a QString().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QString AudioDevices::rtAudioVersionNumber()
+QString GkAudioDevices::rtAudioVersionNumber()
 {
     // TODO: Update this so that it mentions the audio backend!
     return QCoreApplication::applicationVersion();
 }
 
 /**
- * @brief AudioDevices::rtAudioVersionText returns version-specific information about
+ * @brief GkAudioDevices::rtAudioVersionText returns version-specific information about
  * PortAudio itself, as a QString().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QString AudioDevices::rtAudioVersionText()
+QString GkAudioDevices::rtAudioVersionText()
 {
     // TODO: Update this so that it mentions the audio backend!
     return QCoreApplication::applicationVersion();

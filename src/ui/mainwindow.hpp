@@ -88,7 +88,6 @@
 #include <QScreen>
 #include <QString>
 #include <QObject>
-#include <QBuffer>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
@@ -281,6 +280,7 @@ public slots:
 
 signals:
     void updatePaVol(const int &percentage);
+    void updateAudioIn();
     void updatePlot();
     void gkExitApp();
 
@@ -313,7 +313,7 @@ private:
     leveldb::DB *db;
     sentry_options_t *sen_opt;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
     QPointer<GekkoFyre::FileIo> gkFileIo;
@@ -347,6 +347,7 @@ private:
     ALCcontext *mOutputCtx;
     ALCboolean mInputCtxCurr;
     ALCboolean mOutputCtxCurr;
+    std::shared_ptr<std::vector<ALshort>> mInputDeviceBuf; // `ALshort` should be equivalent to `int16_t`!
 
     //
     // Audio System miscellaneous variables
@@ -354,6 +355,9 @@ private:
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
+    qint32 audioFrameSampleCountPerChannel;
+    qint32 audioFrameSampleCountTotal;
+    ALCsizei circBufSize;
 
     //
     // Audio sub-system

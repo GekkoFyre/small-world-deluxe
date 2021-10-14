@@ -76,20 +76,20 @@ extern "C"
 } // extern "C"
 #endif
 
-#define alCall(function, ...) AudioDevices::alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
-#define alcCall(function, device, ...) AudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
+#define alCall(function, ...) GkAudioDevices::alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
+#define alcCall(function, device, ...) GkAudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
 
 namespace GekkoFyre {
 
-class AudioDevices : public QObject {
+class GkAudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                          QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                          QObject *parent = nullptr);
-    ~AudioDevices() override;
+    explicit GkAudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
+                            QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                            QObject *parent = nullptr);
+    ~GkAudioDevices() override;
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
@@ -105,9 +105,12 @@ public:
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
+    qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);
 
+    static void captureAlSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples);
     static void fwrite16le(ALushort val, FILE *f);
     static void fwrite32le(ALuint val, FILE *f);
+    static void applyGain(ALshort *buffer, const quint32 &buffer_size, const qreal &gain_factor);
 
     Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 

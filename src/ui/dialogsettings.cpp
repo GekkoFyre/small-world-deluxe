@@ -88,7 +88,7 @@ std::mutex index_loop_mtx;
  */
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
-                               QPointer<AudioDevices> audioDevices,
+                               QPointer<GkAudioDevices> audioDevices,
                                const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputDevs,
                                const QList<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputDevs,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
@@ -794,7 +794,7 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
  * computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
- * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
+ * @see GekkoFyre::GkAudioDevices::enumAudioDevices(), GkAudioDevices::filterPortAudioHostType().
  */
 void DialogSettings::prefill_audio_devices()
 {
@@ -2227,20 +2227,23 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
  */
 void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int index)
 {
-    QList<GkDevice>::iterator it = gkSysInputDevs.begin();
-    while (it != gkSysInputDevs.end()) {
-        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
-        if (!curr_sel_input_dev.isEmpty()) {
-            if (it->audio_dev_str == curr_sel_input_dev) {
-                const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(it->sel_channels, index);
-                it->pref_audio_format = input_audio_dev_format;
-                return;
-            } else {
-                ++it;
+    on_comboBox_input_audio_dev_number_channels_currentIndexChanged(ui->comboBox_input_audio_dev_number_channels->currentIndex());
+    if (!gkSysInputDevs.isEmpty()) {
+        QList<GkDevice>::iterator it = gkSysInputDevs.begin();
+        while (it != gkSysInputDevs.end()) {
+            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+            if (!curr_sel_input_dev.isEmpty()) {
+                if (it->audio_dev_str == curr_sel_input_dev) {
+                    const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(it->sel_channels, index);
+                    it->pref_audio_format = input_audio_dev_format;
+                    return;
+                } else {
+                    ++it;
+                }
             }
-        }
 
-        break;
+            break;
+        }
     }
 
     return;
@@ -2253,27 +2256,28 @@ void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int
  */
 void DialogSettings::on_comboBox_input_audio_dev_number_channels_currentIndexChanged(int index)
 {
-    QList<GkDevice>::iterator it = gkSysInputDevs.begin();
-    while (it != gkSysInputDevs.end()) {
-        const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
-        if (!curr_sel_input_dev.isEmpty()) {
-            if (it->audio_dev_str == curr_sel_input_dev) {
-                switch (index) {
-                    case GK_AUDIO_CHANNELS_MONO:
-                        it->sel_channels = GkAudioChannels::Mono;
-                        return;
-                    case GK_AUDIO_CHANNELS_STEREO:
-                        it->sel_channels = GkAudioChannels::Stereo;
-                        return;
-                    default:
-                        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
+    if (!gkSysInputDevs.isEmpty()) {
+        QList<GkDevice>::iterator it = gkSysInputDevs.begin();
+        while (it != gkSysInputDevs.end()) {
+            const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
+            if (!curr_sel_input_dev.isEmpty()) {
+                if (it->audio_dev_str == curr_sel_input_dev) {
+                    switch (index) {
+                        case GK_AUDIO_CHANNELS_MONO:
+                            it->sel_channels = GkAudioChannels::Mono;
+                            return;
+                        case GK_AUDIO_CHANNELS_STEREO:
+                            return;
+                        default:
+                            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine number of audio channels for input audio device!").toStdString()));
+                    }
+                } else {
+                    ++it;
                 }
-            } else {
-                ++it;
             }
-        }
 
-        break;
+            break;
+        }
     }
 
     return;

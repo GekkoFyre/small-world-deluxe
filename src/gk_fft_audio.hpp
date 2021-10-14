@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/audio_devices.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include <boost/filesystem.hpp>
@@ -55,9 +56,6 @@
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
-#include <QAudioInput>
-#include <QAudioFormat>
-#include <QAudioOutput>
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -67,48 +65,36 @@ class GkFFTAudio : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
-                        const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
-                        const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
-                        QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkFFTAudio(std::shared_ptr<std::vector<ALshort>> audioDevBuf, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevDetails,
+                        QPointer<GekkoFyre::GkAudioDevices> audioDevices, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
+                        QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                        QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
-    void processEvent(Spectrograph::GkFftEventType audioEventType);
-    void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-                      const fs::path &mediaFilePath);
-
 private slots:
-    void recordAudioStream();
-    void stopRecordStream();
-
     void refreshGraphTrue();
 
 public slots:
+    void recordAudioStream();
+    void stopRecordStream();
     void processAudioInFft();
 
 signals:
-    void recordStream();
+    void startRecording();
     void stopRecording();
     void refreshGraph(bool forceRepaint = false);
 
 private:
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
     // Audio System initialization and buffers
     //
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<QBuffer> gkAudioInputBuf;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
-    bool audioStreamProc = false;  // Whether an audio stream recording into memory is active or not
-    bool audioFileStreamProc = false; // Whether an audio stream recording into a file is active or not
-    bool enableAudioStreamProc = false; // Should we re-enable audio stream recording into memory?
-    bool enableAudioFileStreamProc = false; // Should we re-enable audio stream recording into a file?
+    std::shared_ptr<std::vector<ALshort>> mAudioDevBuf;
+    GekkoFyre::Database::Settings::Audio::GkDevice mAudioDevDetails;
 
     qint32 gkAudioInNumSamples = 0;
     qint32 gkAudioInSampleRate = 0;

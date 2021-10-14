@@ -42,7 +42,6 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/pa_audio_player.hpp"
 #include <AudioFile.h>
 #include <memory>
 #include <string>
@@ -56,10 +55,6 @@
 #include <QString>
 #include <QPointer>
 #include <QFileInfo>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
-#include <QAudioDeviceInfo>
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -73,9 +68,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                               QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
@@ -113,9 +106,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
     //
     // Filesystem paths and related
@@ -123,18 +114,14 @@ private:
 
     //
     // QPushButtons, etc.
-    bool audio_out_play;
-    bool audio_out_stop;
     bool m_audioRecReady;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
     //
     // Audio System initialization and buffers
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;  // Preferred output audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioInputDev;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioOutputDev;  // Preferred output audio device
 
     //
     // Audio encoding related objects

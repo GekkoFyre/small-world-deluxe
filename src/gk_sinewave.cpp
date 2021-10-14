@@ -61,7 +61,7 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkSinewaveOutput::GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::AudioDevices> audio_devs,
+GkSinewaveOutput::GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::GkAudioDevices> audio_devs,
                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     gkAudioDevices = std::move(audio_devs);
