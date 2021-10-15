@@ -3035,20 +3035,20 @@ int GkLevelDb::convConnTypeToInt(const GkConnType &conn_type)
     return -1;
 }
 
-QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrate)
+QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::GkBitrate &bitrate)
 {
     switch (bitrate) {
-    case GkAudioFramework::Bitrate::VBR:
+    case GkAudioFramework::GkBitrate::VBR:
         return tr("Variable bitrate (i.e. VBR)");
-    case GkAudioFramework::Bitrate::Kbps64:
+    case GkAudioFramework::GkBitrate::Kbps64:
         return tr("64 Kbps");
-    case GkAudioFramework::Bitrate::Kbps128:
+    case GkAudioFramework::GkBitrate::Kbps128:
         return tr("128 Kbps");
-    case GkAudioFramework::Bitrate::Kbps192:
+    case GkAudioFramework::GkBitrate::Kbps192:
         return tr("192 Kbps");
-    case GkAudioFramework::Bitrate::Kbps256:
+    case GkAudioFramework::GkBitrate::Kbps256:
         return tr("256 Kbps");
-    case GkAudioFramework::Bitrate::Kbps320:
+    case GkAudioFramework::GkBitrate::Kbps320:
         return tr("320 Kbps");
     default:
         return tr("Variable bitrate (i.e. VBR)");

@@ -133,7 +133,7 @@ private:
 
     //
     // AudioFile objects and related
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::GkAudioFramework::GkAudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
     GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
     qint64 encode_compressed_bytes;
     qint64 encode_uncompressed_bytes;

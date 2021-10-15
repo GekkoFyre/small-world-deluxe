@@ -427,6 +427,19 @@ else()
     message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
 endif(FFMPEG_FOUND)
 
+#
+# TagLib by Scott Wheeler
+# https://github.com/taglib/taglib
+#
+find_package(Taglib REQUIRED)
+if (TAGLIB_FOUND)
+    include_directories(${TAGLIB_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
+    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
+else()
+    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
+endif(TAGLIB_FOUND)
+
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -567,14 +580,6 @@ message(STATUS "The 'Sentry' error reporting libraries have been configured!")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
-
-#
-# TagLib by Scott Wheeler
-# https://github.com/taglib/taglib
-#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/taglib")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/taglib/taglib")
-message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
 
 #
 # KissFFT by Mark Borgerding

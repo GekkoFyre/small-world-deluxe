@@ -40,21 +40,11 @@
  ****************************************************************************************************/
 
 #include "src/gk_multimedia.hpp"
+#include <taglib/tag.h>
+#include <taglib/fileref.h>
+#include <cstdio>
 #include <utility>
 #include <exception>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/dict.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -92,62 +82,39 @@ GkMultimedia::~GkMultimedia()
  * @param file_path The canonical location of the multimedia audio file to be analyzed in question.
  * @return The meta data of the analyzed multimedia audio file.
  */
-GkAudioFramework::AudioFileInfo GkMultimedia::analyzeAudioFileMetadata(const QFileInfo &file_path) const
+GkAudioFramework::GkAudioFileInfo GkMultimedia::analyzeAudioFileMetadata(const QFileInfo &file_path) const
 {
     try {
         if (file_path.exists() && file_path.isReadable()) { // Check that the QFileInfo parameter given is valid and the file in question exists!
             if (file_path.isFile()) { // Are we dealing with a file or directory?
                 qint32 ret = 0;
-                GkAudioFramework::AudioFileInfo audioFileInfo;
-                AVFormatContext *pFormatCtx = avformat_alloc_context();
-                if (pFormatCtx) {
-                    AVDictionaryEntry *tag = nullptr;
-                    ret = avformat_open_input(&pFormatCtx, file_path.canonicalFilePath().toStdString().c_str(), nullptr, nullptr);
-                    if (ret < 0) {
-                        throw std::runtime_error(tr("Error with opening file via FFmpeg for multimedia analysis. File: %1")
-                        .arg(file_path.canonicalFilePath()).toStdString());
-                    }
-
-                    ret = avformat_find_stream_info(pFormatCtx, nullptr);
-                    if (ret < 0) {
-                        throw std::runtime_error(tr("Error with finding stream info within file via FFmpeg. File: %1")
-                        .arg(file_path.canonicalFilePath()).toStdString());
-                    }
-
+                GkAudioFramework::GkAudioFileInfo audioFileInfo;
+                TagLib::FileRef fileRef(file_path.canonicalFilePath().toStdString().c_str());
+                if (!fileRef.isNull() && fileRef.file()) {
                     audioFileInfo.file_size = file_path.size();
                     audioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(audioFileInfo.file_size);
-                    audioFileInfo.length_in_secs = pFormatCtx->duration;
-                    audioFileInfo.bit_depth = pFormatCtx->bit_rate; // TODO: Adjust this so it's mathematically correct!
-                    audioFileInfo.sample_rate = pFormatCtx->bit_rate;
 
-                    //
-                    // Print a separator...
-                    std::cout << "--------------------------------------------------" << std::endl;
+                    std::shared_ptr<GkAudioFramework::GkAudioFileProperties> info = std::make_shared<GkAudioFramework::GkAudioFileProperties>();
+                    info->bitrate = fileRef.audioProperties()->bitrate();
+                    info->sampleRate = fileRef.audioProperties()->sampleRate();
+                    info->channels = fileRef.audioProperties()->channels();
+                    info->lengthInMilliseconds = fileRef.audioProperties()->lengthInMilliseconds();
+                    info->lengthInSeconds = fileRef.audioProperties()->lengthInSeconds();
 
-                    //
-                    // Now print out the key/value pairs!
-                    bool existingValues = false;
-                    while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-                        QString key = tag->key;
-                        QString value = tag->value;
-                        if (!key.isEmpty() && !value.isEmpty()) {
-                            std::cout << QString("[ %1 ]: %2").arg(key, value).toStdString() << std::endl;
-                            existingValues = true;
-                        }
-                    }
+                    GkAudioFramework::GkAudioFileMetadata meta;
+                    TagLib::Tag *tag = fileRef.tag();
+                    meta.title = QString::fromWCharArray(tag->title().toCWString());
+                    meta.artist = QString::fromWCharArray(tag->artist().toCWString());
+                    meta.album = QString::fromWCharArray(tag->album().toCWString());
+                    meta.year_raw = tag->year();
+                    meta.comment = QString::fromWCharArray(tag->comment().toCWString());
+                    meta.track_no = tag->track();
+                    meta.genre = QString::fromWCharArray(tag->genre().toCWString());
 
-                    if (!existingValues) { // Were any key/value pairs detected? If not, let the end-user know so that they don't suspect an error otherwise!
-                        std::cout << tr("Unable to detect any metadata within multimedia file, \"%1\"!").arg(file_path.canonicalFilePath()).toStdString() << std::endl;
-                    }
+                    audioFileInfo.metadata = meta;
+                    audioFileInfo.info = info;
 
-                    //
-                    // Print a separator...
-                    std::cout << "--------------------------------------------------" << std::endl;
-
-                    //
-                    // Terminate any hanging pointers so that there are no memory leaks!
-                    avformat_close_input(&pFormatCtx);
-                    avformat_free_context(pFormatCtx);
+                    return audioFileInfo;
                 } else {
                     throw std::runtime_error(tr("Unable to initialize FFmpeg object. Out of memory?").toStdString());
                 }
@@ -157,5 +124,5 @@ GkAudioFramework::AudioFileInfo GkMultimedia::analyzeAudioFileMetadata(const QFi
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
-    return GkAudioFramework::AudioFileInfo();
+    return GkAudioFramework::GkAudioFileInfo();
 }

@@ -159,7 +159,7 @@ public:
     AmateurRadio::GkConnType convConnTypeToEnum(const int &conn_type);
     int convConnTypeToInt(const AmateurRadio::GkConnType &conn_type);
 
-    QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
+    QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::GkBitrate &bitrate);
 
     QString convBandsToStr(const GekkoFyre::AmateurRadio::GkFreqBands &band);
     QString convDigitalModesToStr(const GekkoFyre::AmateurRadio::DigitalModes &digital_mode);

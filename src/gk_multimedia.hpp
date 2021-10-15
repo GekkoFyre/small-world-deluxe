@@ -63,12 +63,16 @@ public:
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
-    [[nodiscard]] GkAudioFramework::AudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
+    [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    static void cleanupFileMetaStruct(GkAudioFramework::GkAudioFileMetadata *ptr) {
+        delete ptr;
+    }
 
 };
 };

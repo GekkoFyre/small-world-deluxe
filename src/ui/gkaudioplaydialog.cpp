@@ -198,34 +198,38 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 return;
             }
 
-            gkAudioFileInfo.audio_file_path.setFile(filePath);
             gkDb->write_audio_playback_dlg_settings(gkAudioFileInfo.audio_file_path.canonicalFilePath(), AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
-            const auto audioFileInfo = gkMultimedia->analyzeAudioFileMetadata(filePath);
+            gkAudioFileInfo = gkMultimedia->analyzeAudioFileMetadata(filePath);
 
             //
             // Write out information about the file in question!
             emit cleanupForms(GkClearForms::All); // Cleanup everything!
-            audioFileInfo.length_in_secs;
 
             //
             // Determine whether the audio file is Mono, Stereo, or something else in nature, and add it to the global
             // variables for this class...
             m_audioChannels = determineAudioChannels();
 
-            QString lengthSecs = tr("0 seconds");
-            if (gkAudioFileInfo.length_in_secs > 1.0f) {
-                lengthSecs = gkStringFuncs->convSecondsToMinutes(gkAudioFileInfo.length_in_secs);
+            if (!gkAudioFileInfo.info) {
+                throw std::runtime_error(tr("An error was encountered in garnering the properties of the multimedia file, \"%1\"!")
+                                                 .arg(gkAudioFileInfo.audio_file_path.canonicalFilePath()).toStdString());
+            }
+
+            QString lengthMinutesHr = tr("0 seconds");
+            if (gkAudioFileInfo.info->lengthInSeconds > 0) {
+                lengthMinutesHr = gkStringFuncs->convSecondsToMinutes(gkAudioFileInfo.info->lengthInSeconds);
             }
 
             //
             // Write out aforementioned file information to the UI now!
-            ui->lineEdit_playback_file_location->setText(gkAudioFileInfo.audio_file_path.filePath());
+            ui->lineEdit_playback_file_location->setText(gkAudioFileInfo.audio_file_path.canonicalFilePath());
             ui->lineEdit_playback_file_size->setText(gkAudioFileInfo.file_size_hr);
-            ui->lineEdit_playback_file_name->setText(tr("%1 (%2) -- %3")
-                                                             .arg(gkAudioFileInfo.audio_file_path.fileName(), lengthSecs,
-                                                                  gkDb->convertAudioChannelsStr(gkAudioFileInfo.num_audio_channels)));
+            ui->lineEdit_playback_title->setText(gkAudioFileInfo.metadata.title);
+            ui->lineEdit_playback_artist->setText(gkAudioFileInfo.metadata.artist);
+            ui->lineEdit_playback_album->setText(gkAudioFileInfo.metadata.album);
+            ui->lineEdit_playback_audio_codec->setText(tr("Unknown"));
+            ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.info->sampleRate));
             ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
-            ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.sample_rate));
         } else {
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
@@ -376,7 +380,7 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
         case GkClearForms::Playback:
             ui->lineEdit_playback_file_location->clear();
             ui->lineEdit_playback_file_size->clear();
-            ui->lineEdit_playback_file_name->clear();
+            ui->lineEdit_playback_title->clear();
             ui->lineEdit_playback_audio_codec->clear();
             ui->lineEdit_playback_bitrate->clear();
             ui->lineEdit_playback_sample_rate->clear();
@@ -399,7 +403,7 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
         case GkClearForms::All:
             ui->lineEdit_playback_file_location->clear();
             ui->lineEdit_playback_file_size->clear();
-            ui->lineEdit_playback_file_name->clear();
+            ui->lineEdit_playback_title->clear();
             ui->lineEdit_playback_audio_codec->clear();
             ui->lineEdit_playback_bitrate->clear();
             ui->lineEdit_playback_sample_rate->clear();

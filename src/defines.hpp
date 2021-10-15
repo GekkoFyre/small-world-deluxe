@@ -52,6 +52,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#include <taglib/audioproperties.h>
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
@@ -1200,7 +1201,7 @@ namespace GkAudioFramework {
         Defunct
     };
 
-    enum Bitrate {
+    enum GkBitrate {
         LosslessCompressed,
         LosslessUncompressed,
         VBR,
@@ -1212,21 +1213,35 @@ namespace GkAudioFramework {
         Default
     };
 
-    struct AudioFileInfo {
+    struct GkAudioFileMetadata {
+        QString title;                                                          // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
+        QString artist;                                                         // The artist of the album and/or track.
+        QString album;                                                          // The album name.
+        quint32 year_raw;                                                       // The year the album was made and/or published. Raw value.
+        QDateTime year;                                                         // The year the album was made and/or published. Formatted value.
+        QString comment;                                                        // Any miscellaneous comments.
+        quint32 track_no;                                                       // The track number in question.
+        QString genre;                                                          // The genre of the audio track and/or album.
+    };
+
+    struct GkAudioFileProperties {
+        qint32 bitrate;
+        qint32 sampleRate;
+        qint32 channels;
+        qint32 lengthInMilliseconds;
+        qint32 lengthInSeconds;
+    };
+
+    struct GkAudioFileInfo {
         QFileInfo audio_file_path;                                              // The path to the audio file itself, if known.
-        bool is_output;                                                         // Are we dealing with this as an input or output file?
-        QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
+        GkAudioFileMetadata metadata;                                           // Any metadata pertaining to the multimedia file in question.
         QString file_size_hr;                                                   // The human-readable form of the file-size parameter.
-        int64_t sample_rate;                                                    // The sample rate of the file.
-        int64_t length_in_secs;                                                 // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
         Database::Settings::GkAudioChannels num_audio_channels;                 // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
-        qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
-        qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
-        qint64 bitrate_nominal;                                                 // The nominal bitrate for the specified file.
-        int64_t bit_depth;                                                      // Self-explanatory.
+        qint32 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
+        std::shared_ptr<GkAudioFileProperties> info;                            // The audio properties of the given multimedia file itself.
     };
 }
 };
