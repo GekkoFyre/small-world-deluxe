@@ -52,3 +52,6 @@
 [submodule "src/contrib/FFmpeg"]
 	path = src/contrib/FFmpeg
 	url = https://github.com/FFmpeg/FFmpeg.git
+[submodule "src/contrib/taglib"]
+	path = src/contrib/taglib
+	url = https://github.com/taglib/taglib.git
