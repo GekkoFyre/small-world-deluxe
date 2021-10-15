@@ -42,7 +42,6 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include <AudioFile.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -115,13 +114,14 @@ private:
     //
     // QPushButtons, etc.
     bool m_audioRecReady;
+    bool audio_out_play;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
     //
     // Audio System initialization and buffers
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioInputDev;   // Preferred input audio device
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioOutputDev;  // Preferred output audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;  // Preferred output audio device
 
     //
     // Audio encoding related objects
@@ -130,7 +130,6 @@ private:
 
     //
     // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
     GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
     qint64 encode_compressed_bytes;

@@ -84,10 +84,8 @@
 #include <QHostInfo>
 #include <QByteArray>
 #include <QStringList>
-#include <QAudioFormat>
 #include <QHostAddress>
 #include <QSerialPortInfo>
-#include <QAudioDeviceInfo>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <winsdkver.h>
@@ -830,6 +828,13 @@ namespace Database {
             WindowMaximized,
             WindowHSize,
             WindowVSize
+        };
+
+        enum GkUiCfg {
+            GkUiScalePctg,
+            GkEnblMagnifyingGlass,
+            GkMagnifyingGlassShortcutKey,
+            GkCompressSettingsDatabase
         };
 
         enum GkXmppCfg {

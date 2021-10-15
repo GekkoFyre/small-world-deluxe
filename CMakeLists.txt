@@ -290,19 +290,6 @@ else()
     message(FATAL_ERROR "The open source 'OpenAL' 3D audio library could not be found!")
 endif(OPENAL_FOUND)
 
-#
-# libsndfile
-# https://github.com/libsndfile/libsndfile
-#
-find_package(Sndfile REQUIRED)
-if (SNDFILE_FOUND)
-    include_directories(${SNDFILE_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
-    message(STATUS "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
-else()
-    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries could not be found!")
-endif(SNDFILE_FOUND)
-
 install_qxmpp() # Install QXmpp as non-static!
 
 if (LINUX)
@@ -426,6 +413,20 @@ if (LINUX OR !MSYS OR !MINGW)
 	endif(NUSPELL_FOUND)
 endif()
 
+#
+# FFmpeg
+# https://www.ffmpeg.org/
+# https://github.com/FFmpeg/FFmpeg
+#
+find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC REQUIRED)
+if (FFMPEG_FOUND)
+    include_directories(${FFMPEG_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${FFMPEG_SSL_LIBRARIES})
+    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
+else()
+    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
+endif(FFMPEG_FOUND)
+
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -435,7 +436,7 @@ else()
     message(FATAL_ERROR "The 'OpenSSL' cryptography libraries could not be found!")
 endif(OPENSSL_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -576,16 +577,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
 
 #
-
-#
-# AudioFile by Adam Stark
-# https://github.com/adamstark/AudioFile
-#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
-message(STATUS "The 'AudioFile' libraries have been configured!")
-
-#
 # c-ares by Daniel Stenberg et al.
 # https://c-ares.haxx.se/
 #
@@ -713,7 +704,6 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
-    src/ui/widgets/gk_vu_change_widget.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui)
@@ -758,10 +748,8 @@ set(GALAXY_UI_CPP
     src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
-    src/gk_pcm_file_stream.cpp
     src/gk_sinewave.cpp
 	src/gk_exception.cpp
-    src/ui/widgets/gk_vu_change_widget.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
@@ -859,11 +847,9 @@ set(GALAXY_OBJ_HEADERS
     src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
-    src/gk_pcm_file_stream.hpp
     src/gk_sinewave.hpp
 	src/gk_exception.hpp
     src/gk_waterfall_data.hpp
-    src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
@@ -1008,7 +994,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 #
 # Qt Translations

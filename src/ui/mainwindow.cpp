@@ -501,6 +501,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                         if (it->audio_dev_str == output_audio_device_saved) {
                             output_audio_dev_str = it->audio_dev_str;
                             it->pref_sample_rate = GK_AUDIO_OUTPUT_DEVICE_INIT_SAMPLE_RATE; // Use a default, hopefully universal value until we are able to initialize the device and therefore detect what is actually supported!
+                            it->audio_src = GkAudioSource::Output;
                             it->al_error = 0;
                             it->isEnabled = true;
                             it->isStreaming = false;
@@ -555,6 +556,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
                         if (it->audio_dev_str == input_audio_device_saved) {
                             it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
+                            it->audio_src = GkAudioSource::Input;
                             it->pref_audio_format = input_audio_dev_pref_audio_format;
                             it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
                             it->al_error = 0;
@@ -1000,17 +1002,28 @@ void MainWindow::setIcon()
  */
 void MainWindow::launchAudioPlayerWin()
 {
-    /*
-    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkAudioInputDev, gkAudioOutputDev, gkAudioInput, gkAudioOutput,
-                                                                       gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
+    GkDevice active_output_dev;
+    for (const auto &output_dev: gkSysOutputAudioDevs) {
+        if (output_dev.isEnabled) {
+            active_output_dev = output_dev;
+        }
+    }
+
+    GkDevice active_input_dev;
+    for (const auto &input_dev: gkSysInputAudioDevs) {
+        if (input_dev.isEnabled) {
+            active_input_dev = input_dev;
+        }
+    }
+
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, active_input_dev, active_output_dev,
+                                                                       gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkAudioPlayDlg->moveToThread(&gkAudioInputThread);
     QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-    QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioInput, &QObject::deleteLater);
 
     gkAudioPlayDlg->show();
-     */
 }
 
 /**
@@ -1720,7 +1733,7 @@ void MainWindow::spectroSamplesUpdated()
     /*
     const qint32 n = waterfall_samples_vec.length();
     if (n > 96000) {
-        waterfall_samples_vec.mid(n - gkAudioInputDev.audio_device_info.preferredFormat().sampleRate(), -1);
+        waterfall_samples_vec.mid(n - gkSysInputAudioDev.audio_device_info.preferredFormat().sampleRate(), -1);
     }
      */
 

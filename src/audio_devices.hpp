@@ -62,8 +62,6 @@
 #include <QString>
 #include <QVector>
 #include <QPointer>
-#include <QAudioFormat>
-#include <QAudioDeviceInfo>
 
 #ifdef __cplusplus
 extern "C"

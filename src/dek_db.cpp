@@ -456,6 +456,56 @@ void GkLevelDb::write_general_settings(const QString &value, const general_stat_
 }
 
 /**
+ * @brief GkLevelDb::write_ui_settings writes out the UI-related settings (such as UI scaling, etc.) to the Google LevelDB
+ * database that is configured to Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The value to the written.
+ * @param key The key that is to be written towards.
+ */
+void GkLevelDb::write_ui_settings(const QString &value, const Settings::GkUiCfg &key)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case Settings::GkUiCfg::GkUiScalePctg:
+                batch.Put("GkUiScalePctg", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkEnblMagnifyingGlass:
+                batch.Put("GkEnblMagnifyingGlass", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkMagnifyingGlassShortcutKey:
+                batch.Put("GkMagnifyingGlassShortcutKey", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkCompressSettingsDatabase:
+                batch.Put("GkCompressSettingsDatabase", value.toStdString());
+                break;
+            default:
+                return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
  * @brief DekodeDb::write_audio_device_settings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -2455,6 +2505,41 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_ui_settings reads any UI-related settings (such as UI scaling, etc.) from the Google LevelDB
+ * database that is configured to Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key that is to be read from within Google LevelDB.
+ * @return The value itself, as related to the key.
+ */
+QString GkLevelDb::read_ui_settings(const Settings::GkUiCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case Settings::GkUiCfg::GkUiScalePctg:
+            status = db->Get(read_options, "GkUiScalePctg", &value);
+            break;
+        case Settings::GkUiCfg::GkEnblMagnifyingGlass:
+            status = db->Get(read_options, "GkEnblMagnifyingGlass", &value);
+            break;
+        case Settings::GkUiCfg::GkMagnifyingGlassShortcutKey:
+            status = db->Get(read_options, "GkMagnifyingGlassShortcutKey", &value);
+            break;
+        case Settings::GkUiCfg::GkCompressSettingsDatabase:
+            status = db->Get(read_options, "GkCompressSettingsDatabase", &value);
+            break;
+        default:
+            break;
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
  * @brief DekodeDb::read_audio_device_settings Reads out captured settings about the user's preferred audial device
  * preferences.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2831,32 +2916,6 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
     }
 
     return false;
-}
-
-/**
- * @brief GkLevelDb::convAudioBitRateToEnum converts a given bit-rate to the nearest, or rather, the most
- * appropriate Sample Type as per under Audio System.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bit_rate Whether we are using 8-bits, 16-bits, etc.
- * @return For 8-bit samples, you would use QAudioFormat::UnsignedInt, whilst for 16-bit samples, QAudioFormat:SignedInt is
- * the modus operandi. Anything higher then you must use QAudioFormat::Float.
- */
-QAudioFormat::SampleType GkLevelDb::convAudioBitRateToEnum(const qint32 &bit_rate)
-{
-    switch (bit_rate) {
-        case 8:
-            return QAudioFormat::UnSignedInt;
-        case 16:
-            return QAudioFormat::SignedInt;
-        case 24:
-            return QAudioFormat::Float;
-        case 32:
-            return QAudioFormat::Float;
-        default:
-            return QAudioFormat::Float;
-    }
-
-    return QAudioFormat::Unknown;
 }
 
 /**

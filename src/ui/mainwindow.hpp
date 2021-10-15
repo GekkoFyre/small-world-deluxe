@@ -49,7 +49,6 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
-#include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_logger.hpp"

@@ -351,8 +351,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>655</width>
-                      <height>894</height>
+                      <width>1448</width>
+                      <height>997</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -602,8 +602,8 @@
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>1216</width>
-                          <height>2223</height>
+                          <width>1380</width>
+                          <height>2270</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -1132,35 +1132,69 @@ Thanks.</string>
                                   <property name="bottomMargin">
                                    <number>0</number>
                                   </property>
+                                  <item row="0" column="1">
+                                   <widget class="QFrame" name="frame_16">
+                                    <property name="frameShape">
+                                     <enum>QFrame::NoFrame</enum>
+                                    </property>
+                                    <property name="frameShadow">
+                                     <enum>QFrame::Plain</enum>
+                                    </property>
+                                    <layout class="QVBoxLayout" name="verticalLayout_53">
+                                     <property name="leftMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="topMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="rightMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="bottomMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <item>
+                                      <widget class="QSlider" name="horizontalSlider_accessibility_appearance_ui_scale">
+                                       <property name="toolTip">
+                                        <string>The total scaling and pixel density for which you wish the user interface to be.</string>
+                                       </property>
+                                       <property name="minimum">
+                                        <number>50</number>
+                                       </property>
+                                       <property name="maximum">
+                                        <number>200</number>
+                                       </property>
+                                       <property name="value">
+                                        <number>100</number>
+                                       </property>
+                                       <property name="orientation">
+                                        <enum>Qt::Horizontal</enum>
+                                       </property>
+                                       <property name="tickPosition">
+                                        <enum>QSlider::TicksBelow</enum>
+                                       </property>
+                                       <property name="tickInterval">
+                                        <number>25</number>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="label_accessibility_appearance_ui_scale_percentage">
+                                       <property name="text">
+                                        <string>100%</string>
+                                       </property>
+                                       <property name="alignment">
+                                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                    </layout>
+                                   </widget>
+                                  </item>
                                   <item row="0" column="0">
                                    <widget class="QLabel" name="label_accessibility_appearance_ui_scale">
                                     <property name="text">
                                      <string>UI Scale: </string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item row="0" column="1">
-                                   <widget class="QSlider" name="horizontalSlider_accessibility_appearance_ui_scale">
-                                    <property name="toolTip">
-                                     <string>The total scaling and pixel density for which you wish the user interface to be.</string>
-                                    </property>
-                                    <property name="minimum">
-                                     <number>50</number>
-                                    </property>
-                                    <property name="maximum">
-                                     <number>400</number>
-                                    </property>
-                                    <property name="value">
-                                     <number>100</number>
-                                    </property>
-                                    <property name="orientation">
-                                     <enum>Qt::Horizontal</enum>
-                                    </property>
-                                    <property name="tickPosition">
-                                     <enum>QSlider::TicksBelow</enum>
-                                    </property>
-                                    <property name="tickInterval">
-                                     <number>25</number>
                                     </property>
                                    </widget>
                                   </item>
@@ -1209,13 +1243,6 @@ Thanks.</string>
                                      <property name="bottomMargin">
                                       <number>0</number>
                                      </property>
-                                     <item row="0" column="0">
-                                      <widget class="QLabel" name="label_accessibility_appearance_enbl_custom_font">
-                                       <property name="text">
-                                        <string>Enable Custom Font: </string>
-                                       </property>
-                                      </widget>
-                                     </item>
                                      <item row="0" column="1">
                                       <widget class="QFrame" name="frame_23">
                                        <property name="frameShape">
@@ -1245,6 +1272,13 @@ Thanks.</string>
                                          </widget>
                                         </item>
                                        </layout>
+                                      </widget>
+                                     </item>
+                                     <item row="0" column="0">
+                                      <widget class="QLabel" name="label_accessibility_appearance_enbl_custom_font">
+                                       <property name="text">
+                                        <string>Enable Custom Font: </string>
+                                       </property>
                                       </widget>
                                      </item>
                                     </layout>
@@ -2404,7 +2438,7 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>1004</width>
+                      <width>1420</width>
                       <height>1276</height>
                      </rect>
                     </property>
@@ -3465,8 +3499,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>775</width>
-                      <height>163</height>
+                      <width>1448</width>
+                      <height>997</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -4136,8 +4170,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>1448</width>
-                      <height>997</height>
+                      <width>1030</width>
+                      <height>792</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
