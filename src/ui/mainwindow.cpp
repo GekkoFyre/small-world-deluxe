@@ -620,6 +620,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Initialize the Multimedia I/O class!
+        //
+        gkMultimedia = new GkMultimedia(gkAudioDevices, gkStringFuncs, gkEventLogger, this);
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         #ifndef ENBL_VALGRIND_SUPPORT
@@ -1017,7 +1022,7 @@ void MainWindow::launchAudioPlayerWin()
     }
 
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, active_input_dev, active_output_dev,
-                                                                       gkStringFuncs, gkEventLogger, this);
+                                                                       gkMultimedia, gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkAudioPlayDlg->moveToThread(&gkAudioInputThread);

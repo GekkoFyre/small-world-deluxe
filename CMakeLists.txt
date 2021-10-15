@@ -420,8 +420,8 @@ endif()
 #
 find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC REQUIRED)
 if (FFMPEG_FOUND)
-    include_directories(${FFMPEG_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${FFMPEG_SSL_LIBRARIES})
+    include_directories(${FFMPEG_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
     message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
 else()
     message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
@@ -567,6 +567,14 @@ message(STATUS "The 'Sentry' error reporting libraries have been configured!")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
+
+#
+# TagLib by Scott Wheeler
+# https://github.com/taglib/taglib
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/taglib")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/taglib/taglib")
+message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
 
 #
 # KissFFT by Mark Borgerding
@@ -748,6 +756,7 @@ set(GALAXY_UI_CPP
     src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
+	src/gk_multimedia.cpp
     src/gk_sinewave.cpp
 	src/gk_exception.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
@@ -847,6 +856,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
+	src/gk_multimedia.hpp
     src/gk_sinewave.hpp
 	src/gk_exception.hpp
     src/gk_waterfall_data.hpp

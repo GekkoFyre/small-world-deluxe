@@ -40,6 +40,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_multimedia.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
 #include <memory>
@@ -67,6 +68,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                               QPointer<GekkoFyre::GkMultimedia> multimedia,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -105,6 +107,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -146,6 +149,7 @@ private:
     void prefillAudioSourceComboBoxes();
 
     void recordLockSettings(const bool &unlock = false);
+    void print_exception(const std::exception &e, int level = 0);
 
 };
 

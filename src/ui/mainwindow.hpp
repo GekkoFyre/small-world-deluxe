@@ -56,6 +56,7 @@
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
+#include "src/gk_multimedia.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -324,6 +325,7 @@ private:
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;

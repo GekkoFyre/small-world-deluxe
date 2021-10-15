@@ -60,13 +60,14 @@ using namespace GkXmpp;
 using namespace Security;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, const GkDevice &input_device,
-                                     const GkDevice &output_device, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) : QDialog(parent),
-                                     ui(new Ui::GkAudioPlayDialog)
+                                     const GkDevice &output_device, QPointer<GekkoFyre::GkMultimedia> multimedia,
+                                     QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                     QWidget *parent) : QDialog(parent), ui(new Ui::GkAudioPlayDialog)
 {
     ui->setupUi(this);
 
     gkDb = std::move(database);
+    gkMultimedia = std::move(multimedia);
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
@@ -191,25 +192,20 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
             //
             // Open a QFileDialog so a user may choose a multimedia file to open and then thusly play!
-            QString fileName = QFileDialog::getOpenFileName(this, tr("Audio File Playback"), def_path, tr("Audio Files (*.wav *.ogg *.opus);;All Files (*.*)"));
-            if (fileName.isEmpty()) { // No file has supposedly been chosen!
+            QString filePath = QFileDialog::getOpenFileName(this, tr("Audio File Playback"), def_path, tr("Audio Files %1;;All Files (*.*)").arg(General::GkAudio::commonAudioFileFormats));
+            if (filePath.isEmpty()) { // No file has supposedly been chosen!
                 emit cleanupForms(GkClearForms::Playback); // Cleanup just the playback section only!
                 return;
             }
 
-            gkAudioFileInfo.audio_file_path.setFile(fileName);
+            gkAudioFileInfo.audio_file_path.setFile(filePath);
             gkDb->write_audio_playback_dlg_settings(gkAudioFileInfo.audio_file_path.canonicalFilePath(), AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
-            // gkAudioFile->load(gkAudioFileInfo.audio_file_path.filePath().toStdString());
+            const auto audioFileInfo = gkMultimedia->analyzeAudioFileMetadata(filePath);
 
             //
             // Write out information about the file in question!
             emit cleanupForms(GkClearForms::All); // Cleanup everything!
-            gkAudioFileInfo.file_size = gkAudioFileInfo.audio_file_path.size();
-            gkAudioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(gkAudioFileInfo.file_size);
-            // gkAudioFileInfo.sample_rate = gkAudioFile->getSampleRate();
-            // gkAudioFileInfo.bit_depth = gkAudioFile->getBitDepth();
-            // gkAudioFileInfo.length_in_secs = gkAudioFile->getLengthInSeconds();
-            // gkAudioFileInfo.num_samples_per_channel = gkAudioFile->getNumSamplesPerChannel();
+            audioFileInfo.length_in_secs;
 
             //
             // Determine whether the audio file is Mono, Stereo, or something else in nature, and add it to the global
@@ -237,7 +233,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             audio_out_play = false;
         }
     } catch (const std::exception &e) {
-        gkStringFuncs->print_exception(e);
+        print_exception(e);
     }
 
     return;
@@ -507,6 +503,25 @@ void GkAudioPlayDialog::recordLockSettings(const bool &unlock)
     ui->pushButton_playback_skip_back->setEnabled(unlock);
     ui->pushButton_playback_skip_forward->setEnabled(unlock);
     ui->pushButton_playback_play->setEnabled(unlock);
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::print_exception
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param e
+ * @param level
+ */
+void GkAudioPlayDialog::print_exception(const std::exception &e, int level)
+{
+    gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
 
     return;
 }

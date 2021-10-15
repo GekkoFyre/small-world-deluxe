@@ -385,6 +385,10 @@ namespace General {
         constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
     }
 
+    namespace GkAudio {
+        constexpr char commonAudioFileFormats[] = "(*.wav *.mp3 *.aiff *.ogg *.opus *.flac *.m4a *.caf *.pcm *.wma)";
+    }
+
     namespace Xmpp {
         constexpr char captchaNamespace[] = "urn:xmpp:captcha";
         constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
@@ -1213,15 +1217,15 @@ namespace GkAudioFramework {
         bool is_output;                                                         // Are we dealing with this as an input or output file?
         QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
         QString file_size_hr;                                                   // The human-readable form of the file-size parameter.
-        double sample_rate;                                                     // The sample rate of the file.
-        double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
+        int64_t sample_rate;                                                    // The sample rate of the file.
+        int64_t length_in_secs;                                                 // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
         Database::Settings::GkAudioChannels num_audio_channels;                 // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
         qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
         qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
         qint64 bitrate_nominal;                                                 // The nominal bitrate for the specified file.
-        qint32 bit_depth;                                                       // Self-explanatory.
+        int64_t bit_depth;                                                      // Self-explanatory.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
     };
 }
