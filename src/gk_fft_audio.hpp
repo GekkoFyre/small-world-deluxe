@@ -73,11 +73,11 @@ public:
 
 private slots:
     void refreshGraphTrue();
+    void processAudioInFft();
 
 public slots:
     void recordAudioStream();
     void stopRecordStream();
-    void processAudioInFft();
 
 signals:
     void startRecording();

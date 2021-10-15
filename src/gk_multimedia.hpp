@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,40 +39,40 @@
  **
  ****************************************************************************************************/
 
-#include "src/ui/widgets/gk_vu_change_widget.hpp"
-#include "ui_gk_vu_change_widget.h"
-#include <utility>
+#pragma once
 
-GkVuAdjust::GkVuAdjust(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, QWidget *parent) :
-    QDialog(parent), ui(new Ui::GkVuAdjust)
-{
-    ui->setupUi(this);
+#include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/audio_devices.hpp"
+#include <memory>
+#include <vector>
+#include <string>
+#include <QObject>
+#include <QString>
+#include <QPointer>
+#include <QFileInfo>
 
-    gkAudioInput = std::move(audioInput);
-    gkAudioOutput = std::move(audioOutput);
-}
+namespace GekkoFyre {
 
-GkVuAdjust::~GkVuAdjust()
-{
-    delete ui;
-}
+class GkMultimedia : public QObject {
+    Q_OBJECT
 
-void GkVuAdjust::on_buttonBox_accepted()
-{
-    return;
-}
+public:
+    explicit GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkMultimedia() override;
 
-void GkVuAdjust::on_buttonBox_rejected()
-{
-    return;
-}
+    [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
 
-void GkVuAdjust::on_horizontalSlider_vu_adjust_input_sliderMoved(int position)
-{
-    return;
-}
+private:
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-void GkVuAdjust::on_horizontalSlider_vu_adjust_output_sliderMoved(int position)
-{
-    return;
-}
+    static void cleanupFileMetaStruct(GkAudioFramework::GkAudioFileMetadata *ptr) {
+        delete ptr;
+    }
+
+};
+};

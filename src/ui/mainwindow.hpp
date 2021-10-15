@@ -49,7 +49,6 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
-#include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_logger.hpp"
@@ -57,6 +56,7 @@
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
+#include "src/gk_multimedia.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -280,8 +280,6 @@ public slots:
 
 signals:
     void updatePaVol(const int &percentage);
-    void updateAudioIn();
-    void updatePlot();
     void gkExitApp();
 
     //
@@ -291,6 +289,11 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+
+    //
+    // FFT & Spectrograph related
+    //
+    void initSpectrograph();
 
     //
     // Audio related
@@ -322,6 +325,7 @@ private:
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;
@@ -513,7 +517,7 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkBitrate);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkClearForms);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);

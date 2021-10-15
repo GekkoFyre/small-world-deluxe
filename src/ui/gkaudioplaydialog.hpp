@@ -40,9 +40,9 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_multimedia.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include <AudioFile.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -68,6 +68,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                               QPointer<GekkoFyre::GkMultimedia> multimedia,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -106,6 +107,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -115,13 +117,14 @@ private:
     //
     // QPushButtons, etc.
     bool m_audioRecReady;
+    bool audio_out_play;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
     //
     // Audio System initialization and buffers
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioInputDev;   // Preferred input audio device
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioOutputDev;  // Preferred output audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;  // Preferred output audio device
 
     //
     // Audio encoding related objects
@@ -130,8 +133,7 @@ private:
 
     //
     // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::GkAudioFramework::GkAudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
     GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
     qint64 encode_compressed_bytes;
     qint64 encode_uncompressed_bytes;
@@ -147,6 +149,7 @@ private:
     void prefillAudioSourceComboBoxes();
 
     void recordLockSettings(const bool &unlock = false);
+    void print_exception(const std::exception &e, int level = 0);
 
 };
 

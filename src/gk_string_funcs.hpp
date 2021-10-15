@@ -45,7 +45,6 @@
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <opus/opus_defines.h>
-#include <QAudioFormat>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QDateTime>

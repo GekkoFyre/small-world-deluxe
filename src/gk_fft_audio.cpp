@@ -109,7 +109,7 @@ GkFFTAudio::~GkFFTAudio()
  */
 void GkFFTAudio::recordAudioStream()
 {
-    if (mAudioDevDetails.is_enabled) {
+    if (mAudioDevDetails.isEnabled) {
         emit startRecording();
     }
 
@@ -156,7 +156,9 @@ void GkFFTAudio::processAudioInFft()
 
 void GkFFTAudio::refreshGraphTrue()
 {
+    processAudioInFft();
     emit refreshGraph(true);
+
     return;
 }
 

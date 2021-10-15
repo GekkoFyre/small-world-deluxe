@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>684</height>
+    <width>1024</width>
+    <height>1160</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -61,8 +61,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>582</width>
-               <height>557</height>
+               <width>884</width>
+               <height>1140</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -75,7 +75,7 @@
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_playback_file_loc">
                    <property name="text">
-                    <string>Selection:      </string>
+                    <string>Location:       </string>
                    </property>
                   </widget>
                  </item>
@@ -478,61 +478,81 @@ QPushButton:disabled {
                  <string>Information</string>
                 </property>
                 <layout class="QFormLayout" name="formLayout_2">
-                 <item row="0" column="0">
+                 <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_file_name">
                    <property name="text">
                     <string>Title: </string>
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="1">
-                  <widget class="QLineEdit" name="lineEdit_playback_file_name">
-                   <property name="readOnly">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QLabel" name="label_playback_audio_codec">
-                   <property name="text">
-                    <string>Audio Codec: </string>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="1" column="1">
-                  <widget class="QLineEdit" name="lineEdit_playback_audio_codec">
-                   <property name="readOnly">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <widget class="QLabel" name="label_playback_bitrate">
-                   <property name="text">
-                    <string>Bitrate: </string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="1">
-                  <widget class="QLineEdit" name="lineEdit_playback_bitrate">
+                  <widget class="QLineEdit" name="lineEdit_playback_title">
                    <property name="readOnly">
                     <bool>true</bool>
                    </property>
                   </widget>
                  </item>
                  <item row="3" column="0">
+                  <widget class="QLabel" name="label_playback_audio_codec">
+                   <property name="text">
+                    <string>Audio Codec: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_audio_codec">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="4" column="0">
+                  <widget class="QLabel" name="label_playback_bitrate">
+                   <property name="text">
+                    <string>Bitrate: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="4" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_bitrate">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="5" column="0">
                   <widget class="QLabel" name="label_playback_sample_rate">
                    <property name="text">
                     <string>Sample rate: </string>
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="1">
+                 <item row="5" column="1">
                   <widget class="QLineEdit" name="lineEdit_playback_sample_rate">
                    <property name="readOnly">
                     <bool>true</bool>
                    </property>
                   </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_playback_artist">
+                   <property name="text">
+                    <string>Artist: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_artist"/>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_playback_album">
+                   <property name="text">
+                    <string>Album: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_album"/>
                  </item>
                 </layout>
                </widget>

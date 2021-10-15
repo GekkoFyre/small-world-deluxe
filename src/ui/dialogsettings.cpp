@@ -408,6 +408,11 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             gkDekodeDb->write_lang_dict_settings(user_interface_hunspell_dict, Language::GkDictionary::ChosenDictLang);
         }
 
+        const qint32 ui_scale_pctg_val = ui->horizontalSlider_accessibility_appearance_ui_scale->value();
+        if (ui_scale_pctg_val >= 50) { // 50% is the most minimum value for user interface scaling!
+            gkDekodeDb->write_ui_settings(QString::number(ui_scale_pctg_val), Settings::GkUiCfg::GkUiScalePctg);
+        }
+
         //
         // General --> XMPP --> Client Settings
         //
@@ -511,13 +516,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Now make the sound-device selection official throughout the running Small World Deluxe application!
         //
         for (const auto &input_dev: gkSysInputDevs) {
-            if (input_dev.is_enabled) {
+            if (input_dev.isEnabled) {
                 emit changeInputAudioInterface(input_dev);
             }
         }
 
         for (const auto &output_dev: gkSysOutputDevs) {
-            if (output_dev.is_enabled) {
+            if (output_dev.isEnabled) {
                 emit changeOutputAudioInterface(output_dev);
             }
         }
@@ -1447,6 +1452,11 @@ bool DialogSettings::read_settings()
         const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
 
         const QString eventLogVerbIdx = gkDekodeDb->read_event_log_settings(GkEventLogCfg::GkLogVerbosity);
+
+        const qint32 ui_scale_pctg_val = gkDekodeDb->read_ui_settings(Settings::GkUiCfg::GkUiScalePctg).toInt();
+        if (ui_scale_pctg_val >= 50) { // 50% is the most minimum value for user interface scaling!
+            ui->horizontalSlider_accessibility_appearance_ui_scale->setValue(ui_scale_pctg_val);
+        }
 
         //
         // General --> XMPP --> Client Settings
@@ -3280,12 +3290,17 @@ void DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged(const QS
 }
 
 /**
- * @brief DialogSettings::on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged
+ * @brief DialogSettings::on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged manages the UI scale factor
+ * and the change within it accordingly.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
+ * @param value How much to scale the UI by.
  */
 void DialogSettings::on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged(int value)
 {
+    //
+    // Mention the changing percentage as a floating tooltip!
+    ui->horizontalSlider_accessibility_appearance_ui_scale->setToolTip(QString("%1%").arg(QString::number(value)));
+
     return;
 }
 

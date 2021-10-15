@@ -157,7 +157,6 @@ RUN pacman -S --noconfirm --noprogressbar \
         mingw-w64-qt5-graphicaleffects \
         mingw-w64-qt5-imageformats \
         mingw-w64-qt5-location \
-        mingw-w64-qt5-multimedia \
         mingw-w64-qt5-quickcontrols \
         mingw-w64-qt5-script \
         mingw-w64-qt5-sensors \
@@ -217,7 +216,6 @@ RUN pacman -S qt5-sensors --noconfirm
 RUN pacman -S qt5-imageformats --noconfirm
 RUN pacman -S qt5-translations --noconfirm
 RUN pacman -S qt5-svg --noconfirm
-RUN pacman -S qt5-multimedia --noconfirm
 RUN pacman -S qt5-xmlpatterns --noconfirm
 RUN pacman -S qt5-charts --noconfirm
 RUN pacman -S qt5-3d --noconfirm
@@ -230,8 +228,6 @@ RUN pacman -S hidapi --noconfirm
 RUN pacman -S lz4 --noconfirm
 RUN pacman -S zlib --noconfirm
 RUN pacman -S leveldb --noconfirm
-RUN pacman -S portaudio --noconfirm
-RUN pacman -S libsndfile --noconfirm
 RUN pacman -S libusb --noconfirm
 RUN pacman -S fftw --noconfirm
 RUN pacman -S snappy --noconfirm
@@ -246,6 +242,7 @@ RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
 RUN pacman -S openal --noconfirm
+RUN pacman -S ffmpeg --noconfirm
 
 USER devel
 RUN yay -S conan --noconfirm
@@ -329,14 +326,14 @@ CMD rm -rvf snappy
 #
 # We had to login to the Docker image itself and compile this by hand manually!
 #
-RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.1/hamlib-4.1.tar.gz" ]
-RUN tar -xvzf hamlib-4.1.tar.gz
-CMD cd hamlib-4.1
-CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./..
-CMD rm -rvf hamlib-4.1
+# RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.3.1/hamlib-4.3.1.tar.gz" ]
+# RUN tar -xvzf hamlib-4.1.tar.gz
+# CMD cd hamlib-4.1
+# CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
+# CMD [ "make", "-j$(nproc)" ]
+# CMD [ "make", "install" ]
+# CMD cd ./..
+# CMD rm -rvf hamlib-4.1
 
 #
 # Make it so that the Qt5 libraries (i.e. specifically `libQt5Core.so.5`) can run with Small World Deluxe, and thusly 
