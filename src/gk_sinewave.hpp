@@ -42,8 +42,11 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/audio_devices.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <memory>
 #include <vector>
 #include <string>
@@ -51,63 +54,40 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
-#include <QIODevice>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
-
-class GkSinewaveTest : public QIODevice {
-    Q_OBJECT
-
-public:
-    explicit GkSinewaveTest(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                            qint32 freq, QObject *parent = nullptr);
-    ~GkSinewaveTest() override;
-
-    void setFreq(qint32 freq);
-    void setDuration(qint32 ms);
-
-    qint64 readData(char *data, qint64 max_length) Q_DECL_OVERRIDE;
-    qint64 writeData(const char *data, qint64 length) Q_DECL_OVERRIDE;
-
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
-
-    qint32 frequency;
-    qint32 samples;             // Samples to play for desired duration
-    qint32 *end;                // The last position within the circular buffer, for faster comparisons
-    qint32 *buffer;             // Sinewave buffer itself
-    qint32 *send_pos;           // The current position within the circular buffer
-
-};
 
 class GkSinewaveOutput : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSinewaveOutput(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                              QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, QObject *parent = nullptr);
+    explicit GkSinewaveOutput(const QString &output_audio_dev_name, QPointer<GekkoFyre::GkAudioDevices> audio_devs,
+                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkSinewaveOutput() override;
 
 public slots:
-    void playSound(quint32 milliseconds);
+    void setPlayLength(quint32 milliseconds);
+    void play();
 
 private slots:
-    void writeMore();
+    void setBufferLength();
+    void setSampleRate();
 
 private:
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
-    QPointer<GkSinewaveTest> gkSinewaveTest;
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-
+    QString gkOutputDevName;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QIODevice *output;
+
     QTimer *timer;
-    char *buffer;
+    ALCdevice *mTestDevice;     // Audio device under test; regards OpenAL.
+    ALCcontext *mTestCtx;       // Context; regards OpenAL.
+    ALCboolean mTestCtxCurr;    // Current context; regards OpenAL.
+    quint32 playLength;         // The amount of time for which to play the artificially created sinewave audio sample.
+    quint32 bufferLength;       // The buffer size/length to use for storing the sinewave audio data.
+    ALuint sampleRate;          // The preferred sample rate by the given audio device.
+
+    quint32 calcBufferLength();
+    std::vector<ALshort> generateSineWaveData();
 
 };
 };

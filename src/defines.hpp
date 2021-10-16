@@ -49,6 +49,10 @@
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
+#include <taglib/audioproperties.h>
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
@@ -81,10 +85,8 @@
 #include <QHostInfo>
 #include <QByteArray>
 #include <QStringList>
-#include <QAudioFormat>
 #include <QHostAddress>
 #include <QSerialPortInfo>
-#include <QAudioDeviceInfo>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <winsdkver.h>
@@ -166,6 +168,9 @@ namespace GekkoFyre {
 #define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
 #define GK_XMPP_HANDLE_DISCONNECTION_SINGLE_SHOT_TIMER_SECS (5)
 
+#define GK_XMPP_AVATAR_SIZE_MAX_WIDTH (150)
+#define GK_XMPP_AVATAR_SIZE_MAX_HEIGHT (150)
+
 //
 // Networking settings (also sometimes related to XMPP!)
 //
@@ -179,9 +184,7 @@ namespace GekkoFyre {
 #define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                         // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
 #define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback.
-#define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
-#define GK_AUDIO_PEAK_MAX (32768)                               // The maximum integer/signal value possible within the QAudio system.
-#define GK_AUDIO_PEAK_MIN (-32768)                              // The minimum integer/signal value possible within the QAudio system.
+#define GK_AUDIO_OPENAL_RECORD_BUFFER_SIZE (32768)              // The recording buffer size for when initializing a new device via `alcCaptureOpenDevice()`.
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
@@ -190,7 +193,6 @@ namespace GekkoFyre {
 #define AUDIO_OPUS_DEFAULT_SAMPLE_RATE (48000)                  // The default sampling rate to use when encoding/decoding with Ogg Opus audio (measured in kHz).
 #define AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS (1000)         // The amount of time to wait for (in milliseconds) while the buffers prime themselves, before continuing with the rest of the encoding functions!
 
-#define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
@@ -208,6 +210,35 @@ namespace GekkoFyre {
 #define AUDIO_RECORDING_DEF_BITRATE (192)
 #define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
 #define AUDIO_RECORDING_SOURCE_OUTPUT_IDX (1)
+
+//
+// Settings Dialog
+//
+#define GK_AUDIO_DEVS_STR_LENGTH (40)
+#define GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS (3)                // Play the sine wave test sample for three seconds!
+#define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)
+#define GK_AUDIO_OUTPUT_DEVICE_INIT_SAMPLE_RATE (11025)         // The default sample rate to initialize with, which will hopefully be a universal value, at least and until we can initialize the device and then therefore probe it for a supported value!
+#define GK_AUDIO_SINEWAVE_TEST_DEFAULT_SAMPLE_RATE (44100)      // The default sample rate to use, if it cannot be calculated any other way, successfully.
+
+#define GK_AUDIO_FRAME_DURATION (20)
+#define GK_AUDIO_GAIN_FACTOR (1)
+#define GK_AUDIO_DEFAULT_BITRATE (16)                           // The default bitrate is 16-bits, especially when concerning output audio devices.
+
+#define GK_AUDIO_SAMPLE_RATE_8000_IDX (0)
+#define GK_AUDIO_SAMPLE_RATE_11025_IDX (1)
+#define GK_AUDIO_SAMPLE_RATE_22050_IDX (2)
+#define GK_AUDIO_SAMPLE_RATE_32000_IDX (3)
+#define GK_AUDIO_SAMPLE_RATE_44100_IDX (4)
+#define GK_AUDIO_SAMPLE_RATE_48000_IDX (5)
+#define GK_AUDIO_SAMPLE_RATE_88200_IDX (6)
+#define GK_AUDIO_SAMPLE_RATE_96000_IDX (7)
+
+#define GK_AUDIO_BITRATE_8_IDX (0)
+#define GK_AUDIO_BITRATE_16_IDX (1)
+#define GK_AUDIO_BITRATE_24_IDX (2)
+
+#define GK_AUDIO_CHANNELS_MONO (0)
+#define GK_AUDIO_CHANNELS_STEREO (1)
 
 //
 // Mostly regarding FFTW functions
@@ -355,6 +386,10 @@ namespace General {
         constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
     }
 
+    namespace GkAudio {
+        constexpr char commonAudioFileFormats[] = "(*.wav *.mp3 *.aiff *.ogg *.opus *.flac *.m4a *.caf *.pcm *.wma)";
+    }
+
     namespace Xmpp {
         constexpr char captchaNamespace[] = "urn:xmpp:captcha";
         constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
@@ -365,6 +400,11 @@ namespace General {
             constexpr char keyToConvAvatarImg[] = "GkAvatarImg";
             constexpr char keyToConvMsgHistory[] = "msg";
             constexpr char keyToConvTimestampHistory[] = "timestamp";
+        }
+
+        namespace Avatar {
+            constexpr char defaultAvatarFormat[] = "image/JPEG";
+            constexpr char defaultAvatarFormatSuffix[] = "JPEG";
         }
     }
 }
@@ -753,18 +793,16 @@ namespace Database {
             LogsDirLoc,
             AudioRecLoc,
             AudioInputChannels,
-            AudioOutputChannels,
             AudioInputSampleRate,
-            AudioOutputSampleRate,
             AudioInputBitrate,
-            AudioOutputBitrate
+            AudioInputFormat
         };
 
         enum GkAudioChannels {
             Mono,
             Left,
             Right,
-            Both,
+            Stereo,
             Surround,
             Unknown
         };
@@ -797,6 +835,13 @@ namespace Database {
             WindowVSize
         };
 
+        enum GkUiCfg {
+            GkUiScalePctg,
+            GkEnblMagnifyingGlass,
+            GkMagnifyingGlassShortcutKey,
+            GkCompressSettingsDatabase
+        };
+
         enum GkXmppCfg {
             XmppAllowMsgHistory,
             XmppAllowFileXfers,
@@ -819,6 +864,10 @@ namespace Database {
             XmppNetworkTimeout,
             XmppCheckboxRememberCreds,
             XmppLastOnlinePresence
+        };
+
+        enum GkXmppRecall {
+            XmppAvatarFolderDir
         };
 
         enum Codec2Mode {
@@ -879,17 +928,39 @@ namespace Database {
         };
 
         namespace Audio {
+            enum SampleType { Unknown, SignedInt, UnSignedInt, Float };
+            enum Endian { BigEndian = QSysInfo::BigEndian, LittleEndian = QSysInfo::LittleEndian };
+            struct GkFormat {
+                SampleType sample_type;
+                Endian endian_type;
+                qint32 bytesPerFrame;
+            };
+
+            struct GkAudioDeviceInfo {
+                QList<ALuint> supported_sample_rates;
+                QList<qint32> supported_channel_counts;
+                QList<ALuint> supported_sample_sizes;
+                QList<Endian> supported_byte_orders;
+                QList<SampleType> supported_sample_types;
+            };
+
             struct GkDevice {
-                QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
-                QString realm_str;                                                  // The API that this particular audio device belongs towards.
-                QAudioDeviceInfo audio_device_info;                                 // Pointer to the actual audio device in question.
-                bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
+                ALCdevice *alDevice;                                                // The pointer to the openAL device itself.
+                ALCcontext *alDeviceCtx;                                            // The pointer to the openAL device's context.
+                ALCboolean alDeviceCtxCurr;                                         // The current context of the openAL device.
+                QString audio_dev_str;                                              // The referred towards name of the device, as a formatted string.
+                GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
-                bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
+                bool isEnabled;                                                     // Whether this device (as the `output` or `input`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
+                bool isStreaming;                                                   // Is the audio device in question currently recording, streaming, outputting sound, etc.?
+                bool isGraphing;                                                    // Are we recording any data captured from this device to the spectrograph on the QMainWindow of this application (i.e. Small World Deluxe)?
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
-                QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
-                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user. TODO: Replace this with `user_settings` instead!
+                ALuint pref_sample_rate;                                            // The desired sample rate to use with this device (namely if it is an input device!), as chosen by the end-user.
+                ALenum pref_audio_format;                                           // The desired audio format to use with this device (namely if it is an input device!), as chosen by the end-user.
+                ALenum al_error;                                                    // The last error message received in regards to openAL.
+                ALCenum alc_error;                                                  // The last error message received in regards to openALC.
+                GkFormat user_settings;                                             // The user defined settings for this particular audio device.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }
@@ -1130,7 +1201,7 @@ namespace GkAudioFramework {
         Defunct
     };
 
-    enum Bitrate {
+    enum GkBitrate {
         LosslessCompressed,
         LosslessUncompressed,
         VBR,
@@ -1142,21 +1213,41 @@ namespace GkAudioFramework {
         Default
     };
 
-    struct AudioFileInfo {
+    struct GkAudioFileMetadata {
+        QString title;                                                          // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
+        QString artist;                                                         // The artist of the album and/or track.
+        QString album;                                                          // The album name.
+        quint32 year_raw;                                                       // The year the album was made and/or published. Raw value.
+        QDateTime year;                                                         // The year the album was made and/or published. Formatted value.
+        QString comment;                                                        // Any miscellaneous comments.
+        quint32 track_no;                                                       // The track number in question.
+        QString genre;                                                          // The genre of the audio track and/or album.
+    };
+
+    struct GkAudioFileProperties {
+        qint32 bitrate;
+        qint32 sampleRate;
+        qint32 channels;
+        qint32 lengthInMilliseconds;
+        qint32 lengthInSeconds;
+    };
+
+    struct GkAudioFileInfo {
         QFileInfo audio_file_path;                                              // The path to the audio file itself, if known.
-        bool is_output;                                                         // Are we dealing with this as an input or output file?
-        QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
+        GkAudioFileMetadata metadata;                                           // Any metadata pertaining to the multimedia file in question.
         QString file_size_hr;                                                   // The human-readable form of the file-size parameter.
-        double sample_rate;                                                     // The sample rate of the file.
-        double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
+        QString type_codec_str;                                                 // The codec of the audio file, if known. As a formatted string.
         Database::Settings::GkAudioChannels num_audio_channels;                 // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
-        qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
-        qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
-        qint64 bitrate_nominal;                                                 // The nominal bitrate for the specified file.
-        qint32 bit_depth;                                                       // Self-explanatory.
+        qint32 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
+        std::shared_ptr<GkAudioFileProperties> info;                            // The audio properties of the given multimedia file itself.
+    };
+
+    struct GkAudioFileDecoded {
+        GkAudioFileInfo properties;
+        std::vector<float> samples;
     };
 }
 };

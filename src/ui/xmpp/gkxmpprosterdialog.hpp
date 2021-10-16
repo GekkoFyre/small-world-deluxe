@@ -97,7 +97,7 @@ private slots:
     //
     void recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type);
     void defaultClientAvatarPlaceholder();
-    void updateClientAvatar(const QImage &avatar_img, const QString &img_type);
+    void updateClientAvatar(const QByteArray &avatar_img, const QString &img_type);
     void updateUserVCard(const QXmppVCardIq &vCard);
     void editNicknameLabel(const QString &value);
 
@@ -146,7 +146,7 @@ signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
                            const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
-    void updateClientAvatarImg(const QImage &avatar_img, const QString &img_type);
+    void updateClientAvatarImg(const QByteArray &avatar_img, const QString &img_type);
 
     void acceptSubscription(const QString &bareJid);
     void refuseSubscription(const QString &bareJid);

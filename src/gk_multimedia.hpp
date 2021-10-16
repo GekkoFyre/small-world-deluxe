@@ -43,79 +43,62 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <mutex>
-#include <thread>
+#include "src/gk_string_funcs.hpp"
+#include "src/audio_devices.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <memory>
+#include <vector>
 #include <string>
+#include <fstream>
 #include <QObject>
-#include <QBuffer>
+#include <QString>
 #include <QPointer>
-#include <QSaveFile>
-#include <QIODevice>
-#include <QByteArray>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <opus/opusenc.h>
-
-#ifdef __cplusplus
-}
-#endif
+#include <QFileInfo>
 
 namespace GekkoFyre {
 
-class GkOggOpusSink : public QIODevice {
+class GkMultimedia : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkOggOpusSink(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkOggOpusSink() override;
+    explicit GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs,
+                          GekkoFyre::Database::Settings::Audio::GkDevice sysOutputAudioDev,
+                          GekkoFyre::Database::Settings::Audio::GkDevice sysInputAudioDev,
+                          QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkMultimedia() override;
 
-    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
-    qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
+    [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
+
+    [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
+    [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
+
+    [[nodiscard]] GkAudioFramework::GkAudioFileDecoded decodeAudioFile(const QFileInfo &file_path);
 
 public slots:
-    void start();
-    void stop();
-
-signals:
-    void volume(qint32 vol);
+    void playAudioFile(const QFileInfo &file_path);
 
 private:
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // QAudioSystem initialization and buffers
-    qint64 m_totalUncompBytesRead;
-    qint64 m_totalCompBytesWritten;
-
+    // Audio System miscellaneous variables
     //
-    // Status variables
-    GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
-    //
-    // Encoder variables
-    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
-    QString m_fileLoc;                                          // The filename to write-out the encoded data towards!
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
 
-    //
-    // Filesystem and related
-    QPointer<QSaveFile> file;                                   // The file that the encoded data is to be saved towards.
-    QPointer<QSaveFile> file_pcm;                               // If the user desires so, then a PCM WAV file can be created as an adjunct too!
-
-    //
-    // Miscellaneous
-    QAudioFormat m_audioFormat;
-    bool m_failed;
-    bool m_done;
-    quint32 m_maxAmplitude;
+    bool is_big_endian();
+    std::int32_t convert_to_int(char *buffer, std::size_t len);
+    bool loadWavFileHeader(std::ifstream &file, std::uint8_t &channels, std::int32_t &sampleRate,
+                           std::uint8_t &bitsPerSample, ALsizei &size);
+    char *loadWavFileData(const QFileInfo &file_path, std::uint8_t &channels, std::int32_t &sampleRate,
+                          std::uint8_t &bitsPerSample, ALsizei &size);
 
 };
 };

@@ -39,16 +39,12 @@
  **
  ****************************************************************************************************/
 
-#include "src/audio/decoding/gk_codec2_source.hpp"
-#include <vector>
-#include <cstring>
+#include "src/gk_exception.hpp"
 #include <utility>
+#include <iostream>
 #include <exception>
-#include <QDir>
-#include <QtGui>
 
 using namespace GekkoFyre;
-using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -58,66 +54,46 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
-using namespace Network;
-using namespace GkXmpp;
-
-GkCodec2Source::GkCodec2Source(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
-{
-    setParent(parent);
-    gkEventLogger = std::move(eventLogger);
-
-    //
-    // Initialize variables
-    m_done = false;
-    m_failed = false;
-    m_maxAmplitude = maxAmplitude;
-    m_audioFormat = format;
-    m_fileLoc = fileLoc;
-    m_initialized = false;
-    m_recActive = GkAudioRecordStatus::Defunct;
-
-    return;
-}
-
-GkCodec2Source::~GkCodec2Source()
-{}
 
 /**
- * @brief GkCodec2Sink::readData
+ * @brief GkException::GkException
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err_msg
+ * @param err
  */
-qint64 GkCodec2Source::readData(char *data, qint64 maxlen)
-{
-    return 0;
-}
-
-/**
- * @brief GkPcmWavSink::writeData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data
- * @param len
- * @return
- */
-qint64 GkCodec2Source::writeData(const char *data, qint64 len)
-{
-    return 0;
-}
-
-/**
- * @brief GkCodec2Sink::start
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkCodec2Source::start()
+GkException::GkException(const QString &err_msg, const qint32 err)
 {
     return;
 }
 
 /**
- * @brief GkPcmWavSink::stop
+ * @brief GkException::GkException
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err
+ */
+GkException::GkException(const qint32 err)
+{
+    return;
+}
+
+/**
+ * @brief GkException::GkException
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err_msg
+ */
+GkException::GkException(const QString &err_msg)
+{
+    return;
+}
+
+GkException::~GkException() {}
+
+/**
+ * @brief GkException::print
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkCodec2Source::stop()
+void GkException::print() const
 {
+    std::cerr << "Error with SWD: " << message.toStdString() << std::endl;
     return;
 }

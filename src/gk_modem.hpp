@@ -56,7 +56,7 @@ class GkModemQRA64 : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkModemQRA64(QPointer<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+    explicit GkModemQRA64(QPointer<GekkoFyre::GkAudioDevices> gkAudio, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                           QPointer<GekkoFyre::StringFuncs> stringFuncs, const int &channel_type, const int &EbNodB,
                           const int &mode, QObject *parent = nullptr);
     ~GkModemQRA64() override;
@@ -98,7 +98,7 @@ public:
     QString decodeFromJT65(const QString &callsign_1, const QString &callsign_2, const QString &maidenhead_grid);
 
 private:
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
@@ -117,13 +117,13 @@ class GkModem : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkModem(QPointer<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkLevelDb> dbPtr,
+    explicit GkModem(QPointer<GekkoFyre::GkAudioDevices> gkAudio, QPointer<GekkoFyre::GkLevelDb> dbPtr,
                      QPointer<GekkoFyre::GkEventLogger> eventLogger,
                      QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkModem() override;
 
 private:
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;

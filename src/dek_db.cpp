@@ -456,44 +456,79 @@ void GkLevelDb::write_general_settings(const QString &value, const general_stat_
 }
 
 /**
+ * @brief GkLevelDb::write_ui_settings writes out the UI-related settings (such as UI scaling, etc.) to the Google LevelDB
+ * database that is configured to Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The value to the written.
+ * @param key The key that is to be written towards.
+ */
+void GkLevelDb::write_ui_settings(const QString &value, const Settings::GkUiCfg &key)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case Settings::GkUiCfg::GkUiScalePctg:
+                batch.Put("GkUiScalePctg", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkEnblMagnifyingGlass:
+                batch.Put("GkEnblMagnifyingGlass", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkMagnifyingGlassShortcutKey:
+                batch.Put("GkMagnifyingGlassShortcutKey", value.toStdString());
+                break;
+            case Settings::GkUiCfg::GkCompressSettingsDatabase:
+                batch.Put("GkCompressSettingsDatabase", value.toStdString());
+                break;
+            default:
+                return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
  * @brief DekodeDb::write_audio_device_settings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
  * @param is_output_device
  */
-void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const QString &value, const bool &is_output_device)
 {
     try {
         leveldb::WriteBatch batch;
         leveldb::Status status;
 
         if (is_output_device) {
-            // Unique identifier for the chosen output audio device
-            batch.Put("AudioOutputDeviceName", value.audio_dev_str.toStdString());
-
-            // Determine if this is the default output device for the system and if so, convert
-            // the boolean value to a std::string suitable for database storage.
-            std::string is_default = boolEnum(value.default_output_dev);
-            batch.Put("AudioOutputDefSysDevice", is_default);
-
-            // Modifier to let SWD know if this audio input device was configured as the result of
-            // user activity and not by the part of default activity/settings.
-            std::string user_activity = boolEnum(value.user_config_succ);
-            batch.Put("AudioOutputCfgUsrActivity", user_activity);
+            // Output audio device
+            batch.Put("AudioOutputDeviceName", value.toStdString());
         } else {
-            // Unique identifier for the chosen input audio device
-            batch.Put("AudioInputDeviceName", value.audio_dev_str.toStdString());
-
-            // Determine if this is the default input device for the system and if so, convert
-            // the boolean value to a std::string suitable for database storage.
-            std::string is_default = boolEnum(value.default_input_dev);
-            batch.Put("AudioInputDefSysDevice", is_default);
-
-            // Modifier to let SWD know if this audio input device was configured as the result of
-            // user activity and not by the part of default activity/settings.
-            std::string user_activity = boolEnum(value.user_config_succ);
-            batch.Put("AudioInputCfgUsrActivity", user_activity);
+            // Input audio device
+            batch.Put("AudioInputDeviceName", value.toStdString());
         }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
 
         leveldb::WriteOptions write_options;
         write_options.sync = true;
@@ -536,20 +571,14 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
             case GkAudioCfg::AudioInputChannels:
                 batch.Put("AudioInputChannels", value.toStdString());
                 break;
-            case GkAudioCfg::AudioOutputChannels:
-                batch.Put("AudioOutputChannels", value.toStdString());
-                break;
             case GkAudioCfg::AudioInputSampleRate:
                 batch.Put("AudioInputSampleRate", value.toStdString());
-                break;
-            case GkAudioCfg::AudioOutputSampleRate:
-                batch.Put("AudioOutputSampleRate", value.toStdString());
                 break;
             case GkAudioCfg::AudioInputBitrate:
                 batch.Put("AudioInputBitrate", value.toStdString());
                 break;
-            case GkAudioCfg::AudioOutputBitrate:
-                batch.Put("AudioOutputBitrate", value.toStdString());
+            case GkAudioCfg::AudioInputFormat:
+                batch.Put("AudioInputFormat", value.toStdString());
                 break;
         }
 
@@ -1735,6 +1764,48 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_recall is for the recalling of specific settings, such as folder locations, which are
+ * saved to a pre-configured Google LevelDB database for future reading and processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The actual configuration value to be saved.
+ * @param key The setting in question that the value is to be saved under.
+ */
+void GkLevelDb::write_xmpp_recall(const QString &value, const Settings::GkXmppRecall &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case Settings::GkXmppRecall::XmppAvatarFolderDir:
+                batch.Put("XmppAvatarFolderDir", value.toStdString());
+                break;
+            default:
+                return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_xmpp_vcard_data stores the information of users as outputted by the QXmppRosterManager upon
  * a successful connection having been made to a given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1969,6 +2040,32 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppLastOnlinePresence:
             status = db->Get(read_options, "XmppLastOnlinePresence", &value);
+            break;
+        default:
+            return QString();
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_xmpp_recall reads out the previously saved XMPP recall information from the given Google LevelDB
+ * database for further processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The setting in question that the value we are trying to retrieve is saved under.
+ * @return Our previously saved value from the pre-configured Google LevelDB database.
+ */
+QString GkLevelDb::read_xmpp_recall(const Settings::GkXmppRecall &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case Settings::GkXmppRecall::XmppAvatarFolderDir:
+            status = db->Get(read_options, "XmppAvatarFolderDir", &value);
             break;
         default:
             return QString();
@@ -2408,6 +2505,41 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_ui_settings reads any UI-related settings (such as UI scaling, etc.) from the Google LevelDB
+ * database that is configured to Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key that is to be read from within Google LevelDB.
+ * @return The value itself, as related to the key.
+ */
+QString GkLevelDb::read_ui_settings(const Settings::GkUiCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case Settings::GkUiCfg::GkUiScalePctg:
+            status = db->Get(read_options, "GkUiScalePctg", &value);
+            break;
+        case Settings::GkUiCfg::GkEnblMagnifyingGlass:
+            status = db->Get(read_options, "GkEnblMagnifyingGlass", &value);
+            break;
+        case Settings::GkUiCfg::GkMagnifyingGlassShortcutKey:
+            status = db->Get(read_options, "GkMagnifyingGlassShortcutKey", &value);
+            break;
+        case Settings::GkUiCfg::GkCompressSettingsDatabase:
+            status = db->Get(read_options, "GkCompressSettingsDatabase", &value);
+            break;
+        default:
+            break;
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
  * @brief DekodeDb::read_audio_device_settings Reads out captured settings about the user's preferred audial device
  * preferences.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2483,86 +2615,6 @@ std::string GkLevelDb::removeInvalidChars(const std::string &string_to_modify)
     return "";
 }
 
-/**
- * @brief DekodeDb::read_audio_details_settings Reads all the settings concerning Audio Devices from the
- * Google LevelDB database.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_output_device Whether we are dealing with an output or input audio device.
- * @return The struct, `GekkoFyre::Database::Settings::Audio::Device`.
- */
-GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
-{
-    GkDevice audio_device;
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-
-    read_options.verify_checksums = true;
-
-    if (is_output_device) {
-        //
-        // Output audio device
-        //
-        std::string output_id;
-        std::string output_pa_host_idx; //-V808
-        std::string output_sel_channels;
-        std::string output_def_sys_device;
-        std::string output_user_activity;
-
-        status = db->Get(read_options, "AudioOutputDeviceName", &output_id);
-        status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
-        status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
-
-        bool def_sys_device = boolStr(output_def_sys_device);
-        bool user_activity = boolStr(output_user_activity);
-
-        //
-        // Test to see if the following are empty or not
-        //
-        audio_device.audio_dev_str = QString::fromStdString(output_id);
-
-        if (!output_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
-        } else {
-            audio_device.sel_channels = GkAudioChannels::Unknown;
-        }
-
-        audio_device.default_output_dev = def_sys_device;
-        audio_device.user_config_succ = user_activity;
-    } else {
-        //
-        // Input audio device
-        //
-        std::string input_id;
-        std::string input_pa_host_idx; //-V808
-        std::string input_sel_channels;
-        std::string input_def_sys_device;
-        std::string input_user_activity;
-
-        status = db->Get(read_options, "AudioInputDeviceName", &input_id);
-        status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
-        status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
-
-        bool def_sys_device = boolStr(input_def_sys_device);
-        bool user_activity = boolStr(input_user_activity);
-
-        //
-        // Test to see if the following are empty or not
-        //
-        audio_device.audio_dev_str = QString::fromStdString(input_id);
-
-        if (!input_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(input_sel_channels));
-        } else {
-            audio_device.sel_channels = GkAudioChannels::Unknown;
-        }
-
-        audio_device.default_input_dev = def_sys_device;
-        audio_device.user_config_succ = user_activity;
-    }
-
-    return audio_device;
-}
-
 QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
 {
     leveldb::Status status;
@@ -2584,24 +2636,22 @@ QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
         case GkAudioCfg::AudioInputChannels:
             status = db->Get(read_options, "AudioInputChannels", &value);
             break;
-        case GkAudioCfg::AudioOutputChannels:
-            status = db->Get(read_options, "AudioOutputChannels", &value);
-            break;
         case GkAudioCfg::AudioInputSampleRate:
             status = db->Get(read_options, "AudioInputSampleRate", &value);
-            break;
-        case GkAudioCfg::AudioOutputSampleRate:
-            status = db->Get(read_options, "AudioOutputSampleRate", &value);
             break;
         case GkAudioCfg::AudioInputBitrate:
             status = db->Get(read_options, "AudioInputBitrate", &value);
             break;
-        case GkAudioCfg::AudioOutputBitrate:
-            status = db->Get(read_options, "AudioOutputBitrate", &value);
+        case GkAudioCfg::AudioInputFormat:
+            status = db->Get(read_options, "AudioInputFormat", &value);
             break;
     }
 
-    return QString::fromStdString(value);
+    if (!value.empty()) {
+        return QString::fromStdString(value);
+    }
+
+    return QString::number(-1);
 }
 
 /**
@@ -2775,7 +2825,7 @@ GkAudioChannels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel
             ret = GkAudioChannels::Right;
             break;
         case 3:
-            ret = GkAudioChannels::Both;
+            ret = GkAudioChannels::Stereo;
             break;
         case 4:
             ret = GkAudioChannels::Surround;
@@ -2804,7 +2854,7 @@ qint32 GkLevelDb::convertAudioChannelsToCount(const GkAudioChannels &channel_enu
             return 1;
         case Right:
             return 1;
-        case Both:
+        case Stereo:
             return 2;
         case Surround:
             return -2; // NOTE: This is such because it needs to be worked out via other means!
@@ -2830,7 +2880,7 @@ QString GkLevelDb::convertAudioChannelsStr(const GkAudioChannels &channel_enum)
             return tr("Left");
         case Right:
             return tr("Right");
-        case Both:
+        case Stereo:
             return tr("Stereo");
         case Surround:
             return tr("Surround");
@@ -2857,7 +2907,7 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
             return false;
         case Right:
             return false;
-        case Both:
+        case Stereo:
             return true;
         case Surround:
             return false;
@@ -2866,32 +2916,6 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
     }
 
     return false;
-}
-
-/**
- * @brief GkLevelDb::convAudioBitRateToEnum converts a given bit-rate to the nearest, or rather, the most
- * appropriate Sample Type as per under QAudioSystem.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bit_rate Whether we are using 8-bits, 16-bits, etc.
- * @return For 8-bit samples, you would use QAudioFormat::UnsignedInt, whilst for 16-bit samples, QAudioFormat:SignedInt is
- * the modus operandi. Anything higher then you must use QAudioFormat::Float.
- */
-QAudioFormat::SampleType GkLevelDb::convAudioBitRateToEnum(const qint32 &bit_rate)
-{
-    switch (bit_rate) {
-        case 8:
-            return QAudioFormat::UnSignedInt;
-        case 16:
-            return QAudioFormat::SignedInt;
-        case 24:
-            return QAudioFormat::Float;
-        case 32:
-            return QAudioFormat::Float;
-        default:
-            return QAudioFormat::Float;
-    }
-
-    return QAudioFormat::Unknown;
 }
 
 /**
@@ -3011,20 +3035,20 @@ int GkLevelDb::convConnTypeToInt(const GkConnType &conn_type)
     return -1;
 }
 
-QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrate)
+QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::GkBitrate &bitrate)
 {
     switch (bitrate) {
-    case GkAudioFramework::Bitrate::VBR:
+    case GkAudioFramework::GkBitrate::VBR:
         return tr("Variable bitrate (i.e. VBR)");
-    case GkAudioFramework::Bitrate::Kbps64:
+    case GkAudioFramework::GkBitrate::Kbps64:
         return tr("64 Kbps");
-    case GkAudioFramework::Bitrate::Kbps128:
+    case GkAudioFramework::GkBitrate::Kbps128:
         return tr("128 Kbps");
-    case GkAudioFramework::Bitrate::Kbps192:
+    case GkAudioFramework::GkBitrate::Kbps192:
         return tr("192 Kbps");
-    case GkAudioFramework::Bitrate::Kbps256:
+    case GkAudioFramework::GkBitrate::Kbps256:
         return tr("256 Kbps");
-    case GkAudioFramework::Bitrate::Kbps320:
+    case GkAudioFramework::GkBitrate::Kbps320:
         return tr("320 Kbps");
     default:
         return tr("Variable bitrate (i.e. VBR)");

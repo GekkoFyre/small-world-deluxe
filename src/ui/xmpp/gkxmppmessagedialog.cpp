@@ -490,8 +490,9 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
+    xmppMsg.setState(QXmppMessage::Active); // User is actively participating in the chat session...
     xmppMsg.setPrivate(false);
-    // xmppMsg.setReceiptRequested(true);
+    xmppMsg.setReceiptRequested(false);
     xmppMsg.setType(QXmppMessage::Chat);
 
     return xmppMsg;
@@ -540,7 +541,7 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
         }
 
         if (message.isXmppStanza() && !message.body().isEmpty()) {
-            gkXmppRecvMsgsTableViewModel->insertData(message.to(), message.body(), message.stamp());
+            gkXmppRecvMsgsTableViewModel->insertData(message.from(), message.body(), message.stamp());
             if (!m_xmppClient->getMsgRecved()) {
                 emit msgRecved(true);
             }

@@ -54,6 +54,10 @@ Gist by Adam Stark
     <https://github.com/adamstark/Gist>
         GNU General Public License (GPL, version 3)
 
+OpenAL soft by Creative Labs, Christopher Fitzgerald, et al.
+	<https://github.com/kcat/openal-soft>
+		GNU Library General Public License (GLGPL, version 2)
+
 KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
@@ -66,9 +70,15 @@ Enchant by Reuben Thomas et al.
     <https://github.com/AbiWord/enchant>
         GNU Lesser General Public License (LGPL, version 2.1)
 
-AudioFile by Adam Stark
-    <https://github.com/adamstark/AudioFile>
-        GNU General Public License (GPL, version 3)
+FFmpeg by Michael Niedermayer and Marton Balint et al.
+    <https://github.com/FFmpeg/FFmpeg>
+        GNU Lesser General Public License (LGPL, version 2.1+)
+		The MIT License / X11 / BSD 3-clause License
+		GNU General Public License (GPL, version 2+)
+
+TagLib by Scott Wheeler
+	<https://github.com/taglib/taglib>
+		GNU Lesser General Public License (LGPL, version 2.1)
 
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>

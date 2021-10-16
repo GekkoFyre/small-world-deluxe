@@ -57,7 +57,6 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
-#include <QAudioFormat>
 
 #ifdef __cplusplus
 extern "C"
@@ -84,8 +83,8 @@ public:
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
     void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key);
     void write_general_settings(const QString &value, const Database::Settings::general_stat_cfg &key);
-    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value,
-                                     const bool &is_output_device);
+    void write_ui_settings(const QString &value, const Database::Settings::GkUiCfg &key);
+    void write_audio_device_settings(const QString &value, const bool &is_output_device);
     void write_misc_audio_settings(const QString &value, const Database::Settings::GkAudioCfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
     void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
@@ -125,11 +124,13 @@ public:
     [[nodiscard]] QList<QXmppMessage> update_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &original_msgs,
                                                            const QList<QXmppMessage> &comparison_msgs) const;
     void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    void write_xmpp_recall(const QString &value, const GekkoFyre::Database::Settings::GkXmppRecall &key);
     void write_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     void write_xmpp_alpha_notice(const bool &value);
     void remove_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     [[nodiscard]] QList<QXmppMessage> read_xmpp_chat_log(const QString &bareJid) const;
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    QString read_xmpp_recall(const GekkoFyre::Database::Settings::GkXmppRecall &key);
     bool read_xmpp_alpha_notice();
 
     GekkoFyre::Network::GkXmpp::GkServerType convXmppServerTypeFromInt(const qint32 &idx);
@@ -142,8 +143,8 @@ public:
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key);
     QString read_general_settings(const Database::Settings::general_stat_cfg &key);
+    QString read_ui_settings(const Database::Settings::GkUiCfg &key);
     QString read_audio_device_settings(const bool &is_output_device);
-    GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::GkAudioCfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
     QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
@@ -152,14 +153,13 @@ public:
     qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum) const;
-    QAudioFormat::SampleType convAudioBitRateToEnum(const qint32 &bit_rate);
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);
     AmateurRadio::GkConnType convConnTypeToEnum(const int &conn_type);
     int convConnTypeToInt(const AmateurRadio::GkConnType &conn_type);
 
-    QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
+    QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::GkBitrate &bitrate);
 
     QString convBandsToStr(const GekkoFyre::AmateurRadio::GkFreqBands &band);
     QString convDigitalModesToStr(const GekkoFyre::AmateurRadio::DigitalModes &digital_mode);

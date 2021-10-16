@@ -47,6 +47,9 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <mutex>
 #include <vector>
 #include <string>
@@ -59,34 +62,96 @@
 #include <QString>
 #include <QVector>
 #include <QPointer>
-#include <QAudioFormat>
-#include <QAudioDeviceInfo>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <stdio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#define alCall(function, ...) GkAudioDevices::alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
+#define alcCall(function, device, ...) GkAudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
 
 namespace GekkoFyre {
 
-class AudioDevices : public QObject {
+class GkAudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                          QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                          QObject *parent = nullptr);
-    ~AudioDevices() override;
+    explicit GkAudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
+                            QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                            QObject *parent = nullptr);
+    ~GkAudioDevices() override;
 
-    std::vector<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
+    static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line);
+    static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
+    ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
+    ALCuint getAudioDevSampleRate(ALCdevice *device);
+    bool isStereoChannelSource(ALCdevice *device);
+    bool isMonoChannelSource(ALCdevice *device);
+    qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);
 
-    void systemVolumeSetting();
-    float vuMeter(const int &channels, const int &count, float *buffer);
-    float vuMeterPeakAmplitude(const size_t &count, float *buffer);
-    float vuMeterRMS(const size_t &count, float *buffer);
+    static void captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples);
+    static void fwrite16le(ALushort val, FILE *f);
+    static void fwrite32le(ALuint val, FILE *f);
+    static void applyGain(ALshort *buffer, const quint32 &buffer_size, const qreal &gain_factor);
 
-    float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
-                                    const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
-                                    const size_t &buf_size);
+    Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 
     QString rtAudioVersionNumber();
     QString rtAudioVersionText();
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alFunction, typename... Params>
+    static auto alCallImpl(const char *filename, const std::uint_fast32_t line, alFunction function, Params... params)
+    ->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, decltype(function(params...))> {
+        auto ret = function(std::forward<Params>(params)...);
+        checkAlErrors(filename, line);
+        return ret;
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alFunction, typename... Params>
+    static auto alCallImpl(const char* filename, const std::uint_fast32_t line, alFunction function, Params... params)
+    ->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool> {
+        function(std::forward<Params>(params)...);
+        return checkAlErrors(filename, line);
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alcFunction, typename... Params>
+    static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ALCdevice *device,
+                     Params... params)->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool> {
+        function(std::forward<Params>(params)...);
+        return checkAlcErrors(filename, line, device);
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alcFunction, typename ReturnType, typename... Params>
+    static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ReturnType& returnValue,
+                     ALCdevice *device, Params... params)->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, bool>{
+        returnValue = function(std::forward<Params>(params)...);
+        return checkAlcErrors(filename, line, device);
+    }
 
 private:
     QPointer<GkLevelDb> gkDekodeDb;

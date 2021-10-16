@@ -40,10 +40,9 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_multimedia.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/pa_audio_player.hpp"
-#include <AudioFile.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -56,10 +55,6 @@
 #include <QString>
 #include <QPointer>
 #include <QFileInfo>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
-#include <QAudioDeviceInfo>
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -70,18 +65,13 @@ class GkAudioPlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
-                               QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                               QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger,
+    explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
+                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
 
     //
-    // QAudioSystem initialization and buffers
+    // Audio System initialization and buffers
     [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
@@ -113,9 +103,8 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
     //
     // Filesystem paths and related
@@ -123,18 +112,10 @@ private:
 
     //
     // QPushButtons, etc.
-    bool audio_out_play;
-    bool audio_out_stop;
     bool m_audioRecReady;
+    bool audio_out_play;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
-
-    //
-    // QAudioSystem initialization and buffers
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;  // Preferred output audio device
 
     //
     // Audio encoding related objects
@@ -143,8 +124,7 @@ private:
 
     //
     // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::GkAudioFramework::GkAudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
     GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
     qint64 encode_compressed_bytes;
     qint64 encode_uncompressed_bytes;
@@ -160,6 +140,7 @@ private:
     void prefillAudioSourceComboBoxes();
 
     void recordLockSettings(const bool &unlock = false);
+    void print_exception(const std::exception &e, int level = 0);
 
 };
 

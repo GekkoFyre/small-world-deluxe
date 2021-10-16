@@ -39,23 +39,24 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_SNDFILE QUIET "sndfile")
-set(SNDFILE_DEFINITIONS ${PC_SNDFILE_CFLAGS_OTHER})
+pkg_check_modules(PC_TAGLIB QUIET "Taglib")
+set(TAGLIB_DEFINITIONS ${PC_TAGLIB_CFLAGS_OTHER})
 
-find_path(SNDFILE_INCLUDE_DIR
-    NAMES "sndfile.h" "sndfile.hh"
-    HINTS ${PC_SNDFILE_INCLUDE_DIR} ${PC_SNDFILE_INCLUDE_DIRS}
-    PATHS "/usr/local/include" "/usr/include" "/opt/local/include" "/sw/include")
+find_path(TAGLIB_INCLUDE_DIR
+    NAMES "taglib/tag.h" "taglib/tag_c.h"
+    HINTS ${PC_TAGLIB_INCLUDE_DIR} ${PC_TAGLIB_INCLUDE_DIRS}
+    PATHS "/usr/local/include" "/usr/include" "/opt/local/include" "/mingw64/include")
 
-find_library(SNDFILE_LIBRARY
-    NAMES "sndfile" "sndfile1" "libsndfile" "libsndfile1"
-    HINTS ${PC_SNDFILE_LIBDIR} ${PC_SNDFILE_LIBRARY_DIRS}
-    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
+find_library(TAGLIB_LIBRARY
+    NAMES "libtag" "tag" "libtag_c" "tag_c"
+    HINTS ${PC_TAGLIB_LIBDIR} ${PC_TAGLIB_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Sndfile DEFAULT_MSG SNDFILE_LIBRARY SNDFILE_INCLUDE_DIR)
+find_package_handle_standard_args(Taglib DEFAULT_MSG TAGLIB_LIBRARY TAGLIB_INCLUDE_DIR)
 
-mark_as_advanced(SNDFILE_INCLUDE_DIR SNDFILE_LIBRARY)
+mark_as_advanced(TAGLIB_INCLUDE_DIR TAGLIB_LIBRARY)
 
-set(SNDFILE_LIBRARIES ${SNDFILE_LIBRARY})
-set(SNDFILE_INCLUDE_DIRS ${SNDFILE_INCLUDE_DIR})
+set(TAGLIB_LIBRARIES ${TAGLIB_LIBRARY})
+set(TAGLIB_INCLUDE_DIRS ${TAGLIB_INCLUDE_DIR})
+

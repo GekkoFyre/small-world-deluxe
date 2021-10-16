@@ -278,17 +278,17 @@ else()
 endif(OpusEnc_FOUND)
 
 #
-# libsndfile
-# https://github.com/libsndfile/libsndfile
+# OpenAL
+# https://www.openal.org/
 #
-find_package(Sndfile REQUIRED)
-if (SNDFILE_FOUND)
-    include_directories(${SNDFILE_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
-    message(STATUS "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
+find_package(OpenAL REQUIRED)
+if (OPENAL_FOUND)
+    include_directories(${OPENAL_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${OPENAL_LIBRARY})
+    message(STATUS "The open source 'OpenAL' 3D audio library has been configured!")
 else()
-    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries could not be found!")
-endif(SNDFILE_FOUND)
+    message(FATAL_ERROR "The open source 'OpenAL' 3D audio library could not be found!")
+endif(OPENAL_FOUND)
 
 install_qxmpp() # Install QXmpp as non-static!
 
@@ -413,6 +413,33 @@ if (LINUX OR !MSYS OR !MINGW)
 	endif(NUSPELL_FOUND)
 endif()
 
+#
+# FFmpeg
+# https://www.ffmpeg.org/
+# https://github.com/FFmpeg/FFmpeg
+#
+find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
+if (FFMPEG_FOUND)
+    include_directories(${FFMPEG_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
+    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
+else()
+    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
+endif(FFMPEG_FOUND)
+
+#
+# TagLib by Scott Wheeler
+# https://github.com/taglib/taglib
+#
+find_package(Taglib REQUIRED)
+if (TAGLIB_FOUND)
+    include_directories(${TAGLIB_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
+    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
+else()
+    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
+endif(TAGLIB_FOUND)
+
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -422,7 +449,7 @@ else()
     message(FATAL_ERROR "The 'OpenSSL' cryptography libraries could not be found!")
 endif(OPENSSL_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -435,18 +462,6 @@ endif(ZLIB_FOUND)
 
 set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 
-#
-# Left blank intentionally!
-#
-set(GALAXY_CODEC2_CPP
-    ${GALAXY_CODEC2_CPP})
-
-#
-# Left blank intentionally!
-#
-set(GALAXY_CODEC2_HPP
-    ${GALAXY_CODEC2_HPP})
-
 if (BUILD_CODEC2_SUPPORT)
     if (MSYS OR MINGW OR LINUX OR UNIX)
         message(STATUS "Support for 'Codec2' has been enabled! Finding package...")
@@ -455,16 +470,6 @@ if (BUILD_CODEC2_SUPPORT)
             include_directories(${CODEC2_INCLUDE_DIRS})
             set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
             add_definitions(-DCODEC2_LIBS_ENBLD)
-            
-            set(GALAXY_CODEC2_CPP
-                ${GALAXY_CODEC2_CPP}
-                src/gk_codec2.cpp
-				src/audio/encoding/gk_codec2_sink.cpp)
-            
-            set(GALAXY_CODEC2_HPP
-                ${GALAXY_CODEC2_HPP}
-                src/gk_codec2.hpp
-				src/audio/encoding/gk_codec2_sink.hpp)
         else()
             message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
         endif(CODEC2_FOUND)
@@ -583,16 +588,6 @@ message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
-
-#
-
-#
-# AudioFile by Adam Stark
-# https://github.com/adamstark/AudioFile
-#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
-message(STATUS "The 'AudioFile' libraries have been configured!")
 
 #
 # c-ares by Daniel Stenberg et al.
@@ -722,7 +717,6 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
-    src/ui/widgets/gk_vu_change_widget.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui)
@@ -767,20 +761,9 @@ set(GALAXY_UI_CPP
     src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
-    src/gk_pcm_file_stream.cpp
-    src/pa_stream_handler.cpp
+	src/gk_multimedia.cpp
     src/gk_sinewave.cpp
-    src/pa_audio_player.cpp
-	src/audio/encoding/gk_pcm_wav_sink.cpp
-	src/audio/encoding/gk_ogg_opus_sink.cpp
-	src/audio/encoding/gk_flac_sink.cpp
-	src/audio/encoding/gk_ogg_vorbis_sink.cpp
-	src/audio/decoding/gk_pcm_wav_source.cpp
-	src/audio/decoding/gk_ogg_opus_source.cpp
-	src/audio/decoding/gk_flac_source.cpp
-	src/audio/decoding/gk_ogg_vorbis_source.cpp
-	src/audio/decoding/gk_codec2_source.cpp
-    src/ui/widgets/gk_vu_change_widget.cpp
+	src/gk_exception.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
@@ -878,21 +861,10 @@ set(GALAXY_OBJ_HEADERS
     src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
-    src/gk_pcm_file_stream.hpp
-    src/pa_stream_handler.hpp
+	src/gk_multimedia.hpp
     src/gk_sinewave.hpp
+	src/gk_exception.hpp
     src/gk_waterfall_data.hpp
-    src/pa_audio_player.hpp
-	src/audio/encoding/gk_pcm_wav_sink.hpp
-	src/audio/encoding/gk_ogg_opus_sink.hpp
-	src/audio/encoding/gk_flac_sink.hpp
-	src/audio/encoding/gk_ogg_vorbis_sink.hpp
-	src/audio/decoding/gk_pcm_wav_source.hpp
-	src/audio/decoding/gk_ogg_opus_source.hpp
-	src/audio/decoding/gk_flac_source.hpp
-	src/audio/decoding/gk_ogg_vorbis_source.hpp
-	src/audio/decoding/gk_codec2_source.hpp
-    src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
@@ -1018,7 +990,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     if(WIN32 OR MSYS OR MINGW)
         target_link_libraries(galaxy PUBLIC "-static")
     endif()
@@ -1031,13 +1003,13 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 #
 # Qt Translations

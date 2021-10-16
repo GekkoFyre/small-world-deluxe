@@ -44,13 +44,11 @@
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
-#include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_logger.hpp"
@@ -58,10 +56,14 @@
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
+#include "src/gk_multimedia.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <sentry.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
@@ -86,7 +88,6 @@
 #include <QScreen>
 #include <QString>
 #include <QObject>
-#include <QBuffer>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
@@ -96,11 +97,7 @@
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
-#include <QAudioInput>
-#include <QAudioOutput>
-#include <QAudioFormat>
 #include <QSystemTrayIcon>
-#include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
 namespace Ui {
@@ -208,11 +205,6 @@ private slots:
     void configInputAudioDevice();
 
     //
-    // Audio related
-    //
-    void setAudioIo(const bool &use_input_audio); // True by default!
-
-    //
     // Transmission & Digital Signalling
     //
     void msgOutgoingProcess(const QString &curr_text);
@@ -275,25 +267,7 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
-    //
-    // Audio related
-    //
-    void processAudioInMain();
-    void processAudioInMainBuffer();
-    void audioInHandleStateChanged(QAudio::State changed_state);
-    void processAudioOutMain();
-    void processAudioOutMainBuffer();
-    void audioOutHandleStateChanged(QAudio::State changed_state);
-
 public slots:
-    //
-    // Audio related
-    //
-    void stopRecordingInput();
-    void stopRecordingOutput();
-    void startRecordingInput();
-    void startRecordingOutput();
-
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
     //
@@ -306,7 +280,6 @@ public slots:
 
 signals:
     void updatePaVol(const int &percentage);
-    void updatePlot();
     void gkExitApp();
 
     //
@@ -318,22 +291,21 @@ signals:
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
+    // FFT & Spectrograph related
+    //
+    void initSpectrograph();
+
+    //
     // Audio related
     //
-    void updateAudioIn();
     void updateAudioOut();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
-    void stopRecInput();
-    void stopRecOutput();
-    void startRecInput();
-    void startRecOutput();
 
     //
-    // QAudioSystem and related
+    // Audio System and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
-    void changeAudioIo(const bool &use_input_audio); // True by default!
 
 private:
     Ui::MainWindow *ui;
@@ -344,7 +316,7 @@ private:
     leveldb::DB *db;
     sentry_options_t *sen_opt;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
     QPointer<GekkoFyre::FileIo> gkFileIo;
@@ -353,6 +325,7 @@ private:
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
+    QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;
@@ -370,25 +343,19 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // QAudioSystem initialization, buffers, and event-loops
+    // Audio System initialization, buffers, and event-loops
     //
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<GkVuAdjust> gkVuAdjustDlg;
-    QPointer<QBuffer> gkAudioInputBuf;
-    QPointer<QBuffer> gkAudioOutputBuf;
-    QByteArray gkAudioInputByteArrayBuf;
-    QByteArray gkAudioOutputByteArrayBuf;
+    std::shared_ptr<std::vector<ALshort>> mInputDeviceBuf; // `ALshort` should be equivalent to `int16_t`!
 
     //
-    // QAudioSystem miscellaneous variables
+    // Audio System miscellaneous variables
     //
-    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
-    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
+    qint32 audioFrameSampleCountPerChannel;
+    qint32 audioFrameSampleCountTotal;
+    ALCsizei circBufSize;
 
     //
     // Audio sub-system
@@ -437,8 +404,6 @@ private:
     //
     // Timing and date related
     //
-    QPointer<QTimer> gkAudioInputReadySignal;
-    QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
 
     //
@@ -466,8 +431,6 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
-    void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
-    void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
 
     //
     // Spell-checking, dictionaries, etc.
@@ -554,7 +517,7 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkBitrate);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkClearForms);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
