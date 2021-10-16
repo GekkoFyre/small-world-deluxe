@@ -224,9 +224,11 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             ui->lineEdit_playback_title->setText(gkAudioFileInfo.metadata.title);
             ui->lineEdit_playback_artist->setText(gkAudioFileInfo.metadata.artist);
             ui->lineEdit_playback_album->setText(gkAudioFileInfo.metadata.album);
-            ui->lineEdit_playback_audio_codec->setText(tr("Unknown"));
+            ui->lineEdit_playback_audio_codec->setText(gkAudioFileInfo.type_codec_str);
             ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.info->sampleRate));
             ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
+
+            gkMultimedia->playAudioFile(filePath);
         } else {
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 

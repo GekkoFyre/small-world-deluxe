@@ -75,8 +75,10 @@ public:
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
+    [[nodiscard]] GkAudioFramework::GkAudioFileDecoded decodeAudioFile(const QFileInfo &file_path);
+
 public slots:
-    void startFilePlayback(const QFileInfo &file_path);
+    void playAudioFile(const QFileInfo &file_path);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
@@ -89,12 +91,14 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, double **data, qint32 *size);
+
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);
     bool loadWavFileHeader(std::ifstream &file, std::uint8_t &channels, std::int32_t &sampleRate,
                            std::uint8_t &bitsPerSample, ALsizei &size);
-    char *loadAudioFileData(const QFileInfo &file_path, std::uint8_t &channels, std::int32_t &sampleRate,
-                            std::uint8_t &bitsPerSample, ALsizei &size);
+    char *loadWavFileData(const QFileInfo &file_path, std::uint8_t &channels, std::int32_t &sampleRate,
+                          std::uint8_t &bitsPerSample, ALsizei &size);
 
 };
 };

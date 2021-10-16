@@ -51,9 +51,11 @@ extern "C"
 {
 #endif
 
-#include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <libavutil/dict.h>
+#include <libavutil/opt.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -91,6 +93,136 @@ GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, GkDev
 
 GkMultimedia::~GkMultimedia()
 {}
+
+/**
+ * @brief GkMultimedia::ffmpegDecodeAudioFile attempts to universally decode any given audio file into PCM data, provided it
+ * is a supported codec as provided by FFmpeg.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The canonical path to the given audio file to be decoded.
+ * @param sample_rate The sample rate at which the audio file is to be decoded into.
+ * @param data The raw data as provided by the conversion process.
+ * @param size The size of the raw data as provided by the conversion process.
+ * @return Whether the decoding process was a success or not.
+ * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>
+ */
+bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, double **data, qint32 *size)
+{
+    //
+    // Initalize all the muxers, demuxers, and protocols for the libavformat library!
+    // NOTE: Does nothing if called twice during the course of a program's execution...
+    av_register_all();
+
+    //
+    // Obtain the format from the given audio file!
+    AVFormatContext *format = avformat_alloc_context();
+    if (avformat_open_input(&format, file_path.canonicalFilePath().toStdString().c_str(), nullptr, nullptr) != 0) {
+        gkEventLogger->publishEvent(tr("Unable to open file, \"%1\"!")
+        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    if (avformat_find_stream_info(format, nullptr) < 0) {
+        gkEventLogger->publishEvent(tr("Could not retrieve stream info from file, \"%1\"!")
+        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    //
+    // Find the index of the first audio stream!
+    qint32 stream_index =- 1;
+    for (qint32 i = 0; i < format->nb_streams; ++i) {
+        if (format->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+            stream_index = i;
+            break;
+        }
+    }
+
+    if (stream_index == -1) {
+        gkEventLogger->publishEvent(tr("Could not retrieve audio stream from file, \"%1\"!")
+        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    AVStream *stream = format->streams[stream_index];
+
+    //
+    // Find and open the codec!
+    AVCodecContext *codec = stream->codec;
+    if (avcodec_open2(codec, avcodec_find_decoder(codec->codec_id), nullptr) < 0) {
+        gkEventLogger->publishEvent(tr("Failed to open decoder for stream #%1 in file, \"%1\"!")
+        .arg(QString::number(stream_index), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    //
+    // Prepare re-sampler!
+    struct SwrContext* swr = swr_alloc();
+    av_opt_set_int(swr, "in_channel_count",  codec->channels, 0);
+    av_opt_set_int(swr, "out_channel_count", 1, 0);
+    av_opt_set_int(swr, "in_channel_layout",  codec->channel_layout, 0);
+    av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_MONO, 0);
+    av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
+    av_opt_set_int(swr, "out_sample_rate", sample_rate, 0);
+    av_opt_set_sample_fmt(swr, "in_sample_fmt",  codec->sample_fmt, 0);
+    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_DBL,  0);
+    swr_init(swr);
+
+    if (!swr_is_initialized(swr)) {
+        gkEventLogger->publishEvent(tr("Unable to initialize re-sampler due to unknown reasons!")
+        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    //
+    // Prepare to read the data
+    AVPacket packet;
+    av_init_packet(&packet);
+    AVFrame *frame = av_frame_alloc();
+    if (!frame) {
+        gkEventLogger->publishEvent(tr("An error was encountered while allocating the frame!")
+        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    //
+    // Iterate through the frames
+    *data = nullptr;
+    *size = 0;
+    while (av_read_frame(format, &packet) >= 0) {
+        //
+        // Decode only a single frame
+        qint32 gotFrame;
+        if (avcodec_decode_audio4(codec, frame, &gotFrame, &packet) < 0) {
+            break;
+        }
+
+        if (!gotFrame) {
+            continue;
+        }
+
+        //
+        // Resample the frames
+        double *buffer;
+        av_samples_alloc((uint8_t**) &buffer, nullptr, 1, frame->nb_samples, AV_SAMPLE_FMT_DBL, 0);
+        qint32 frame_count = swr_convert(swr, (uint8_t**) &buffer, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
+        //
+        // Append the resampled frames to the data pointer!
+        *data = (double *)std::realloc(*data, (*size + frame->nb_samples) * sizeof(double));
+        std::memcpy(*data + *size, buffer, frame_count * sizeof(double));
+        *size += frame_count;
+    }
+
+    //
+    // Cleanup
+    av_frame_free(&frame);
+    swr_free(&swr);
+    avcodec_close(codec);
+    avformat_free_context(format);
+
+    //
+    // Success at last!
+    return true;
+}
 
 /**
  * @brief GkMultimedia::analyzeAudioFileMetadata will analyze a given multimedia audio file and output the metadata
@@ -142,6 +274,8 @@ GkAudioFramework::GkAudioFileInfo GkMultimedia::analyzeAudioFileMetadata(const Q
                     meta.comment = QString::fromWCharArray(tag->comment().toCWString());
                     meta.track_no = tag->track();
                     meta.genre = QString::fromWCharArray(tag->genre().toCWString());
+
+                    audioFileInfo.type_codec_str = avcodec_get_name(pFormatCtx->audio_codec_id);
 
                     audioFileInfo.metadata = meta;
                     audioFileInfo.info = info;
@@ -211,28 +345,107 @@ GkDevice GkMultimedia::getInputAudioDevice()
 }
 
 /**
- * @brief GkMultimedia::startFilePlayback initiates the playback of a file through an output audio device via the openAL
- * audio library.
+ * @brief GkMultimedia::decodeAudioFile attempts to decode a given audio file according to a number of detected parameters,
+ * some of which are provided by FFmpeg and others which too are provided by TagLib. It is intended as a universal approach
+ * to decoding audio files of all types, provided they are both supported by FFmpeg and TagLib, but primarily the former
+ * which does the heavy lifting in terms of the decoding work itself. TagLib only detects the metadata and doesn't do
+ * any decoding work on its own.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path
- * @note IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+ * @param file_path The canonical path to the given audio file to be decoded.
+ * @return Whether the operation was a success or not.
+ * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>
  */
-void GkMultimedia::startFilePlayback(const QFileInfo &file_path)
+GkAudioFramework::GkAudioFileDecoded GkMultimedia::decodeAudioFile(const QFileInfo &file_path)
 {
     try {
-        if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx) {
-            if (!gkSysOutputAudioDev.isStreaming) {
-                //
-                // Output audio device is both valid and not in use currently!
-            } else {
-                throw std::runtime_error(tr("Output audio device, \"%1\", is already in use!").arg(gkSysOutputAudioDev.audio_dev_str).toStdString());
+        if (file_path.isReadable() && file_path.exists()) {
+            if (file_path.isFile()) {
+                double *data_ptr;
+                qint32 size = 0;
+                GkAudioFramework::GkAudioFileDecoded decoded;
+                decoded.properties = analyzeAudioFileMetadata(file_path);
+                const bool ret = ffmpegDecodeAudioFile(file_path, decoded.properties.info->sampleRate, &data_ptr, &size);
+
+                if (!ret) {
+                    if (data_ptr) {
+                        delete[] data_ptr;
+                    }
+
+                    throw std::runtime_error(tr("Error encountered while atttempting to decode file, \"%1\"!").arg(file_path.canonicalFilePath()).toStdString());
+                }
+
+                decoded.samples.assign(data_ptr, data_ptr + size);
+                if (data_ptr) {
+                    delete[] data_ptr;
+                }
+
+                return decoded;
             }
-        } else {
-            throw std::invalid_argument(tr("An issue was detected with your choice of output audio device. Please check your configuration and try again.").toStdString());
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An error has occurred while attempting playback of file, \"%1\"!").arg(file_path.canonicalFilePath()),
-                                    GkSeverity::Fatal, "", false, true, false, true, false);
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return GkAudioFramework::GkAudioFileDecoded();
+}
+
+/**
+ * @brief GkMultimedia::playAudioFile will attempt to play an audio file of any, given, supported audio format provided
+ * it's either supported by FFmpeg or it's simply a WAV file.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The canonical path to the given audio file to be played.
+ * @note IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+ */
+void GkMultimedia::playAudioFile(const QFileInfo &file_path)
+{
+    try {
+        if (file_path.exists() && file_path.isReadable()) {
+            if (file_path.isFile()) {
+                if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx) {
+                    if (!gkSysOutputAudioDev.isStreaming) {
+                        auto decoded = decodeAudioFile(file_path);
+                        if (!decoded.samples.empty()) {
+                            //
+                            // We have data we can possibly work with!
+                            ALuint buffer;
+                            alCall(alGenBuffers, 1, &buffer);
+
+                            alCall(alBufferData, buffer, gkSysOutputAudioDev.pref_audio_format, decoded.samples.data(), decoded.samples.size(), decoded.properties.info->sampleRate);
+                            decoded.samples.clear(); // Erase the audio samples to free up RAM!
+
+                            ALuint source;
+                            alCall(alGenSources, 1, &source);
+                            alCall(alSourcef, source, AL_PITCH, 1);
+                            alCall(alSourcef, source, AL_GAIN, 1.0f);
+                            alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
+                            alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
+                            alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
+                            alCall(alSourcei, source, AL_BUFFER, buffer);
+
+                            alCall(alSourcePlay, source);
+                            ALint state = AL_PLAYING;
+
+                            while (state == AL_PLAYING) {
+                                alCall(alGetSourcei, source, AL_SOURCE_STATE, &state);
+                            }
+
+                            alCall(alDeleteSources, 1, &source);
+                            alCall(alDeleteBuffers, 1, &buffer);
+
+                            return;
+                        }
+                    } else {
+                        throw std::runtime_error(tr("Output audio device, \"%1\", is already in use!").arg(gkSysOutputAudioDev.audio_dev_str).toStdString());
+                    }
+                } else {
+                    throw std::invalid_argument(tr("An issue was detected with your choice of output audio device. Please check your configuration and try again.").toStdString());
+                }
+            }
+        }
+
+        throw std::runtime_error(tr("An error was encountered while attempting to play file, \"%1\"!").arg(file_path.canonicalFilePath()).toStdString());
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
     return;
@@ -424,7 +637,7 @@ bool GkMultimedia::loadWavFileHeader(std::ifstream &file, uint8_t &channels, int
 }
 
 /**
- * @brief GkMultimedia::loadAudioFileData
+ * @brief GkMultimedia::loadWavFileData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param file_path
  * @param channels
@@ -435,8 +648,8 @@ bool GkMultimedia::loadWavFileHeader(std::ifstream &file, uint8_t &channels, int
  * @note IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>,
  * Florian Fainelli <https://ffainelli.github.io/openal-example/>
  */
-char *GkMultimedia::loadAudioFileData(const QFileInfo &file_path, uint8_t &channels, int32_t &sampleRate,
-                                      uint8_t &bitsPerSample, ALsizei &size)
+char *GkMultimedia::loadWavFileData(const QFileInfo &file_path, uint8_t &channels, int32_t &sampleRate,
+                                    uint8_t &bitsPerSample, ALsizei &size)
 {
     std::ifstream in(file_path.canonicalFilePath().toStdString(), std::ios::binary);
     if (!in.is_open()) {
