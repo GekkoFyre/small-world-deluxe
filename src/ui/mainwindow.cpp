@@ -597,10 +597,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                                   audioFrameSampleCountPerChannel);
 
                                 //
-                                // We are now officially capturing data!
-                                it->isStreaming = true;
-
-                                //
                                 // Start the audio input thread!
                                 gkAudioInputThread.start();
                                 gkEventLogger->publishEvent(tr("Input audio device, \"%1\", has been initialized successfully!").arg(it->audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
@@ -618,11 +614,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         } catch (const std::exception &e) {
             gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
         }
-
-        //
-        // Initialize the Multimedia I/O class!
-        //
-        gkMultimedia = new GkMultimedia(gkAudioDevices, gkStringFuncs, gkEventLogger, this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -646,11 +637,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(initSpectrograph()), gkFftAudio, SIGNAL(startRecording()), Qt::QueuedConnection);
 
         for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-            if (it->isEnabled && it->isStreaming) {
-                //
-                // Begin FFT & Spectrograph data capture!
-                emit initSpectrograph();
-                it->isGraphing = true;
+            if (it->alDevice && it->alDeviceCtx) {
+                if (it->isEnabled && !it->isStreaming) {
+                    //
+                    // Begin FFT & Spectrograph data capture!
+                    emit initSpectrograph();
+                    it->isGraphing = true;
+                    it->isStreaming = true;
+                }
             }
         }
 
@@ -1021,8 +1015,11 @@ void MainWindow::launchAudioPlayerWin()
         }
     }
 
-    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, active_input_dev, active_output_dev,
-                                                                       gkMultimedia, gkStringFuncs, gkEventLogger, this);
+    //
+    // Initialize the Multimedia I/O class!
+    //
+    QPointer<GkMultimedia> gkMultimedia = new GkMultimedia(gkAudioDevices, active_output_dev, active_input_dev, gkStringFuncs, gkEventLogger, this);
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkMultimedia, gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkAudioPlayDlg->moveToThread(&gkAudioInputThread);

@@ -45,9 +45,13 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/audio_devices.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <memory>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <QObject>
 #include <QString>
 #include <QPointer>
@@ -59,20 +63,38 @@ class GkMultimedia : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+    explicit GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs,
+                          GekkoFyre::Database::Settings::Audio::GkDevice sysOutputAudioDev,
+                          GekkoFyre::Database::Settings::Audio::GkDevice sysInputAudioDev,
+                          QPointer<GekkoFyre::StringFuncs> stringFuncs,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
     [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
+
+    [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
+    [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
+
+public slots:
+    void startFilePlayback(const QFileInfo &file_path);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    static void cleanupFileMetaStruct(GkAudioFramework::GkAudioFileMetadata *ptr) {
-        delete ptr;
-    }
+    //
+    // Audio System miscellaneous variables
+    //
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
+
+    bool is_big_endian();
+    std::int32_t convert_to_int(char *buffer, std::size_t len);
+    bool loadWavFileHeader(std::ifstream &file, std::uint8_t &channels, std::int32_t &sampleRate,
+                           std::uint8_t &bitsPerSample, ALsizei &size);
+    char *loadAudioFileData(const QFileInfo &file_path, std::uint8_t &channels, std::int32_t &sampleRate,
+                            std::uint8_t &bitsPerSample, ALsizei &size);
 
 };
 };

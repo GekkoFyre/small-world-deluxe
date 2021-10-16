@@ -59,8 +59,7 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
-GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, const GkDevice &input_device,
-                                     const GkDevice &output_device, QPointer<GekkoFyre::GkMultimedia> multimedia,
+GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                      QWidget *parent) : QDialog(parent), ui(new Ui::GkAudioPlayDialog)
 {
@@ -78,8 +77,6 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, const GkDevic
     // Initialize variables
     //
     gkAudioFileInfo = {};
-    gkSysInputAudioDev = input_device;
-    gkSysOutputAudioDev = output_device;
     m_rec_codec_chosen = CodecSupport::Codec2;
     m_encode_bitrate_chosen = 8;
 
@@ -487,8 +484,8 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
  */
 void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
 {
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(gkSysInputAudioDev.audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(gkSysOutputAudioDev.audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(gkMultimedia->getInputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(gkMultimedia->getOutputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
 
     return;
 }
