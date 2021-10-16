@@ -103,9 +103,10 @@ GkMultimedia::~GkMultimedia()
  * @param data The raw data as provided by the conversion process.
  * @param size The size of the raw data as provided by the conversion process.
  * @return Whether the decoding process was a success or not.
- * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>
+ * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>,
+ * TheSHEEEP <https://stackoverflow.com/a/21404721>
  */
-bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, double **data, qint32 *size)
+bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size)
 {
     //
     // Initalize all the muxers, demuxers, and protocols for the libavformat library!
@@ -158,13 +159,13 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint3
     // Prepare re-sampler!
     struct SwrContext* swr = swr_alloc();
     av_opt_set_int(swr, "in_channel_count",  codec->channels, 0);
-    av_opt_set_int(swr, "out_channel_count", 1, 0);
+    av_opt_set_int(swr, "out_channel_count", 2, 0);
     av_opt_set_int(swr, "in_channel_layout",  codec->channel_layout, 0);
-    av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_MONO, 0);
+    av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO, 0);
     av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
     av_opt_set_int(swr, "out_sample_rate", sample_rate, 0);
     av_opt_set_sample_fmt(swr, "in_sample_fmt",  codec->sample_fmt, 0);
-    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_DBL,  0);
+    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_FLT,  0);
     swr_init(swr);
 
     if (!swr_is_initialized(swr)) {
@@ -202,13 +203,14 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint3
 
         //
         // Resample the frames
-        double *buffer;
+        float *buffer;
         av_samples_alloc((uint8_t**) &buffer, nullptr, 1, frame->nb_samples, AV_SAMPLE_FMT_DBL, 0);
-        qint32 frame_count = swr_convert(swr, (uint8_t**) &buffer, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
+        qint32 frame_count = swr_convert(swr, (uint8_t **) &buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
+
         //
         // Append the resampled frames to the data pointer!
-        *data = (double *)std::realloc(*data, (*size + frame->nb_samples) * sizeof(double));
-        std::memcpy(*data + *size, buffer, frame_count * sizeof(double));
+        *data = (float *)std::realloc(*data, (*size + frame->nb_samples) * sizeof(float));
+        std::memcpy(*data + *size, buffer, frame_count * sizeof(float));
         *size += frame_count;
     }
 
@@ -360,7 +362,7 @@ GkAudioFramework::GkAudioFileDecoded GkMultimedia::decodeAudioFile(const QFileIn
     try {
         if (file_path.isReadable() && file_path.exists()) {
             if (file_path.isFile()) {
-                double *data_ptr;
+                float *data_ptr;
                 qint32 size = 0;
                 GkAudioFramework::GkAudioFileDecoded decoded;
                 decoded.properties = analyzeAudioFileMetadata(file_path);
@@ -410,13 +412,14 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                             ALuint buffer;
                             alCall(alGenBuffers, 1, &buffer);
 
-                            alCall(alBufferData, buffer, gkSysOutputAudioDev.pref_audio_format, decoded.samples.data(), decoded.samples.size(), decoded.properties.info->sampleRate);
+                            const size_t buf_size = decoded.samples.size() - decoded.samples.size() % 4;
+                            alCall(alBufferData, buffer, AL_FORMAT_STEREO_FLOAT32, decoded.samples.data(), buf_size, decoded.properties.info->sampleRate);
                             decoded.samples.clear(); // Erase the audio samples to free up RAM!
 
                             ALuint source;
                             alCall(alGenSources, 1, &source);
                             alCall(alSourcef, source, AL_PITCH, 1);
-                            alCall(alSourcef, source, AL_GAIN, 1.0f);
+                            alCall(alSourcef, source, AL_GAIN, 0.75f);
                             alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
                             alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
                             alCall(alSourcei, source, AL_LOOPING, AL_FALSE);

@@ -91,7 +91,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, double **data, qint32 *size);
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);

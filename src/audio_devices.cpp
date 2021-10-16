@@ -322,6 +322,53 @@ ALCuint GkAudioDevices::getAudioDevSampleRate(ALCdevice *device)
 }
 
 /**
+ * @brief GkAudioDevices::isStereoChannelSource determines whether the given audio device is a stereo channel source or
+ * not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device The audio device to query in question.
+ * @return Whether the given audio device is stereo channel in nature or not.
+ */
+bool GkAudioDevices::isStereoChannelSource(ALCdevice *device)
+{
+    ALCint size;
+    alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
+    std::vector<ALCint> attrs(size);
+    alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attrs[i] == ALC_STEREO_SOURCES) {
+            if (attrs[i + 1] > 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkAudioDevices::isMonoChannelSource determines whether the given audio device is a mono channel source or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device The audio device to query in question.
+ * @return Whether the given audio device is mono channel in nature or not.
+ */
+bool GkAudioDevices::isMonoChannelSource(ALCdevice *device)
+{
+    ALCint size;
+    alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
+    std::vector<ALCint> attrs(size);
+    alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attrs[i] == ALC_MONO_SOURCES) {
+            if (attrs[i + 1] > 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * @brief GkAudioDevices::getPeakValue
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_format

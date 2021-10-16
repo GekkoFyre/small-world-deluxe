@@ -94,6 +94,8 @@ public:
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
+    bool isStereoChannelSource(ALCdevice *device);
+    bool isMonoChannelSource(ALCdevice *device);
     qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);
 
     static void captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples);
