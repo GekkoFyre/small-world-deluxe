@@ -418,7 +418,7 @@ endif()
 # https://www.ffmpeg.org/
 # https://github.com/FFmpeg/FFmpeg
 #
-find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC REQUIRED)
+find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
 if (FFMPEG_FOUND)
     include_directories(${FFMPEG_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})

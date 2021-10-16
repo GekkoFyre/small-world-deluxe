@@ -89,20 +89,13 @@ public:
                             QObject *parent = nullptr);
     ~GkAudioDevices() override;
 
-    void systemVolumeSetting();
-    float vuMeter(const int &channels, const int &count, float *buffer);
-    float vuMeterPeakAmplitude(const size_t &count, float *buffer);
-    float vuMeterRMS(const size_t &count, float *buffer);
-
-    float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
-                                    const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
-                                    const size_t &buf_size);
-
     static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line);
     static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
+    bool isStereoChannelSource(ALCdevice *device);
+    bool isMonoChannelSource(ALCdevice *device);
     qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);
 
     static void captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples);

@@ -97,147 +97,6 @@ GkAudioDevices::~GkAudioDevices()
 {}
 
 /**
- * @brief GkAudioDevices::volumeSetting
- * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
- */
-void GkAudioDevices::systemVolumeSetting()
-{}
-
-/**
- * @brief GkAudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param channels How many audio channels there are, since they are interleaved. The first byte is the first channel, second
- * byte is the second channel, etc.
- * @param count The amount of `frames per buffer`.
- * @param buffer The raw audiological data.
- * @return The volume level, in decibels (dB).
- * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
- * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
- */
-float GkAudioDevices::vuMeter(const int &channels, const int &count, float *buffer)
-{
-    float dB_val = 0.0f;
-    if (buffer != nullptr) {
-        float max_val = buffer[0];
-
-        // Find maximum!
-        // Traverse the array elements from second and compare every element with current maximum...
-        for (int i = 1; i < (count * channels); ++i) {
-            if (buffer[++i] > max_val) {
-                max_val = buffer[++i];
-            }
-        }
-
-        float amplitude = (static_cast<float>(max_val) / gkStringFuncs->getNumericMax<qint64>());
-        dB_val = (20 * std::log10(amplitude));
-
-        // Invert from a negative to a positive!
-        // dB_val *= (-1.f);
-    }
-
-    return dB_val;
-}
-
-/**
- * @brief GkAudioDevices::vuMeterPeakAmplitude traverses the buffered data array and compares every element with the current
- * maximum to see if there's a new maximum value to be had.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param count The size of the audio data buffer.
- * @param buffer The given audio data buffer.
- * @return The maximum, peak audio signal for a given lot of buffered data.
- */
-float GkAudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
-{
-    float peak_signal = 0;
-    if (buffer != nullptr) {
-        peak_signal = buffer[0];
-
-        // Find maximum!
-        // Traverse the array elements from second and compare every element with current maximum...
-        for (size_t i = 1; i < count; ++i) {
-            if (buffer[i] > peak_signal) {
-                peak_signal = buffer[i];
-            }
-        }
-    }
-
-    return peak_signal;
-}
-
-/**
- * @brief GkAudioDevices::vuMeterRMS gathers averages from a given audio data buffer by doing a root-mean-square (i.e. RMS) on all the
- * given samples.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param count The size of the audio data buffer.
- * @param buffer The given audio data buffer.
- * @return The averaged RMS of a given data buffer of audio samples.
- * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
- */
-float GkAudioDevices::vuMeterRMS(const size_t &count, float *buffer)
-{
-    float sample = 0;
-    if (buffer != nullptr) {
-        for (size_t i = 0; i < count; ++i) {
-            sample += buffer[i] * buffer[i];
-        }
-    }
-
-    float calc_val = std::sqrt(sample / static_cast<double>(count));
-    return calc_val;
-}
-
-/**
- * @brief GkAudioDevices::calcAudioBufferTimeNeeded will calculate the maximum time required before an update is next required
- * from a circular buffer.
- * @param num_channels The number of audio channels we are dealing with regarding the stream in question.
- * @param fft_samples_per_line The number of FFT Samples per Line.
- * @param audio_buf_sampling_length The audio buffer's sampling length.
- * @param buf_size The total size of the buffer in question.
- * @return The amount of seconds you have in total before an update is next required from the circular buffer.
- */
-float GkAudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channels, const size_t &fft_num_lines,
-                                                const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
-                                                const size_t &buf_size)
-{
-    int audio_channels = 0;
-
-    switch (num_channels) {
-    case GkAudioChannels::Mono:
-        audio_channels = 1;
-        break;
-    case GkAudioChannels::Left:
-        audio_channels = 1;
-        break;
-    case GkAudioChannels::Right:
-        audio_channels = 1;
-        break;
-    case GkAudioChannels::Stereo:
-        audio_channels = 2;
-        break;
-    case GkAudioChannels::Unknown:
-        audio_channels = 0;
-        break;
-    default:
-        audio_channels = 0;
-        break;
-    }
-
-    if (audio_channels > 0) {
-        // We are dealing with an audio device we can work with!
-        float seconds = (audio_buf_sampling_length - fft_samples_per_line / (fft_num_lines - 1));
-        if (gkFreqList->definitelyGreaterThan(seconds, 0.000, 3)) {
-            return seconds;
-        }
-
-        return 0.000;
-    } else {
-        throw std::invalid_argument(tr("More than zero audio channels are required!").toStdString());
-    }
-
-    return -1;
-}
-
-/**
  * @brief GkAudioDevices::checkAlErrors A function to make OpenAL error detection a little bit easier.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
@@ -460,6 +319,53 @@ ALCuint GkAudioDevices::getAudioDevSampleRate(ALCdevice *device)
     alcGetIntegerv(device, ALC_FREQUENCY, 1, &srate);
 
     return srate;
+}
+
+/**
+ * @brief GkAudioDevices::isStereoChannelSource determines whether the given audio device is a stereo channel source or
+ * not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device The audio device to query in question.
+ * @return Whether the given audio device is stereo channel in nature or not.
+ */
+bool GkAudioDevices::isStereoChannelSource(ALCdevice *device)
+{
+    ALCint size;
+    alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
+    std::vector<ALCint> attrs(size);
+    alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attrs[i] == ALC_STEREO_SOURCES) {
+            if (attrs[i + 1] > 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkAudioDevices::isMonoChannelSource determines whether the given audio device is a mono channel source or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device The audio device to query in question.
+ * @return Whether the given audio device is mono channel in nature or not.
+ */
+bool GkAudioDevices::isMonoChannelSource(ALCdevice *device)
+{
+    ALCint size;
+    alcGetIntegerv(device, ALC_ATTRIBUTES_SIZE, 1, &size);
+    std::vector<ALCint> attrs(size);
+    alcGetIntegerv(device, ALC_ALL_ATTRIBUTES, size, &attrs[0]);
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attrs[i] == ALC_MONO_SOURCES) {
+            if (attrs[i + 1] > 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 /**

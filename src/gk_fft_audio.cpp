@@ -132,23 +132,25 @@ void GkFFTAudio::stopRecordStream()
  */
 void GkFFTAudio::processAudioInFft()
 {
-    if (!mAudioDevBuf->empty()) {
-        qint32 ba_num_samples = mAudioDevBuf->size() / 2;
-        qint32 b_pos = 0;
-        for (qint32 i = 0; i < ba_num_samples; ++i) {
-            ALshort s;
-            s = mAudioDevBuf->at(b_pos++);
-            s |= mAudioDevBuf->at(b_pos++) << 8;
-            if (s != 0) {
-                audioSamples.push_back((double)s / gkAudioDevices->getPeakValue(mAudioDevDetails.pref_audio_format, GK_AUDIO_DEFAULT_BITRATE));
-            } else {
-                audioSamples.push_back(0);
+    if (mAudioDevBuf) {
+        if (!mAudioDevBuf->empty()) {
+            qint32 ba_num_samples = mAudioDevBuf->size() / 2;
+            qint32 b_pos = 0;
+            for (qint32 i = 0; i < ba_num_samples; ++i) {
+                ALshort s;
+                s = mAudioDevBuf->at(b_pos++);
+                s |= mAudioDevBuf->at(b_pos++) << 8;
+                if (s != 0) {
+                    audioSamples.push_back((double)s / gkAudioDevices->getPeakValue(mAudioDevDetails.pref_audio_format, GK_AUDIO_DEFAULT_BITRATE));
+                } else {
+                    audioSamples.push_back(0);
+                }
             }
-        }
 
-        samplesUpdated();
-    } else {
-        // gkEventLogger->publishEvent(tr("Audio input, %1, has changed to an interrupted state.").arg(pref_input_audio_device.audio_device_info.deviceName()), GkSeverity::Info, "", true, true, false, false);
+            samplesUpdated();
+        } else {
+            // gkEventLogger->publishEvent(tr("Audio input, %1, has changed to an interrupted state.").arg(pref_input_audio_device.audio_device_info.deviceName()), GkSeverity::Info, "", true, true, false, false);
+        }
     }
 
     return;

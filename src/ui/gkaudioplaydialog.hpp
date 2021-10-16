@@ -65,12 +65,8 @@ class GkAudioPlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<GekkoFyre::GkMultimedia> multimedia,
-                               QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger,
+    explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
+                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
 
@@ -120,11 +116,6 @@ private:
     bool audio_out_play;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
-
-    //
-    // Audio System initialization and buffers
-    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;   // Preferred input audio device
-    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;  // Preferred output audio device
 
     //
     // Audio encoding related objects
