@@ -511,8 +511,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                         if (gkAudioDevices->isStereoChannelSource(it->alDevice)) {
                             it->pref_audio_format = AL_FORMAT_STEREO16;
+                            it->sel_channels = GkAudioChannels::Stereo;
                         } else {
                             it->pref_audio_format = AL_FORMAT_MONO16;
+                            it->sel_channels = GkAudioChannels::Mono;
                         }
 
                         it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(it->alDevice);

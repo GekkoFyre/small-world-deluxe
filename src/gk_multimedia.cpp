@@ -100,13 +100,15 @@ GkMultimedia::~GkMultimedia()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param file_path The canonical path to the given audio file to be decoded.
  * @param sample_rate The sample rate at which the audio file is to be decoded into.
+ * @param num_channels The number of channels the output file should have.
  * @param data The raw data as provided by the conversion process.
  * @param size The size of the raw data as provided by the conversion process.
  * @return Whether the decoding process was a success or not.
  * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>,
- * TheSHEEEP <https://stackoverflow.com/a/21404721>
+ * mohabouje <https://stackoverflow.com/a/55394040>, TheSHEEEP <https://stackoverflow.com/a/21404721>
  */
-bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size)
+bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, const qint32 &num_channels,
+                                         float **data, qint32 *size)
 {
     //
     // Initalize all the muxers, demuxers, and protocols for the libavformat library!
@@ -159,7 +161,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint3
     // Prepare re-sampler!
     struct SwrContext* swr = swr_alloc();
     av_opt_set_int(swr, "in_channel_count",  codec->channels, 0);
-    av_opt_set_int(swr, "out_channel_count", 2, 0);
+    av_opt_set_int(swr, "out_channel_count", num_channels, 0);
     av_opt_set_int(swr, "in_channel_layout",  codec->channel_layout, 0);
     av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO, 0);
     av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
@@ -202,22 +204,36 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint3
         }
 
         //
+        // Estimate the number of output samples
+        qint32 out_num_samples = av_rescale_rnd(swr_get_delay(swr, codec->sample_rate) + frame->nb_samples, sample_rate, codec->sample_rate, AV_ROUND_UP);
+
+        //
         // Resample the frames
         float *buffer;
-        av_samples_alloc((uint8_t**) &buffer, nullptr, 1, frame->nb_samples, AV_SAMPLE_FMT_DBL, 0);
-        qint32 frame_count = swr_convert(swr, (uint8_t **) &buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
+        av_samples_alloc((uint8_t**)&buffer, nullptr, num_channels, out_num_samples, AV_SAMPLE_FMT_FLT, 0);
+        out_num_samples = swr_convert(swr, (uint8_t **)&buffer, out_num_samples, (const uint8_t **)frame->data, frame->nb_samples);
 
         //
         // Append the resampled frames to the data pointer!
         *data = (float *)std::realloc(*data, (*size + frame->nb_samples) * sizeof(float));
-        std::memcpy(*data + *size, buffer, frame_count * sizeof(float));
-        *size += frame_count;
+        std::memcpy(*data + *size, buffer, out_num_samples * sizeof(float));
+        *size += out_num_samples;
+
+        //
+        // Cleanup any unneeded buffers!
+        av_freep(&buffer);
     }
 
     //
     // Cleanup
-    av_frame_free(&frame);
-    swr_free(&swr);
+    if (frame) {
+        av_frame_free(&frame);
+    }
+
+    if (swr) {
+        swr_free(&swr);
+    }
+
     avcodec_close(codec);
     avformat_free_context(format);
 
@@ -366,7 +382,9 @@ GkAudioFramework::GkAudioFileDecoded GkMultimedia::decodeAudioFile(const QFileIn
                 qint32 size = 0;
                 GkAudioFramework::GkAudioFileDecoded decoded;
                 decoded.properties = analyzeAudioFileMetadata(file_path);
-                const bool ret = ffmpegDecodeAudioFile(file_path, decoded.properties.info->sampleRate, &data_ptr, &size);
+                const bool ret = ffmpegDecodeAudioFile(file_path, decoded.properties.info->sampleRate,
+                                                       gkAudioDevices->convAudioChannelsFromEnum(gkSysOutputAudioDev.sel_channels),
+                                                       &data_ptr, &size);
 
                 if (!ret) {
                     if (data_ptr) {
@@ -401,6 +419,10 @@ GkAudioFramework::GkAudioFileDecoded GkMultimedia::decodeAudioFile(const QFileIn
 void GkMultimedia::playAudioFile(const QFileInfo &file_path)
 {
     try {
+        if (!alIsExtensionPresent("AL_EXT_FLOAT32")) {
+            throw std::runtime_error(tr("The OpenAL extension, \"AL_EXT_FLOAT32\", is not present! Please install it before continuing.").toStdString());
+        }
+
         if (file_path.exists() && file_path.isReadable()) {
             if (file_path.isFile()) {
                 if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx) {
@@ -419,7 +441,7 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                             ALuint source;
                             alCall(alGenSources, 1, &source);
                             alCall(alSourcef, source, AL_PITCH, 1);
-                            alCall(alSourcef, source, AL_GAIN, 0.75f);
+                            alCall(alSourcef, source, AL_GAIN, 1.0f);
                             alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
                             alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
                             alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
