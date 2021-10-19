@@ -57,6 +57,17 @@
 #include <QPointer>
 #include <QFileInfo>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libavutil/samplefmt.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 namespace GekkoFyre {
 
 class GkMultimedia : public QObject {
@@ -91,7 +102,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, const qint32 &num_channels, float **data, qint32 *size);
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);

@@ -1248,6 +1248,7 @@ namespace GkAudioFramework {
     struct GkAudioFileDecoded {
         GkAudioFileInfo properties;
         std::vector<float> samples;
+        size_t size;
     };
 }
 };
