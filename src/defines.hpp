@@ -104,6 +104,7 @@ extern "C"
 #include <sentry.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
+#include <libavutil/samplefmt.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -1230,6 +1231,11 @@ namespace GkAudioFramework {
         qint32 channels;
         qint32 lengthInMilliseconds;
         qint32 lengthInSeconds;
+        qint32 sample_size;
+        qint32 stream_idx;
+        QString sample_format_str;
+        AVSampleFormat sample_format;
+        const char *float_output;
     };
 
     struct GkAudioFileInfo {

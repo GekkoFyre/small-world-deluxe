@@ -63,8 +63,7 @@ extern "C"
 #endif
 
 #include <libavutil/frame.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/samplefmt.h>
+#include <libavformat/avformat.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -83,7 +82,8 @@ public:
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
-    [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
+    GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path, const AVCodec *codec,
+                                                               const AVCodecContext *codecCtx, qint32 audioStreamIndex) const;
 
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
@@ -104,9 +104,14 @@ private:
     //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
+    FILE *outFile;
 
-    bool putAudioBuffer(const AVFrame *pAvFrameIn, AVFrame **pAvFrameBuffer, AVCodecContext *dec_ctx, int frame_size, int &k0);
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
+    qint32 findAudioStream(const AVFormatContext *formatCtx);
+    qint32 receiveAndHandle(AVCodecContext *codecCtx, AVFrame *frame);
+    void handleFrame(const AVCodecContext *codecCtx, const AVFrame *frame);
+    void drainDecoder(AVCodecContext *codecCtx, AVFrame *frame);
+    float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);
