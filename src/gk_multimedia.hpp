@@ -62,6 +62,8 @@ extern "C"
 {
 #endif
 
+#include <libavutil/frame.h>
+#include <libavcodec/avcodec.h>
 #include <libavutil/samplefmt.h>
 
 #ifdef __cplusplus
@@ -90,6 +92,7 @@ public:
 
 public slots:
     void playAudioFile(const QFileInfo &file_path);
+    void recordAudioFile(const QFileInfo &file_path);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
@@ -102,6 +105,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
+    bool putAudioBuffer(const AVFrame *pAvFrameIn, AVFrame **pAvFrameBuffer, AVCodecContext *dec_ctx, int frame_size, int &k0);
     bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
 
     bool is_big_endian();

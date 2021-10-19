@@ -53,7 +53,6 @@ extern "C"
 
 #include <libswresample/swresample.h>
 #include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
 #include <libavutil/dict.h>
 #include <libavutil/opt.h>
 
@@ -93,6 +92,66 @@ GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, GkDev
 
 GkMultimedia::~GkMultimedia()
 {}
+
+/**
+ * @brief GkMultimedia::putAudioBuffer
+ * @author Neil Z. Shao <https://stackoverflow.com/a/39693587>, Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pAvFrameIn
+ * @param pAvFrameBuffer
+ * @param dec_ctx
+ * @param frame_size
+ * @param k0
+ * @return
+ */
+bool GkMultimedia::putAudioBuffer(const AVFrame *pAvFrameIn, AVFrame **pAvFrameBuffer, AVCodecContext *dec_ctx,
+                                  qint32 frame_size, qint32 &k0)
+{
+    if (!(*pAvFrameBuffer)) {
+        if (!(*pAvFrameBuffer = av_frame_alloc())) {
+            gkEventLogger->publishEvent(tr("Alloc frame failed!"), GkSeverity::Fatal, "", true, true, false, false, false);
+            return false;
+        } else {
+            (*pAvFrameBuffer)->format = dec_ctx->sample_fmt;
+            (*pAvFrameBuffer)->channels = dec_ctx->channels;
+            (*pAvFrameBuffer)->sample_rate = dec_ctx->sample_rate;
+            (*pAvFrameBuffer)->nb_samples = frame_size;
+            qint32 ret = av_frame_get_buffer(*pAvFrameBuffer, 0);
+            if (ret < 0) {
+                char err[500];
+                gkEventLogger->publishEvent(tr("Get audio buffer failed:\n\n%1").arg(QString::fromStdString(av_make_error_string(err, AV_ERROR_MAX_STRING_SIZE, ret))), GkSeverity::Fatal, "", true, true, false, false, false);
+                return false;
+            }
+            (*pAvFrameBuffer)->nb_samples = 0;
+            (*pAvFrameBuffer)->pts = pAvFrameIn->pts;
+        }
+    }
+
+    // copy input data to buffer
+    qint32 n_channels = pAvFrameIn->channels;
+    qint32 new_samples = std::min(pAvFrameIn->nb_samples - k0, frame_size - (*pAvFrameBuffer)->nb_samples);
+    qint32 k1 = (*pAvFrameBuffer)->nb_samples;
+
+    if (pAvFrameIn->format == AV_SAMPLE_FMT_S16) {
+        int16_t *d_in = (int16_t *)pAvFrameIn->data[0];
+        d_in += n_channels * k0;
+        int16_t *d_out = (int16_t *)(*pAvFrameBuffer)->data[0];
+        d_out += n_channels * k1;
+
+        for (qint32 i = 0; i < new_samples; ++i) {
+            for (qint32 j = 0; j < pAvFrameIn->channels; ++j) {
+                *d_out++ = *d_in++;
+            }
+        }
+    } else {
+        gkEventLogger->publishEvent(tr("Unhandled format for audio buffer!"), GkSeverity::Fatal, "", true, true, false, false, false);
+        return false;
+    }
+
+    (*pAvFrameBuffer)->nb_samples += new_samples;
+    k0 += new_samples;
+
+    return true;
+}
 
 /**
  * @brief GkMultimedia::ffmpegDecodeAudioFile attempts to universally decode any given audio file into PCM data, provided it
@@ -212,40 +271,34 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint3
     *data = nullptr;
     *size = 0;
     qint32 out_num_samples = 0;
-    do {
-        while (av_read_frame(format, packet) >= 0) {
-            //
-            // Decode only a single frame
-            qint32 gotFrame;
-            if (avcodec_decode_audio4(codec, frame, &gotFrame, packet) < 0) {
-                break;
-            }
-
-            if (!gotFrame) {
-                continue;
-            }
-
-            //
-            // Estimate the number of output samples
-            out_num_samples = av_rescale_rnd(swr_get_delay(swr, codec->sample_rate) + frame->nb_samples, sample_rate, codec->sample_rate, AV_ROUND_UP);
-
-            //
-            // Resample the frames
-            float *buffer;
-            av_samples_alloc((uint8_t**)&buffer, nullptr, out_num_channels, out_num_samples, out_fmt, 0);
-            out_num_samples = swr_convert(swr, (uint8_t **)&buffer, out_num_samples, (const uint8_t **)frame->data, frame->nb_samples);
-
-            //
-            // Append the resampled frames to the data pointer!
-            *data = (float *)std::realloc(*data, (*size + frame->nb_samples) * sizeof(float));
-            std::memcpy(*data + *size, buffer, out_num_samples * sizeof(float));
-            *size += out_num_samples;
-
-            //
-            // Cleanup any unneeded buffers!
-            av_freep(&buffer);
+    while (av_read_frame(format, packet) >= 0) {
+        //
+        // Decode only a single frame
+        qint32 gotFrame;
+        if (avcodec_decode_audio4(codec, frame, &gotFrame, packet) < 0) {
+            break;
         }
-    } while (out_num_samples < 10);
+
+        //
+        // Estimate the number of output samples
+        out_num_samples = av_rescale_rnd(swr_get_delay(swr, codec->sample_rate) + frame->nb_samples, sample_rate, codec->sample_rate, AV_ROUND_UP);
+
+        //
+        // Resample the frames
+        float *buffer;
+        av_samples_alloc(reinterpret_cast<uint8_t **>(&buffer), nullptr, out_num_channels, out_num_samples, out_fmt, 0);
+        out_num_samples = swr_convert(swr, reinterpret_cast<uint8_t **>(&buffer), out_num_samples, (const uint8_t **)frame->data, frame->nb_samples);
+
+        //
+        // Append the resampled frames to the data pointer!
+        *data = static_cast<float *>(std::realloc(*data, (*size + frame->nb_samples) * sizeof(float)));
+        std::memcpy(*data + *size, buffer, out_num_samples * sizeof(float));
+        *size += out_num_samples;
+
+        //
+        // Cleanup any unneeded buffers!
+        av_freep(&buffer);
+    }
 
     if (packet) {
         av_packet_free(&packet);
@@ -504,6 +557,17 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
+    return;
+}
+
+/**
+ * @brief GkMultimedia::recordAudioFile attempts to record from a given input device to a specified file on the end-user's
+ * storage device of choice.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The file to make the recording towards.
+ */
+void GkMultimedia::recordAudioFile(const QFileInfo &file_path)
+{
     return;
 }
 
