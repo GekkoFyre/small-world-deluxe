@@ -104,6 +104,7 @@ extern "C"
 #include <sentry.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
+#include <libavutil/samplefmt.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -262,9 +263,9 @@ namespace GekkoFyre {
 //
 // Audio encoding/decoding
 //
-#define AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY (1.0)    // The quality at which to encode an Ogg Vorbis file!
-#define AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE (64 * 1024) // The buffering size for each frame, in kilobytes, to be used with Ogg Vorbis encoding.
-#define AUDIO_CODECS_OPUS_MAX_PACKETS (1500)            // Not sure what this is for but it seems to be necessary!
+#define GK_AUDIO_OUTPUT_DECODE_TIMEOUT (15)             // The (default) timeout value, in seconds, until we ask the user if they wish to proceed or not.
+#define GK_AUDIO_STREAM_NUM_BUFS (4)                    // The number of buffers to employ, by default.
+#define GK_AUDIO_STREAM_BUF_SIZE (65536)                // 32 kB of data in each buffer, by default.
 
 //
 // RS232 & USB Connections
@@ -388,6 +389,7 @@ namespace General {
 
     namespace GkAudio {
         constexpr char commonAudioFileFormats[] = "(*.wav *.mp3 *.aiff *.ogg *.opus *.flac *.m4a *.caf *.pcm *.wma)";
+        constexpr char audioFileExtensionRaw[] = ".raw";
     }
 
     namespace Xmpp {
@@ -1230,6 +1232,11 @@ namespace GkAudioFramework {
         qint32 channels;
         qint32 lengthInMilliseconds;
         qint32 lengthInSeconds;
+        qint32 sample_size;
+        qint32 stream_idx;
+        QString sample_format_str;
+        AVSampleFormat sample_format;
+        const char *float_output;
     };
 
     struct GkAudioFileInfo {
@@ -1248,6 +1255,7 @@ namespace GkAudioFramework {
     struct GkAudioFileDecoded {
         GkAudioFileInfo properties;
         std::vector<float> samples;
+        size_t size;
     };
 }
 };

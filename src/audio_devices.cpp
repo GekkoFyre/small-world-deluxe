@@ -522,6 +522,34 @@ Database::Settings::GkAudioChannels GkAudioDevices::convAudioChannelsToEnum(cons
 }
 
 /**
+ * @brief GkAudioDevices::convAudioChannelsFromEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channels
+ * @return
+ */
+qint32 GkAudioDevices::convAudioChannelsFromEnum(const Settings::GkAudioChannels &channels)
+{
+    switch (channels) {
+        case Settings::GkAudioChannels::Mono:
+            return 1;
+        case Settings::Left:
+            return 1;
+        case Settings::Right:
+            return 1;
+        case Settings::Stereo:
+            return 2;
+        case Settings::Surround:
+            return 6;
+        case Settings::Unknown:
+            return -1;
+        default:
+            break;
+    }
+
+    return -1;
+}
+
+/**
  * @brief GkAudioDevices::rtAudioVersionNumber returns the actual version of PortAudio
  * itself, as a QString().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

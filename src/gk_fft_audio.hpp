@@ -54,7 +54,6 @@
 #include <QTimer>
 #include <QString>
 #include <QObject>
-#include <QBuffer>
 #include <QPointer>
 
 namespace fs = boost::filesystem;

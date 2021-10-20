@@ -104,6 +104,7 @@ public:
     static void applyGain(ALshort *buffer, const quint32 &buffer_size, const qreal &gain_factor);
 
     Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
+    qint32 convAudioChannelsFromEnum(const Database::Settings::GkAudioChannels &channels);
 
     QString rtAudioVersionNumber();
     QString rtAudioVersionText();
