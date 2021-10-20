@@ -615,7 +615,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                                 //
                                 // Start the audio input thread!
+                                QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
                                 gkAudioInputThread.start();
+
                                 gkEventLogger->publishEvent(tr("Input audio device, \"%1\", has been initialized successfully!")
                                 .arg(it->audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
 
@@ -642,9 +644,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 break;
             }
         }
-
-        gkFftAudio->moveToThread(&gkAudioInputThread);
-        QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
 
         //
         // Initialize all the SIGNALs and SLOTs for gkFftAudio!
@@ -1034,7 +1033,6 @@ void MainWindow::launchAudioPlayerWin()
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkMultimedia, gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-    gkAudioPlayDlg->moveToThread(&gkAudioInputThread);
     QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
 
     gkAudioPlayDlg->show();
