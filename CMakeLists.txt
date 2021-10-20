@@ -229,6 +229,33 @@ else()
 endif(Boost_FOUND)
 
 #
+# FFmpeg
+# https://www.ffmpeg.org/
+# https://github.com/FFmpeg/FFmpeg
+#
+find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
+if (FFMPEG_FOUND)
+    include_directories(${FFMPEG_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
+    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
+else()
+    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
+endif(FFMPEG_FOUND)
+
+#
+# TagLib by Scott Wheeler
+# https://github.com/taglib/taglib
+#
+find_package(Taglib REQUIRED)
+if (TAGLIB_FOUND)
+    include_directories(${TAGLIB_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
+    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
+else()
+    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
+endif(TAGLIB_FOUND)
+
+#
 # QXmpp
 # https://github.com/qxmpp-project/qxmpp
 #
@@ -412,33 +439,6 @@ if (LINUX OR !MSYS OR !MINGW)
 		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
 	endif(NUSPELL_FOUND)
 endif()
-
-#
-# FFmpeg
-# https://www.ffmpeg.org/
-# https://github.com/FFmpeg/FFmpeg
-#
-find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
-if (FFMPEG_FOUND)
-    include_directories(${FFMPEG_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
-    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
-else()
-    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
-endif(FFMPEG_FOUND)
-
-#
-# TagLib by Scott Wheeler
-# https://github.com/taglib/taglib
-#
-find_package(Taglib REQUIRED)
-if (TAGLIB_FOUND)
-    include_directories(${TAGLIB_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
-    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
-else()
-    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
-endif(TAGLIB_FOUND)
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
