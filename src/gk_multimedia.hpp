@@ -111,8 +111,13 @@ private:
     //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
-    QString tmpFile;
-    FILE *outFile;
+
+    //
+    // Filesystem information and paths
+    //
+    std::ifstream inputFile;
+    QString convFileCanonicalPath;
+    FILE *convFile;
 
     qint32 findAudioStream(const AVFormatContext *formatCtx);
     qint32 receiveAndHandle(AVCodecContext *codecCtx, AVFrame *frame);
@@ -121,7 +126,7 @@ private:
     float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
     bool ffmpegDecodeAudioFile(const QFileInfo &file_path);
 
-    std::vector<char> loadRawFileData(const QString &file_path, ALsizei size);
+    std::vector<char> loadRawFileData(const QString &file_path, ALsizei size, const size_t &cursor = 0);
     void updateStream(const ALuint source, const ALenum &format, const std::int32_t &sample_rate, const std::vector<char> &buf, std::size_t &cursor);
 
     bool is_big_endian();

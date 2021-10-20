@@ -44,7 +44,6 @@
 #include <taglib/fileref.h>
 #include <cstdio>
 #include <future>
-#include <fstream>
 #include <cstring>
 #include <utility>
 #include <exception>
@@ -97,7 +96,11 @@ GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, GkDev
 }
 
 GkMultimedia::~GkMultimedia()
-{}
+{
+    if (inputFile.is_open()) {
+        inputFile.close();
+    }
+}
 
 /**
  * @brief GkMultimedia::findAudioStream
@@ -161,19 +164,19 @@ void GkMultimedia::handleFrame(const AVCodecContext *codecCtx, const AVFrame *fr
         for (qint32 s = 0; s < frame->nb_samples; ++s) {
             for (qint32 c = 0; c < codecCtx->channels; ++c) {
                 float sample = getSample(codecCtx, frame->extended_data[c], s);
-                fwrite(&sample, sizeof(float), 1, outFile);
+                fwrite(&sample, sizeof(float), 1, convFile);
             }
         }
     } else {
         // This means that the data of each channel is in the same buffer.
         // => frame->extended_data[0] contains data of all channels.
         if (RAW_OUT_ON_PLANAR) {
-            fwrite(frame->extended_data[0], 1, frame->linesize[0], outFile);
+            fwrite(frame->extended_data[0], 1, frame->linesize[0], convFile);
         } else {
             for (int s = 0; s < frame->nb_samples; ++s) {
                 for (int c = 0; c < codecCtx->channels; ++c) {
                     float sample = getSample(codecCtx, frame->extended_data[0], s * codecCtx->channels + c);
-                    fwrite(&sample, sizeof(float), 1, outFile);
+                    fwrite(&sample, sizeof(float), 1, convFile);
                 }
             }
         }
@@ -447,7 +450,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     avformat_close_input(&formatCtx);
 
     // Close the outfile!
-    fclose(outFile);
+    fclose(convFile);
 
     //
     // Success at last!
@@ -461,18 +464,20 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
  * @param size
  * @return
  */
-std::vector<char> GkMultimedia::loadRawFileData(const QString &file_path, ALsizei size)
+std::vector<char> GkMultimedia::loadRawFileData(const QString &file_path, ALsizei size, const size_t &cursor)
 {
-    std::ifstream in(file_path.toStdString(), std::ios::binary);
-    if (!in.is_open()) {
-        gkEventLogger->publishEvent(tr("Error! Could not open file, \"%1\"!").arg(file_path), GkSeverity::Warning, "", false, true, false, true, false);
-        return std::vector<char>();
+    if (!inputFile.is_open()) {
+        inputFile.open(file_path.toStdString(), std::ios::binary);
+        if (!inputFile.is_open()) {
+            gkEventLogger->publishEvent(tr("Error! Could not open file, \"%1\"!").arg(file_path), GkSeverity::Warning, "", false, true, false, true, false);
+            return std::vector<char>();
+        }
     }
 
     //
     // TODO: Optimize this to use less memory!
     char *data = new char[size];
-    in.read(data, size);
+    inputFile.read(data, size);
 
     std::vector<char> buf(data, data + size);
     delete[] data;
@@ -655,10 +660,10 @@ bool GkMultimedia::decodeAudioFile(const QFileInfo &file_path)
             char *str1 = const_cast<char *>(file_path.completeBaseName().toStdString().c_str());
             char *str2 = const_cast<char *>(General::GkAudio::audioFileExtensionRaw);
             std::strcat(str1, str2);
-            tmpFile = str1;
-            outFile = fopen(str1, "w+");
+            convFileCanonicalPath = str1;
+            convFile = fopen(str1, "w+");
 
-            if (outFile == nullptr) {
+            if (convFile == nullptr) {
                 gkEventLogger->publishEvent(tr("Unable to open output file, \"%1\"!")
                 .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", false, true, false, true, false);
             }
@@ -705,18 +710,21 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
         if (file_path.exists() && file_path.isReadable()) {
             if (file_path.isFile()) {
                 if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx && !gkSysOutputAudioDev.isStreaming) {
-                    std::future<bool> f = std::async(std::launch::deferred, &GkMultimedia::decodeAudioFile, this, file_path);
-                    if (f.get()) {
-                        std::vector<char> buf = loadRawFileData(tmpFile, GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS);
-                        if (!buf.empty()) {
+                    GkAudioFramework::GkAudioFileDecoded decoded;
+                    std::future<bool> f1 = std::async(std::launch::deferred, &GkMultimedia::decodeAudioFile, this, file_path);
+                    if (f1.get()) {
+                        std::future<std::vector<char>> audio_samples_fut1 = std::async(std::launch::deferred, &GkMultimedia::loadRawFileData, this,
+                        convFileCanonicalPath, GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS, 0);
+                        decoded.samples = audio_samples_fut1.get();
+                        if (!decoded.samples.empty()) {
                             //
                             // We have data we can possibly work with!
                             ALuint buffers[GK_AUDIO_STREAM_NUM_BUFS];
                             alCall(alGenBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
 
-                            const size_t buf_size = buf.size() - buf.size() % 4;
+                            const size_t buf_size = decoded.samples.size() - decoded.samples.size() % 4;
                             for (size_t i = 0; i < GK_AUDIO_STREAM_NUM_BUFS; ++i) {
-                                alCall(alBufferData, buffers[i], AL_FORMAT_STEREO_FLOAT32, &buf[i * GK_AUDIO_STREAM_BUF_SIZE], GK_AUDIO_STREAM_BUF_SIZE, 44100);
+                                alCall(alBufferData, buffers[i], AL_FORMAT_STEREO_FLOAT32, &decoded.samples[i * GK_AUDIO_STREAM_BUF_SIZE], GK_AUDIO_STREAM_BUF_SIZE, 44100);
                             }
 
                             ALuint source;
@@ -736,14 +744,18 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                             alCall(alSourcePlay, source);
 
                             ALint state = AL_PLAYING;
-                            std::size_t cursor = GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS;
+                            size_t cursor = GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS;
                             while (state == AL_PLAYING) {
-                                updateStream(source, AL_FORMAT_STEREO_FLOAT32, 44100, buf, cursor);
+                                updateStream(source, AL_FORMAT_STEREO_FLOAT32, 44100, decoded.samples, cursor);
                                 alCall(alGetSourcei, source, AL_SOURCE_STATE, &state);
                             }
 
                             alCall(alDeleteSources, 1, &source);
                             alCall(alDeleteBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
+
+                            if (inputFile.is_open()) {
+                                inputFile.close();
+                            }
 
                             return;
                         }
