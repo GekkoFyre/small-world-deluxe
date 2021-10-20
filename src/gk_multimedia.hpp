@@ -122,6 +122,7 @@ private:
     bool ffmpegDecodeAudioFile(const QFileInfo &file_path);
 
     std::vector<char> loadRawFileData(const QString &file_path, ALsizei size);
+    void updateStream(const ALuint source, const ALenum &format, const std::int32_t &sample_rate, const std::vector<char> &buf, std::size_t &cursor);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);

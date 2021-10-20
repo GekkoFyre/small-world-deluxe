@@ -480,6 +480,58 @@ std::vector<char> GkMultimedia::loadRawFileData(const QString &file_path, ALsize
 }
 
 /**
+ * @brief GkMultimedia::updateStream
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param source
+ * @param format
+ * @param sample_rate
+ * @param buf
+ * @param cursor
+ * @note IndieGameDev.net <https://indiegamedev.net/2020/02/25/the-complete-guide-to-openal-with-c-part-2-streaming-audio/>
+ */
+void GkMultimedia::updateStream(const ALuint source, const ALenum &format, const int32_t &sample_rate,
+                                const std::vector<char> &buf, size_t &cursor)
+{
+    ALint buffersProcessed = 0;
+    alCall(alGetSourcei, source, AL_BUFFERS_PROCESSED, &buffersProcessed);
+
+    if (buffersProcessed <= 0) {
+        return;
+    }
+
+    while (--buffersProcessed) {
+        ALuint buffer;
+        alCall(alSourceUnqueueBuffers, source, 1, &buffer);
+
+        ALsizei dataSize = GK_AUDIO_STREAM_BUF_SIZE;
+
+        char *data = new char[dataSize];
+        std::memset(data, 0, dataSize);
+
+        std::size_t dataSizeToCopy = GK_AUDIO_STREAM_BUF_SIZE;
+        if (cursor + GK_AUDIO_STREAM_BUF_SIZE > buf.size()) {
+            dataSizeToCopy = buf.size() - cursor;
+        }
+
+        std::memcpy(&data[0], &buf[cursor], dataSizeToCopy);
+        cursor += dataSizeToCopy;
+
+        if (dataSizeToCopy < GK_AUDIO_STREAM_BUF_SIZE) {
+            cursor = 0;
+            std::memcpy(&data[dataSizeToCopy], &buf[cursor], GK_AUDIO_STREAM_BUF_SIZE - dataSizeToCopy);
+            cursor = GK_AUDIO_STREAM_BUF_SIZE - dataSizeToCopy;
+        }
+
+        alCall(alBufferData, buffer, format, data, GK_AUDIO_STREAM_BUF_SIZE, sample_rate);
+        alCall(alSourceQueueBuffers, source, 1, &buffer);
+
+        delete[] data;
+    }
+
+    return;
+}
+
+/**
  * @brief GkMultimedia::analyzeAudioFileMetadata will analyze a given multimedia audio file and output the metadata
  * contained within, provided there is any.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -659,12 +711,13 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                         if (!buf.empty()) {
                             //
                             // We have data we can possibly work with!
-                            ALuint buffer;
-                            alCall(alGenBuffers, 1, &buffer);
+                            ALuint buffers[GK_AUDIO_STREAM_NUM_BUFS];
+                            alCall(alGenBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
 
                             const size_t buf_size = buf.size() - buf.size() % 4;
-                            alCall(alBufferData, buffer, AL_FORMAT_STEREO_FLOAT32, buf.data(), buf_size, 44100);
-                            buf.clear(); // Erase the audio samples to free up RAM!
+                            for (size_t i = 0; i < GK_AUDIO_STREAM_NUM_BUFS; ++i) {
+                                alCall(alBufferData, buffers[i], AL_FORMAT_STEREO_FLOAT32, &buf[i * GK_AUDIO_STREAM_BUF_SIZE], GK_AUDIO_STREAM_BUF_SIZE, 44100);
+                            }
 
                             ALuint source;
                             alCall(alGenSources, 1, &source);
@@ -673,7 +726,7 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                             alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
                             alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
                             alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
-                            alCall(alSourcei, source, AL_BUFFER, buffer);
+                            alCall(alSourceQueueBuffers, source, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
 
                             //
                             // NOTE: If the audio is played faster, then the sampling rate might be incorrect. Check if
@@ -681,14 +734,16 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
                             // sample rate is the same you use in the encoder.
                             //
                             alCall(alSourcePlay, source);
-                            ALint state = AL_PLAYING;
 
+                            ALint state = AL_PLAYING;
+                            std::size_t cursor = GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS;
                             while (state == AL_PLAYING) {
+                                updateStream(source, AL_FORMAT_STEREO_FLOAT32, 44100, buf, cursor);
                                 alCall(alGetSourcei, source, AL_SOURCE_STATE, &state);
                             }
 
                             alCall(alDeleteSources, 1, &source);
-                            alCall(alDeleteBuffers, 1, &buffer);
+                            alCall(alDeleteBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
 
                             return;
                         }
