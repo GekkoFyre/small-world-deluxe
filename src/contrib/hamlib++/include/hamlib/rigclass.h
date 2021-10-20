@@ -27,7 +27,7 @@
 
 
 //! @cond Doxygen_Suppress
-class BACKEND_IMPEXP Rig
+class HAMLIB_CPP_IMPEXP Rig
 {
 private:
     RIG *theRig;  // Global ref. to the rig
@@ -37,6 +37,14 @@ public:
     explicit Rig(rig_model_t rig_model);
 
     virtual ~Rig();
+#if __cplusplus >= 201103L
+    Rig(const Rig&) = delete;
+    Rig& operator=(const Rig&) = delete;
+#else
+    Rig(const Rig&);
+    Rig& operator=(const Rig&);
+#endif
+
 
     const struct rig_caps *caps;
 
@@ -246,7 +254,7 @@ extern "C" void exit(int);
 
 //! @cond Doxygen_Suppress
 // Forward Declarations
-class BACKEND_IMPEXP RigException
+class HAMLIB_CPP_IMPEXP RigException
 {
 public:
     const char *message;
@@ -287,6 +295,8 @@ inline void THROW(const RigException *e)
 #else
     throw *e;
 #endif
+#elif defined(_MSC_VER)
+    throw* e;
 #elif defined(__SUNPRO_CC)
     genericerror(1, ((e != 0) ? (char *)(e->message) : ""));
 #else

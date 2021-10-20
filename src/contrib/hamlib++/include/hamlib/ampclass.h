@@ -1,5 +1,5 @@
 /*
- *  Hamlib C++ bindings - rotator API header
+ *  Hamlib C++ bindings - amplifier API header
  *  Copyright (c) 2002 by Stephane Fillod
  *
  *
@@ -19,36 +19,38 @@
  *
  */
 
-#ifndef _ROTCLASS_H
-#define _ROTCLASS_H 1
+#ifndef _AMPCLASS_H
+#define _AMPCLASS_H 1
 
-#include <hamlib/rotator.h>
+#include <hamlib/amplifier.h>
 
 
 
 //! @cond Doxygen_Suppress
-class HAMLIB_CPP_IMPEXP Rotator
+class HAMLIB_CPP_IMPEXP Amplifier
 {
 private:
-    ROT *theRot;  // Global ref. to the rot
+    AMP *theAmp;  // Global ref. to the amp
 
 protected:
 public:
-    explicit Rotator(rot_model_t rot_model);
+    explicit Amplifier(amp_model_t amp_model);
 
-    virtual ~Rotator();
+    virtual ~Amplifier();
 
-    Rotator(const Rotator&) = default;
-    Rotator(Rotator&&) = default;
-    Rotator& operator=(const Rotator&) = default;
-    Rotator& operator=(Rotator&&) = default;
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201103L) || __cplusplus >= 201103L)
+    Amplifier(const Amplifier&) = default;
+    Amplifier(Amplifier&&) = default;
+    Amplifier& operator=(const Amplifier&) = default;
+    Amplifier& operator=(Amplifier&&) = default;
+#endif
 
-    const struct rot_caps *caps;
+    const struct amp_caps *caps;
 
-    // This method opens the communication port to the rot
+    // This method opens the communication port to the amp
     void open(void);
 
-    // This method closes the communication port to the rot
+    // This method closes the communication port to the amp
     void close(void);
 
     void setConf(token_t token, const char *val);
@@ -57,16 +59,13 @@ public:
     void getConf(const char *name, char *val);
     token_t tokenLookup(const char *name);
 
-    void setPosition(azimuth_t az, elevation_t el);
-    void getPosition(azimuth_t& az, elevation_t& el);
-    void stop();
-    void park();
-    void reset(rot_reset_t reset);
+    void setFreq(freq_t freq);
+    freq_t getFreq();
 
-    void move(int direction, int speed);
+    void reset(amp_reset_t reset);
 };
 //! @endcond
 
 
 
-#endif  // _ROTCLASS_H
+#endif  // _AMPCLASS_H

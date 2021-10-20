@@ -286,8 +286,10 @@ endif(HAMLIB_FOUND)
 
 set(GALAXY_HAMLIB_CPP
     ${GALAXY_HAMLIB_CPP}
+	src/contrib/hamlib++/ampclass.cc
     src/contrib/hamlib++/rigclass.cc
     src/contrib/hamlib++/rotclass.cc
+	src/contrib/hamlib++/include/hamlib/ampclass.h
     src/contrib/hamlib++/include/hamlib/rigclass.h
     src/contrib/hamlib++/include/hamlib/rotclass.h)
 
