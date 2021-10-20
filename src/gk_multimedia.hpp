@@ -48,9 +48,11 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#include <mutex>
 #include <memory>
 #include <vector>
 #include <string>
+#include <thread>
 #include <fstream>
 #include <QObject>
 #include <QString>
@@ -83,12 +85,13 @@ public:
     ~GkMultimedia() override;
 
     GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path, const AVCodec *codec,
-                                                               const AVCodecContext *codecCtx, qint32 audioStreamIndex) const;
+                                                               const AVCodecContext *codecCtx, qint32 audioStreamIndex,
+                                                               const bool &printToConsole = false) const;
 
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
-    [[nodiscard]] GkAudioFramework::GkAudioFileDecoded decodeAudioFile(const QFileInfo &file_path);
+    [[nodiscard]] bool decodeAudioFile(const QFileInfo &file_path);
 
 public slots:
     void playAudioFile(const QFileInfo &file_path);
@@ -100,10 +103,15 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
+    // Mulithreading and mutexes
+    //
+
+    //
     // Audio System miscellaneous variables
     //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
+    QString tmpFile;
     FILE *outFile;
 
     qint32 findAudioStream(const AVFormatContext *formatCtx);
@@ -111,7 +119,9 @@ private:
     void handleFrame(const AVCodecContext *codecCtx, const AVFrame *frame);
     void drainDecoder(AVCodecContext *codecCtx, AVFrame *frame);
     float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate);
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path);
+
+    std::vector<char> loadRawFileData(const QString &file_path, ALsizei size);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);
