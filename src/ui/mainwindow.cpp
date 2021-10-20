@@ -511,8 +511,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                         if (gkAudioDevices->isStereoChannelSource(it->alDevice)) {
                             it->pref_audio_format = AL_FORMAT_STEREO16;
+                            it->sel_channels = GkAudioChannels::Stereo;
                         } else {
                             it->pref_audio_format = AL_FORMAT_MONO16;
+                            it->sel_channels = GkAudioChannels::Mono;
                         }
 
                         it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(it->alDevice);
@@ -562,60 +564,64 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // const qint32 input_audio_dev_chosen_bitrate = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
                 const ALenum input_audio_dev_pref_audio_format = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputFormat).toInt();
 
-                //
-                // Enumerate input audio devices!
-                for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-                    if (it->audio_dev_str == input_audio_device_saved) {
-                        it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
-                        it->audio_src = GkAudioSource::Input;
-                        it->pref_audio_format = input_audio_dev_pref_audio_format;
-                        it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
-                        it->al_error = 0;
-
-                        it->alDevice = alcCaptureOpenDevice(it->audio_dev_str.toStdString().c_str(), it->pref_sample_rate, it->pref_audio_format, circBufSize);
-                        if (!it->alDevice) {
-                            throw std::runtime_error(tr("ERROR: Unable to initialize input audio device, \"%1\"! Out of memory?")
-                            .arg(input_audio_device_saved).toStdString());
-                        }
-
-                        it->isEnabled = true;
-                        it->isStreaming = false;
-                    } else {
-                        it->isEnabled = false;
-                        it->isStreaming = false;
-                    }
-                }
-
-                //
-                // Calculate required variables and constants!
-                const qint32 bytesPerSample = 2;
-                const qint32 safetyFactor = 2; // In order to prevent buffer overruns! Must be larger than inputBuffer to avoid the circular buffer from overwriting itself between captures...
-                audioFrameSampleCountPerChannel = GK_AUDIO_FRAME_DURATION * input_audio_dev_chosen_sample_rate / 1000;
-                audioFrameSampleCountTotal = audioFrameSampleCountPerChannel * input_audio_dev_chosen_number_channels;
-                circBufSize = audioFrameSampleCountTotal * bytesPerSample * safetyFactor;
-
-                for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-                    if (it->alDevice && it->isEnabled) {
+                if (input_audio_dev_chosen_sample_rate >= 8000 && input_audio_dev_chosen_sample_rate <= 192000) {
+                    if (input_audio_dev_chosen_number_channels > 0) {
                         //
-                        // Begin capture of audio stream from given audio device!
-                        // NOTE: A 'context' is not required in this instance unlike an output audio device...
-                        mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(audioFrameSampleCountTotal); // Initialize the `std::vector`!
-                        alcCaptureStart(it->alDevice);
-                        it->alc_error = alcGetError(it->alDevice);
-                        if (it->alc_error != AL_NO_ERROR) {
-                            throw std::runtime_error(tr("An issue was encountered with the capturing of data from audio device: %1")
-                                                             .arg(it->audio_dev_str).toStdString());
-                        }
-
-                        gkAudioDevices->captureAlcSamples(it->alDevice, mInputDeviceBuf->data(), audioFrameSampleCountPerChannel);
+                        // Calculate required variables and constants!
+                        const qint32 bytesPerSample = 2;
+                        const qint32 safetyFactor = 2; // In order to prevent buffer overruns! Must be larger than inputBuffer to avoid the circular buffer from overwriting itself between captures...
+                        audioFrameSampleCountPerChannel = GK_AUDIO_FRAME_DURATION * input_audio_dev_chosen_sample_rate / 1000;
+                        audioFrameSampleCountTotal = audioFrameSampleCountPerChannel * input_audio_dev_chosen_number_channels;
+                        circBufSize = audioFrameSampleCountTotal * bytesPerSample * safetyFactor;
 
                         //
-                        // Start the audio input thread!
-                        gkAudioInputThread.start();
-                        gkEventLogger->publishEvent(tr("Input audio device, \"%1\", has been initialized successfully!")
-                        .arg(it->audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
+                        // Enumerate input audio devices!
+                        for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+                            if (it->audio_dev_str == input_audio_device_saved) {
+                                it->pref_sample_rate = std::abs(input_audio_dev_chosen_sample_rate); // Convert qint32 to unsigned-int!
+                                it->audio_src = GkAudioSource::Input;
+                                it->pref_audio_format = input_audio_dev_pref_audio_format;
+                                it->sel_channels = gkAudioDevices->convAudioChannelsToEnum(input_audio_dev_chosen_number_channels);
+                                it->al_error = 0;
 
-                        break;
+                                it->alDevice = alcCaptureOpenDevice(it->audio_dev_str.toStdString().c_str(), it->pref_sample_rate, it->pref_audio_format, circBufSize);
+                                if (!it->alDevice) {
+                                    throw std::runtime_error(tr("ERROR: Unable to initialize input audio device, \"%1\"! Out of memory?")
+                                    .arg(input_audio_device_saved).toStdString());
+                                }
+
+                                it->isEnabled = true;
+                                it->isStreaming = false;
+                            } else {
+                                it->isEnabled = false;
+                                it->isStreaming = false;
+                            }
+                        }
+
+                        for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+                            if (it->alDevice && it->isEnabled) {
+                                //
+                                // Begin capture of audio stream from given audio device!
+                                // NOTE: A 'context' is not required in this instance unlike an output audio device...
+                                mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(audioFrameSampleCountTotal); // Initialize the `std::vector`!
+                                alcCaptureStart(it->alDevice);
+                                it->alc_error = alcGetError(it->alDevice);
+                                if (it->alc_error != AL_NO_ERROR) {
+                                    throw std::runtime_error(tr("An issue was encountered with the capturing of data from audio device: %1")
+                                    .arg(it->audio_dev_str).toStdString());
+                                }
+
+                                gkAudioDevices->captureAlcSamples(it->alDevice, mInputDeviceBuf->data(), audioFrameSampleCountPerChannel);
+
+                                //
+                                // Start the audio input thread!
+                                gkAudioInputThread.start();
+                                gkEventLogger->publishEvent(tr("Input audio device, \"%1\", has been initialized successfully!")
+                                .arg(it->audio_dev_str), GkSeverity::Info, "", true, true, false, false, false);
+
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -645,14 +651,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(initSpectrograph()), gkFftAudio, SIGNAL(startRecording()), Qt::QueuedConnection);
 
         for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
-            if (it->alDevice && it->alDeviceCtx) {
-                if (it->isEnabled && !it->isStreaming) {
-                    //
-                    // Begin FFT & Spectrograph data capture!
-                    emit initSpectrograph();
-                    it->isGraphing = true;
-                    it->isStreaming = true;
-                }
+            if (it->alDevice && it->isEnabled && !it->isStreaming) {
+                //
+                // Begin FFT & Spectrograph data capture!
+                emit initSpectrograph();
+                it->isGraphing = true;
+                it->isStreaming = true;
             }
         }
 

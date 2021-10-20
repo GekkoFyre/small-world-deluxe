@@ -196,7 +196,6 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             }
 
             gkDb->write_audio_playback_dlg_settings(gkAudioFileInfo.audio_file_path.canonicalFilePath(), AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
-            gkAudioFileInfo = gkMultimedia->analyzeAudioFileMetadata(filePath);
 
             //
             // Write out information about the file in question!
@@ -207,6 +206,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             // variables for this class...
             m_audioChannels = determineAudioChannels();
 
+            /*
             if (!gkAudioFileInfo.info) {
                 throw std::runtime_error(tr("An error was encountered in garnering the properties of the multimedia file, \"%1\"!")
                                                  .arg(gkAudioFileInfo.audio_file_path.canonicalFilePath()).toStdString());
@@ -227,6 +227,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             ui->lineEdit_playback_audio_codec->setText(gkAudioFileInfo.type_codec_str);
             ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.info->sampleRate));
             ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
+             */
 
             gkMultimedia->playAudioFile(filePath);
         } else {

@@ -48,14 +48,28 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
+#include <mutex>
 #include <memory>
 #include <vector>
 #include <string>
+#include <thread>
 #include <fstream>
 #include <QObject>
 #include <QString>
 #include <QPointer>
 #include <QFileInfo>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libavutil/frame.h>
+#include <libavformat/avformat.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
@@ -70,15 +84,18 @@ public:
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
-    [[nodiscard]] GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path) const;
+    GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path, const AVCodec *codec,
+                                                               const AVCodecContext *codecCtx, qint32 audioStreamIndex,
+                                                               const bool &printToConsole = false) const;
 
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
-    [[nodiscard]] GkAudioFramework::GkAudioFileDecoded decodeAudioFile(const QFileInfo &file_path);
+    [[nodiscard]] bool decodeAudioFile(const QFileInfo &file_path);
 
 public slots:
     void playAudioFile(const QFileInfo &file_path);
+    void recordAudioFile(const QFileInfo &file_path);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
@@ -86,12 +103,31 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
+    // Mulithreading and mutexes
+    //
+
+    //
     // Audio System miscellaneous variables
     //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
 
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path, const qint32 &sample_rate, float **data, qint32 *size);
+    //
+    // Filesystem information and paths
+    //
+    std::ifstream inputFile;
+    QString convFileCanonicalPath;
+    FILE *convFile;
+
+    qint32 findAudioStream(const AVFormatContext *formatCtx);
+    qint32 receiveAndHandle(AVCodecContext *codecCtx, AVFrame *frame);
+    void handleFrame(const AVCodecContext *codecCtx, const AVFrame *frame);
+    void drainDecoder(AVCodecContext *codecCtx, AVFrame *frame);
+    float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
+    bool ffmpegDecodeAudioFile(const QFileInfo &file_path);
+
+    std::vector<char> loadRawFileData(const QString &file_path, ALsizei size, const size_t &cursor = 0);
+    void updateStream(const ALuint source, const ALenum &format, const std::int32_t &sample_rate, const std::vector<char> &buf, std::size_t &cursor);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);
