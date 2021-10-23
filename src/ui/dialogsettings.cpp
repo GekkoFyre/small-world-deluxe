@@ -166,7 +166,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
             case System::UserInterface::GkSettingsDlgTab::GkGeneralUiThemes:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
                 ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_app_ui);
-                ui->tabWidget_app_ui->setCurrentWidget(ui->tabWidget_app_ui);
+                ui->tabWidget_app_ui->setCurrentWidget(ui->tabWidget_app_ui); // TODO: Is this correct?
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
@@ -190,7 +190,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkAudioApiInfo:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
-                ui->tabWidget_audio->setCurrentWidget(ui->tabWidget_audio);
+                ui->tabWidget_audio->setCurrentWidget(ui->tabWidget_audio); // TODO: Is this correct?
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkRadio:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);
@@ -1013,7 +1013,6 @@ void DialogSettings::createXmppConnectionFromSettings()
                                                    ui->lineEdit_xmpp_client_password->text(), tmp_jid, false);
         } else if (gkConnDetails.server.type == GkServerType::Custom) {
             QString tmp_jid = ui->lineEdit_xmpp_client_username->text();
-            QString tmp_reg_user = m_xmppClient->getUsername(tmp_jid); // Extract the username from the given JID and its attached URI!
             QString tmp_reg_domain = m_xmppClient->getHostname(tmp_jid); // Extract the URI from the given JID!
             m_xmppClient->createConnectionToServer(tmp_reg_domain, ui->spinBox_xmpp_server_port->value(),
                                                    ui->lineEdit_xmpp_client_password->text(), tmp_jid, false);

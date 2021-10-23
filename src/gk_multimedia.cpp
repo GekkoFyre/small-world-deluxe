@@ -271,7 +271,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     //
     // Initalize all the muxers, demuxers, and protocols for the libavformat library!
     // NOTE: Does nothing if called twice during the course of a program's execution...
-    av_register_all();
+    av_register_all(); // TODO: Change this function, as it's deprecated!
 
     qint32 ret = 0;
 
@@ -309,7 +309,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     // Find the index of the first audio stream!
     qint32 stream_index =- 1;
     for (qint32 i = 0; i < formatCtx->nb_streams; ++i) {
-        if (formatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (formatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) { // TODO: Change this, as it's deprecated!
             stream_index = i;
             break;
         }
@@ -386,7 +386,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     AVPacket packet;
 
     // Set default values.
-    av_init_packet(&packet);
+    av_init_packet(&packet); // TODO: Change this, as it's deprecated!
 
     while ((err = av_read_frame(formatCtx, &packet)) != AVERROR_EOF) {
         if(err != 0) {
@@ -504,13 +504,17 @@ void GkMultimedia::updateStream(const ALuint source, const ALenum &format, const
         return;
     }
 
+    //
+    // Create outside the loop for performance reasons...
+    ALsizei dataSize = GK_AUDIO_STREAM_BUF_SIZE;
+    char *data = new char[dataSize];
+
     while (--buffersProcessed) {
         ALuint buffer;
         alCall(alSourceUnqueueBuffers, source, 1, &buffer);
 
-        ALsizei dataSize = GK_AUDIO_STREAM_BUF_SIZE;
-
-        char *data = new char[dataSize];
+        //
+        // Initialize the buffer with a padding of zeroes!
         std::memset(data, 0, dataSize);
 
         std::size_t dataSizeToCopy = GK_AUDIO_STREAM_BUF_SIZE;

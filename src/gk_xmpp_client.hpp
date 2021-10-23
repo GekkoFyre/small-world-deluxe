@@ -233,7 +233,8 @@ private slots:
     void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
     void handleFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void handleThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
-    void filterIncomingResults(QXmppMessage &message);
+    void filterIncomingResults(QXmppMessage message);
+    void insertArchiveMessage(const QXmppMessage &message, const bool &enqueue = true);
 
     //
     // QXmppMamManager handling
@@ -274,7 +275,7 @@ signals:
     // Message handling and QXmppArchiveManager-related
     void xmppMsgUpdate(const QXmppMessage &message);
     void updateMsgHistory();
-    void sendIncomingResults(QXmppMessage &message);
+    void sendIncomingResults(QXmppMessage message);
 
     //
     // Message handling and QXmppMamManager handling
@@ -286,8 +287,6 @@ signals:
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
 
 private:
-    void insertArchiveMessage(const QXmppMessage &message, const bool &enqueue = true);
-
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkSystem> gkSystem;

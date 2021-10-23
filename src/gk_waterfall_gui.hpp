@@ -68,7 +68,6 @@
 #include <vector>
 #include <thread>
 #include <future>
-#include <memory>
 #include <chrono>
 #include <QList>
 #include <QTimer>

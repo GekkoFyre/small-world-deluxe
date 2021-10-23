@@ -175,7 +175,10 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-serialport \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
-        mingw-w64-python-bin
+        mingw-w64-python-bin \
+		mingw-w64-ffmpeg \
+		mingw-w64-openal \
+		mingw-w64-taglib
 
 # Cleanup
 USER root
@@ -243,6 +246,7 @@ RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
 RUN pacman -S openal --noconfirm
 RUN pacman -S ffmpeg --noconfirm
+RUN pacman -S taglib --noconfirm
 
 USER devel
 RUN yay -S conan --noconfirm
@@ -326,28 +330,17 @@ CMD rm -rvf snappy
 #
 # We had to login to the Docker image itself and compile this by hand manually!
 #
-# RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.3.1/hamlib-4.3.1.tar.gz" ]
-# RUN tar -xvzf hamlib-4.1.tar.gz
-# CMD cd hamlib-4.1
-# CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
-# CMD [ "make", "-j$(nproc)" ]
-# CMD [ "make", "install" ]
-# CMD cd ./..
-# CMD rm -rvf hamlib-4.1
+RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.3.1/hamlib-4.3.1.tar.gz" ]
+RUN tar -xvzf hamlib-4.3.1.tar.gz
+CMD cd hamlib-4.3.1
+CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
+CMD [ "make", "-j$(nproc)" ]
+CMD [ "make", "install" ]
+CMD cd ./..
+CMD rm -rvf hamlib-4.3.1
 
 #
 # Make it so that the Qt5 libraries (i.e. specifically `libQt5Core.so.5`) can run with Small World Deluxe, and thusly 
 # this version of Arch Linux's package!
 #
 RUN strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-
-#
-# Compile the final library required!
-#
-CMD cd src/contrib/QtUsb
-CMD mkdir build
-CMD cd build
-CMD [ "qmake", "-makefile .." ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./../../../..

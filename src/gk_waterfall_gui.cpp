@@ -48,6 +48,7 @@
 #include <stdexcept>
 #include <exception>
 #include <utility>
+#include <memory>
 #include <QPen>
 #include <QColormap>
 #include <QGridLayout>
@@ -273,13 +274,13 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         m_plotVertCurve->setTitle(" ");
 
         {
-            QwtPlotGrid* horCurveGrid = new QwtPlotGrid;
+            std::unique_ptr<QwtPlotGrid> horCurveGrid = std::make_unique<QwtPlotGrid>();
             horCurveGrid->enableXMin(true);
             horCurveGrid->setMinorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->setMajorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->attach(m_plotHorCurve.get());
 
-            QwtPlotGrid* vertCurveGrid = new QwtPlotGrid;
+            std::unique_ptr<QwtPlotGrid> vertCurveGrid = std::make_unique<QwtPlotGrid>();
             vertCurveGrid->enableXMin(true);
             vertCurveGrid->setMinorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
             vertCurveGrid->setMajorPen(QPen(Qt::lightGray, 0, Qt::DotLine));

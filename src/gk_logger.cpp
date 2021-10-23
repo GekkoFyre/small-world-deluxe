@@ -456,7 +456,6 @@ void GkEventLogger::sendToConsole(const GkEventLogging &event_msg, const Events:
 void GkEventLogger::writeToCsv(const Events::Logging::GkEventLogging &event_msg, const Events::Logging::GkSeverity &severity)
 {
     if (!event_msg.mesg.message.isNull() && !event_msg.mesg.message.isEmpty()) {
-        QString msg = event_msg.mesg.message;
         if (!event_msg.mesg.arguments.isNull() && !event_msg.mesg.arguments.toString().isEmpty()) {
 
         }

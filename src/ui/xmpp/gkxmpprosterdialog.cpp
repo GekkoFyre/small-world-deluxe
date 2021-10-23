@@ -914,7 +914,6 @@ void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
 {
     QModelIndex idx = ui->tableView_callsigns_groups->indexAt(ui->actionEdit_Contact->data().toPoint());
     QVariant data = ui->tableView_callsigns_groups->model()->data(idx);
-    QString text = data.toString();
 
     return;
 }

@@ -128,10 +128,6 @@ RapidCSV by Kristofer Berggren
     <https://github.com/d99kris/rapidcsv/>
         BSD 3-clause License
 
-libsndfile by Erik de Castro Lopo
-    <http://www.mega-nerd.com/libsndfile/>
-        GNU Lesser General Public License (LGPL, version 3)
-
 udev related C++ classes by Dimitry Ishenko
     <https://github.com/dimitry-ishenko/udev>
         GNU General Public License (GPL, version 3)
