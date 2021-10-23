@@ -75,6 +75,7 @@
 #include <QDir>
 #include <QList>
 #include <QIcon>
+#include <QQueue>
 #include <QString>
 #include <QVector>
 #include <QVariant>
@@ -515,8 +516,14 @@ namespace Network {
             PageBackwards
         };
 
+        enum GkXmppParty {
+            FirstParty,
+            ThirdParty
+        };
+
         struct GkXmppMamMsg {
             bool presented = false;
+            GkXmppParty party;
             QXmppMessage message;
         };
 
@@ -550,9 +557,11 @@ namespace Network {
         struct GkXmppCallsign {
             GkHost server;
             QString bareJid;
+            GkXmppParty party;
             QXmppVCardIq vCard;
             QList<GkXmppArchiveMsg> archive_messages;
             QList<GkXmppMamMsg> messages;
+            QQueue<GkXmppMamMsg> msg_queue;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
         };

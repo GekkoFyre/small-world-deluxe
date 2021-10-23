@@ -154,7 +154,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
         if (!vcard_save_path.exists()) {
-            if (vcard_save_path.mkpath(vcard_save_path.canonicalPath())) {
+            if (vcard_save_path.mkpath(vcard_save_path.path())) {
                 gkEventLogger->publishEvent(tr("Directory, \"%1\", has been created successfully!")
                 .arg(vcard_save_path.canonicalPath()), GkSeverity::Info, "", false,
                 true, false, false);
@@ -226,6 +226,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         //
         // QXmppArchiveManager and QXmppMamManager handling...
+        QObject::connect(this, SIGNAL(procFirstPartyMsg(const QXmppMessage &)), this, SLOT(handleFirstPartyMsg(const QXmppMessage &)));
+        QObject::connect(this, SIGNAL(procThirdPartyMsg(const QXmppMessage &)), this, SLOT(handleThirdPartyMsg(const QXmppMessage &)));
         QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)),
                          this, SLOT(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)));
         QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)),
@@ -1159,6 +1161,7 @@ void GkXmppClient::clientConnected()
     client_callsign.vCard.nickName() = m_connDetails.nickname;
     client_callsign.server = m_connDetails.server;
     client_callsign.bareJid = m_connDetails.jid;
+    client_callsign.party = GkXmppParty::FirstParty;
     m_rosterList.push_back(client_callsign);
     emit updateRoster();
 
@@ -1406,7 +1409,7 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 {
     try {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-            if (iter->bareJid == m_connDetails.jid) {
+            if (iter->bareJid == m_connDetails.jid && iter->party == GkXmppParty::FirstParty) {
                 m_presence->setType(pres);
                 iter->presence.reset();
                 iter->presence = std::make_shared<QXmppPresence>(pres);
@@ -1433,7 +1436,7 @@ std::shared_ptr<QXmppPresence> GkXmppClient::getPresence(const QString &bareJid)
 {
     if (!bareJid.isEmpty() && !m_rosterList.isEmpty()) {
         for (const auto &entry: m_rosterList) {
-            if (bareJid == entry.bareJid) {
+            if (bareJid == entry.bareJid && entry.party == GkXmppParty::ThirdParty) {
                 return entry.presence;
             }
         }
@@ -2091,6 +2094,7 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
             callsign.bareJid = bareJid;
             callsign.presence = std::make_shared<QXmppPresence>(presence);
             callsign.subStatus = QXmppRosterIq::Item::SubscriptionType::NotSet; // TODO: Change this so it is set dynamically, and therefore can handle more possible situations!
+            callsign.party = GkXmppParty::ThirdParty;
             m_rosterList.push_back(callsign);
             emit updateRoster();
             if (!presence.statusText().isEmpty()) {
@@ -2313,6 +2317,68 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 }
 
 /**
+ * @brief GkXmppClient::handleFirstPartyMsg processes the handling of first-party messages.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param message The message stanza to handle/process.
+ */
+void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message)
+{
+    try {
+        if (message.isXmppStanza() && !message.body().isEmpty()) {
+            //
+            // Messages that have been received towards/from the first-party!
+            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+                if (iter->bareJid == m_connDetails.jid && iter->party == GkXmppParty::FirstParty) {
+                    if (m_connDetails.jid == message.to() || m_connDetails.jid == message.from()) {
+                        GkXmppMamMsg mam_msg;
+                        mam_msg.message = message;
+                        mam_msg.presented = false;
+                        mam_msg.party = GkXmppParty::FirstParty;
+                        iter->msg_queue.enqueue(mam_msg);
+
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handleThirdPartyMsg processes the handling of third-party messages.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param message The message stanza to handle/process.
+ */
+void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message)
+{
+    try {
+        if (message.isXmppStanza() && !message.body().isEmpty()) {
+            //
+            // Messages that have been sent towards/from the third-party!
+            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+                if ((iter->bareJid == message.to() || iter->bareJid == message.from()) && iter->party == GkXmppParty::ThirdParty) {
+                    GkXmppMamMsg mam_msg;
+                    mam_msg.message = message;
+                    mam_msg.presented = false;
+                    mam_msg.party = GkXmppParty::ThirdParty;
+                    iter->msg_queue.enqueue(mam_msg);
+
+                    break;
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::archivedMessageReceived is a signal that's emitted when an archived message is received. Inserts
  * QXmppMessage stanzas into the class-wide variable, `m_rosterList`, if applicable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2324,42 +2390,8 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
     Q_UNUSED(queryId);
-
-    //
-    // TODO: Optimize this function somehow? Surely there's gotta be a better way than comparing message-by-message
-    //  every MAM archive pull...
-
     try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-            if (iter->bareJid == message.from()) {
-                if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    if (!iter->messages.isEmpty()) {
-                        m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
-                    } else {
-                        insertArchiveMessage(message);
-                    }
-                }
-
-                break;
-            }
-        }
-
-        //
-        // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
-        //
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-            if (iter->bareJid == message.to()) {
-                if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    if (!iter->messages.isEmpty()) {
-                        m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
-                    } else {
-                        insertArchiveMessage(message);
-                    }
-                }
-
-                break;
-            }
-        }
+        insertArchiveMessage(message);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
                                     false, true, false, true);
@@ -2377,25 +2409,48 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
  */
 void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete)
 {
-    try {
-        //
-        // Unwrap the std::vector of std::async-laced std::future's and obtain the results laying therein!
-        gkEventLogger->publishEvent(tr("There are %1 archived messages to unpack!").arg(QString::number(m_filterArchivedMsgFut.size() + 1)), GkSeverity::Debug,
-                                    "", false, true, false, false, false);
+    Q_UNUSED(queryId);
+    Q_UNUSED(resultSetReply);
+    Q_UNUSED(complete);
 
-        for (auto filter = m_filterArchivedMsgFut.begin(); filter != m_filterArchivedMsgFut.end(); ++filter) {
-            const bool result = filter->second.get();
-            if (result) { // The message therefore does not exist within memory (i.e. `m_rosterList`) already!
-                emit procXmppMsg(filter->first, false);
-                insertArchiveMessage(filter->first);
+    try {
+        for (auto roster = m_rosterList.begin(); roster != m_rosterList.end(); ++roster) {
+            if (!roster->msg_queue.empty()) {
+                for (auto queue = roster->msg_queue.begin(); queue != roster->msg_queue.end(); ++queue) {
+                    //
+                    // Messages that have been sent towards/from the third-party!
+                    if ((roster->bareJid == queue->message.to() || roster->bareJid == queue->message.from()) && roster->party == GkXmppParty::ThirdParty) {
+                        if (queue->message.isXmppStanza() && !queue->message.body().isEmpty() && !queue->message.id().isEmpty()) {
+                            for (const auto &existing: roster->messages) {
+                                if (existing.message.id() != queue->message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
+                                    //
+                                    // This object does not currently exist in memory!
+                                    emit procXmppMsg(queue->message, false);
+                                    insertArchiveMessage(queue->message);
+                                    roster->msg_queue.dequeue(); // TODO: Check that this works!
+                                }
+                            }
+                        }
+                    }
+
+                    //
+                    // Messages that have been received towards/from the first-party!
+                    if ((m_connDetails.jid == queue->message.to() || m_connDetails.jid == queue->message.from()) && roster->party == GkXmppParty::FirstParty) {
+                        if (queue->message.isXmppStanza() && !queue->message.body().isEmpty() && !queue->message.id().isEmpty()) {
+                            for (const auto &existing: roster->messages) {
+                                if (existing.message.id() != queue->message.id()) {
+                                    //
+                                    // This object does not currently exist in memory!
+                                    emit procXmppMsg(queue->message, false);
+                                    insertArchiveMessage(queue->message);
+                                    roster->msg_queue.dequeue(); // TODO: Check that this works!
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        //
-        // Erase the objects from the std::vector() as we can't call .get() on the same std::future() twice, at least not
-        // without invoking an exception/crash!
-        m_filterArchivedMsgFut.clear();
-        m_filterArchivedMsgFut.shrink_to_fit();
 
         //
         // Tell the program that receiving of all (applicable) messages from the archives of the given XMPP server has been
@@ -2403,44 +2458,6 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
         emit msgArchiveSuccReceived();
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::updateRecordedMsgHistory will update the recorded message history for all users on the variable,
- * `m_rosterList`. Originally designed to be only executed once, it has now been refactored to be run multiple times as
- * required.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user identity to update in question with regard to message history.
- */
-void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
-{
-    try {
-        if (!m_rosterList.isEmpty()) {
-            //
-            // Update the recorded message history for each roster member from the Google LevelDB database!
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-                if (!iter->bareJid.isEmpty()) {
-                    if (iter->bareJid == bareJid) {
-                        const auto msg_history = gkDb->read_xmpp_chat_log(iter->bareJid);
-                        if (!msg_history.isEmpty()) {
-                            for (const auto &msg: msg_history) {
-                                GkXmppMamMsg mam_msg;
-                                mam_msg.message = msg;
-                                mam_msg.presented = false;
-                                iter->messages.push_back(mam_msg);
-                            }
-                        }
-
-                        break;
-                    }
-                }
-            }
-        }
-    } catch (const std::exception &e) {
-        gkStringFuncs->print_exception(e);
     }
 
     return;
@@ -2462,56 +2479,6 @@ void GkXmppClient::setMsgRecved(const bool &setValid)
 }
 
 /**
- * @brief GkXmppClient::filterArchivedMessage filters archived messages according to XMPP standard, XEP-0313, as they
- * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesFine(), to see
- * if they're already existing in program memory already via variable, `m_rosterList`.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param rosterList A reference to the class-wide variable, `m_rosterList`.
- * @param message The message stanza itself that the comparison is to be made against.
- * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::archivedMessageReceived().
- */
-bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList,
-                                         const QXmppMessage &message)
-{
-    try {
-        for (const auto &roster: rosterList) {
-            if (roster.bareJid == message.to()) {
-                if (message.isXmppStanza() && !message.body().isEmpty() && !message.id().isEmpty()) {
-                    for (const auto &existing: roster.messages) {
-                        if (existing.message.id() != message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
-                            return true; // Return the fact that the object did not originally exist in memory...
-                        }
-                    }
-                }
-
-                return false; // The object already existed in memory
-            }
-        }
-
-        //
-        // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
-        //
-        for (const auto &roster: rosterList) {
-            if (roster.bareJid == message.from()) {
-                if (message.isXmppStanza() && !message.body().isEmpty() && !message.id().isEmpty()) {
-                    for (const auto &existing: roster.messages) {
-                        if (existing.message.id() != message.id()) {
-                            return true;
-                        }
-                    }
-                }
-
-                return false; // The object already existed in memory
-            }
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
-    }
-
-    return false; // Something has gone wrong without being detected?
-}
-
-/**
  * @brief GkXmppClient::insertArchiveMessage inserts a QXmppMessage stanza according to XMPP standard, XEP-0313, into the
  * class-wide variable, `m_rosterList`, but only after it has passed all the tests, including filters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2520,33 +2487,8 @@ bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp:
  */
 void GkXmppClient::insertArchiveMessage(const QXmppMessage &message)
 {
-    try {
-        if (message.isXmppStanza() && !message.body().isEmpty()) {
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-                if (iter->bareJid == message.from()) {
-                    GkXmppMamMsg mam_msg;
-                    mam_msg.message = message;
-                    mam_msg.presented = false;
-                    iter->messages.push_back(mam_msg);
-
-                    break;
-                }
-            }
-
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-                if (iter->bareJid == message.to()) {
-                    GkXmppMamMsg mam_msg;
-                    mam_msg.message = message;
-                    mam_msg.presented = false;
-                    iter->messages.push_back(mam_msg);
-
-                    break;
-                }
-            }
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
-    }
+    emit procFirstPartyMsg(message);
+    emit procThirdPartyMsg(message);
 
     return;
 }

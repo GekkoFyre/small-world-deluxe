@@ -229,6 +229,33 @@ else()
 endif(Boost_FOUND)
 
 #
+# FFmpeg
+# https://www.ffmpeg.org/
+# https://github.com/FFmpeg/FFmpeg
+#
+find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
+if (FFMPEG_FOUND)
+    include_directories(${FFMPEG_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
+    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
+else()
+    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
+endif(FFMPEG_FOUND)
+
+#
+# TagLib by Scott Wheeler
+# https://github.com/taglib/taglib
+#
+find_package(Taglib REQUIRED)
+if (TAGLIB_FOUND)
+    include_directories(${TAGLIB_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
+    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
+else()
+    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
+endif(TAGLIB_FOUND)
+
+#
 # QXmpp
 # https://github.com/qxmpp-project/qxmpp
 #
@@ -259,8 +286,10 @@ endif(HAMLIB_FOUND)
 
 set(GALAXY_HAMLIB_CPP
     ${GALAXY_HAMLIB_CPP}
+	src/contrib/hamlib++/ampclass.cc
     src/contrib/hamlib++/rigclass.cc
     src/contrib/hamlib++/rotclass.cc
+	src/contrib/hamlib++/include/hamlib/ampclass.h
     src/contrib/hamlib++/include/hamlib/rigclass.h
     src/contrib/hamlib++/include/hamlib/rotclass.h)
 
@@ -413,33 +442,6 @@ if (LINUX OR !MSYS OR !MINGW)
 	endif(NUSPELL_FOUND)
 endif()
 
-#
-# FFmpeg
-# https://www.ffmpeg.org/
-# https://github.com/FFmpeg/FFmpeg
-#
-find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
-if (FFMPEG_FOUND)
-    include_directories(${FFMPEG_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
-    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
-else()
-    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
-endif(FFMPEG_FOUND)
-
-#
-# TagLib by Scott Wheeler
-# https://github.com/taglib/taglib
-#
-find_package(Taglib REQUIRED)
-if (TAGLIB_FOUND)
-    include_directories(${TAGLIB_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${TAGLIB_LIBRARIES})
-    message(STATUS "The 'TagLib' library for reading and editing of metadata within audio files, has now been configured!")
-else()
-    message(FATAL_ERROR "The 'TagLib' library for reading and editing of metadata within audio files, could not be found!")
-endif(TAGLIB_FOUND)
-
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -539,10 +541,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 #
-# Use Crashpad (and therefore the more modern crash reporting system) for all major operating systems based around the personal computer (Android, iOS, etc. and the like are therefore unsupported but we currently have no plans for the mobile market right now)...
+# Using Breakpad due to a bug where Crashpad won't compile under the latest MSYS2 versions, and because the in-tree Crashpad does not generally support attachments. It is seen as the 'less modern' alternative but this is the best we can do, so oh well! Breakpad supports pretty much everything too, including most of the personal computer market and Android, iOS, etc.
 # A feature matrix can be seen here towards the bottom of the page: https://github.com/getsentry/sentry-native
 #
-set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
+set(SENTRY_BACKEND "breakpad" CACHE STRING "The type of crash manager to use." FORCE)
 set(SENTRY_CRASHPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
 set(SENTRY_BREAKPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
 
@@ -1064,28 +1066,6 @@ add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${QM_FI
 target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independent code!
 set_property(TARGET gk_update PROPERTY AUTOMOC ON)
 target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} cares Qt5::Core Qt5::Network SingleApplication::SingleApplication)
-
-#
-# Copy the crashpad handler to the root of the binary build directory, for easy access!
-# https://cmake.org/cmake/help/latest/module/FetchContent.html
-# https://www.thetopsites.net/article/52110824.shtml
-#
-if(WIN32 OR MSYS OR MINGW)
-    add_custom_command(TARGET smallworld
-                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
-                    ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
-else()
-    add_custom_command(TARGET smallworld
-                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
-                    ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
-
-    add_custom_command(TARGET smallworld
-                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/libcrashpad_handler_lib.a
-                    ${CMAKE_CURRENT_BINARY_DIR}/libcrashpad_handler_lib.a)
-endif()
 
 if(WIN32 OR MSYS OR MINGW)
 	if (EXISTS "$ENV{SystemDrive}/Program Files")

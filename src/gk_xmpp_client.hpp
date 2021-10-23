@@ -231,12 +231,13 @@ private slots:
     void recvXmppMsgUpdate(const QXmppMessage &message);
     void archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply);
     void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
+    void handleFirstPartyMsg(const QXmppMessage &message);
+    void handleThirdPartyMsg(const QXmppMessage &message);
 
     //
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
-    void updateRecordedMsgHistory(const QString &bareJid);
     void setMsgRecved(const bool &setValid);
 
 signals:
@@ -278,9 +279,10 @@ signals:
     void msgArchiveSuccReceived();
     void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
     void msgRecved(const bool &setValid);
+    void procFirstPartyMsg(const QXmppMessage &message);
+    void procThirdPartyMsg(const QXmppMessage &message);
 
 private:
-    [[nodiscard]] bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
     void insertArchiveMessage(const QXmppMessage &message);
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -342,7 +344,6 @@ private:
     std::mutex m_updateRosterMapMtx;
     std::mutex m_archivedMsgsFineMtx;
     std::thread m_archivedMsgsFineThread;
-    std::vector<std::pair<QXmppMessage, std::future<bool>>> m_filterArchivedMsgFut;
 
     //
     // QXmpp and XMPP related

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1600</width>
-    <height>1168</height>
+    <width>1024</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -531,8 +531,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>641</width>
-                                <height>212</height>
+                                <width>428</width>
+                                <height>180</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -677,8 +677,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>641</width>
-                                <height>212</height>
+                                <width>427</width>
+                                <height>180</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -963,8 +963,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>355</width>
-                          <height>347</height>
+                          <width>157</width>
+                          <height>172</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1524,8 +1524,8 @@ QPushButton:disabled {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1600</width>
-     <height>42</height>
+     <width>1024</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

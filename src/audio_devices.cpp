@@ -444,7 +444,9 @@ qreal GkAudioDevices::getPeakValue(const ALenum &audio_format, const qint32 &bit
  */
 void GkAudioDevices::captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples)
 {
-    alcCaptureSamples(device, buffer, samples);
+    alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
+    alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(buffer), samples);
+
     return;
 }
 
