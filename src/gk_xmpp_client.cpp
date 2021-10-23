@@ -226,8 +226,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         //
         // QXmppArchiveManager and QXmppMamManager handling...
-        QObject::connect(this, SIGNAL(procFirstPartyMsg(const QXmppMessage &)), this, SLOT(handleFirstPartyMsg(const QXmppMessage &)));
-        QObject::connect(this, SIGNAL(procThirdPartyMsg(const QXmppMessage &)), this, SLOT(handleThirdPartyMsg(const QXmppMessage &)));
+        QObject::connect(this, SIGNAL(sendXmppMsgToArchive(const QXmppMessage &, const bool &)),
+                         this, SLOT(insertArchiveMessage(const QXmppMessage &, const bool &)));
+        QObject::connect(this, SIGNAL(sendIncomingResults(QXmppMessage &)),
+                         this, SLOT(filterIncomingResults(QXmppMessage &)));
+        QObject::connect(this, SIGNAL(procFirstPartyMsg(const QXmppMessage &, const bool &)),
+                         this, SLOT(handleFirstPartyMsg(const QXmppMessage &, const bool &)));
+        QObject::connect(this, SIGNAL(procThirdPartyMsg(const QXmppMessage &, const bool &)),
+                         this, SLOT(handleThirdPartyMsg(const QXmppMessage &, const bool &)));
         QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)),
                          this, SLOT(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)));
         QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)),
@@ -1085,6 +1091,27 @@ void GkXmppClient::getArchivedMessagesFine(qint32 recursion, const QString &from
 }
 
 /**
+ * @brief GkXmppClient::filterIncomingResults filters incoming messages that are being processed as part of handling by
+ * function, `GkXmppClient::resultsReceived()`, and assigning said messages to the proper roster with regard to the
+ * class-wide variable, `m_rosterList`, from the QQueue-based message queue within the associated struct.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mam_msg_list
+ */
+void GkXmppClient::filterIncomingResults(QXmppMessage &message)
+{
+    try {
+        //
+        // This object does not currently exist in memory!
+        emit procXmppMsg(message, false);
+        emit sendXmppMsgToArchive(message, false);
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::processImgToByteArray processes a given image, or avatar in this case, into a QByteArray so that
  * it is readily usable by QXmppVCardManager().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1182,6 +1209,7 @@ void GkXmppClient::handleRosterReceived()
             const auto jidItem = m_rosterManager->getRosterEntry(rawBareJid);
             GkXmppCallsign callsign;
             callsign.bareJid = jidItem.bareJid();
+            callsign.party = GkXmppParty::ThirdParty;
             callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unavailable);
             callsign.subStatus = jidItem.subscriptionType();
             switch (jidItem.subscriptionType()) {
@@ -2320,8 +2348,11 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
  * @brief GkXmppClient::handleFirstPartyMsg processes the handling of first-party messages.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param message The message stanza to handle/process.
+ * @param enqueue Whether the incoming message(s) should be added to a queue for further processing or not, or otherwise
+ * be made ready as quickly as possible for displaying to the end-user. Please be aware of the context you are using this
+ * parameter within.
  */
-void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message)
+void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message, const bool &enqueue)
 {
     try {
         if (message.isXmppStanza() && !message.body().isEmpty()) {
@@ -2334,8 +2365,12 @@ void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message)
                         mam_msg.message = message;
                         mam_msg.presented = false;
                         mam_msg.party = GkXmppParty::FirstParty;
-                        iter->msg_queue.enqueue(mam_msg);
+                        if (enqueue) {
+                            iter->msg_queue.enqueue(mam_msg);
+                            break;
+                        }
 
+                        iter->messages.push_back(mam_msg);
                         break;
                     }
                 }
@@ -2352,8 +2387,11 @@ void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message)
  * @brief GkXmppClient::handleThirdPartyMsg processes the handling of third-party messages.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param message The message stanza to handle/process.
+ * @param enqueue Whether the incoming message(s) should be added to a queue for further processing or not, or otherwise
+ * be made ready as quickly as possible for displaying to the end-user. Please be aware of the context you are using this
+ * parameter within.
  */
-void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message)
+void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message, const bool &enqueue)
 {
     try {
         if (message.isXmppStanza() && !message.body().isEmpty()) {
@@ -2365,8 +2403,12 @@ void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message)
                     mam_msg.message = message;
                     mam_msg.presented = false;
                     mam_msg.party = GkXmppParty::ThirdParty;
-                    iter->msg_queue.enqueue(mam_msg);
+                    if (enqueue) {
+                        iter->msg_queue.enqueue(mam_msg);
+                        break;
+                    }
 
+                    iter->messages.push_back(mam_msg);
                     break;
                 }
             }
@@ -2390,12 +2432,7 @@ void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message)
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
     Q_UNUSED(queryId);
-    try {
-        insertArchiveMessage(message);
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
-                                    false, true, false, true);
-    }
+    emit sendXmppMsgToArchive(message, true);
 
     return;
 }
@@ -2417,38 +2454,46 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
         for (auto roster = m_rosterList.begin(); roster != m_rosterList.end(); ++roster) {
             if (!roster->msg_queue.empty()) {
                 for (auto queue = roster->msg_queue.begin(); queue != roster->msg_queue.end(); ++queue) {
-                    //
-                    // Messages that have been sent towards/from the third-party!
-                    if ((roster->bareJid == queue->message.to() || roster->bareJid == queue->message.from()) && roster->party == GkXmppParty::ThirdParty) {
-                        if (queue->message.isXmppStanza() && !queue->message.body().isEmpty() && !queue->message.id().isEmpty()) {
-                            for (const auto &existing: roster->messages) {
-                                if (existing.message.id() != queue->message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
-                                    //
-                                    // This object does not currently exist in memory!
-                                    emit procXmppMsg(queue->message, false);
-                                    insertArchiveMessage(queue->message);
-                                    roster->msg_queue.dequeue(); // TODO: Check that this works!
+                    if (queue->message.isXmppStanza() && !queue->message.body().isNull() &&
+                        !queue->message.id().isEmpty()) {
+                        //
+                        // Messages that have been sent towards/from the third-party!
+                        if ((roster->bareJid == queue->message.to() || roster->bareJid == queue->message.from()) &&
+                            roster->party == GkXmppParty::ThirdParty) {
+                            if (!roster->messages.empty()) {
+                                for (const auto &existing: roster->messages) {
+                                    if (existing.message.id() !=
+                                        queue->message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
+                                        emit sendIncomingResults(queue->message); // This object does not exist in memory yet!
+                                        roster->msg_queue.erase(queue);
+                                    }
                                 }
+                            } else {
+                                emit sendIncomingResults(queue->message); // This object does not exist in memory yet!
+                                roster->msg_queue.erase(queue);
                             }
                         }
-                    }
 
-                    //
-                    // Messages that have been received towards/from the first-party!
-                    if ((m_connDetails.jid == queue->message.to() || m_connDetails.jid == queue->message.from()) && roster->party == GkXmppParty::FirstParty) {
-                        if (queue->message.isXmppStanza() && !queue->message.body().isEmpty() && !queue->message.id().isEmpty()) {
-                            for (const auto &existing: roster->messages) {
-                                if (existing.message.id() != queue->message.id()) {
-                                    //
-                                    // This object does not currently exist in memory!
-                                    emit procXmppMsg(queue->message, false);
-                                    insertArchiveMessage(queue->message);
-                                    roster->msg_queue.dequeue(); // TODO: Check that this works!
+                        //
+                        // Messages that have been received towards/from the first-party!
+                        if ((m_connDetails.jid == queue->message.to() || m_connDetails.jid == queue->message.from()) &&
+                            roster->party == GkXmppParty::FirstParty) {
+                            if (!roster->messages.empty()) {
+                                for (const auto &existing: roster->messages) {
+                                    if (existing.message.id() != queue->message.id()) {
+                                        emit sendIncomingResults(queue->message); // This object does not exist in memory yet!
+                                        roster->msg_queue.erase(queue);
+                                    }
                                 }
+                            } else {
+                                emit sendIncomingResults(queue->message); // This object does not exist in memory yet!
+                                roster->msg_queue.erase(queue);
                             }
                         }
                     }
                 }
+            } else {
+                break; // The queue of messages is now exhausted!
             }
         }
 
@@ -2483,12 +2528,23 @@ void GkXmppClient::setMsgRecved(const bool &setValid)
  * class-wide variable, `m_rosterList`, but only after it has passed all the tests, including filters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param message The message stanza itself that is to be inserted into memory.
+ * @param enqueue Whether the incoming message(s) should be added to a queue for further processing or not, or otherwise
+ * be made ready as quickly as possible for displaying to the end-user. Please be aware of the context you are using this
+ * parameter within.
  * @see GkXmppClient::archivedMessageReceived().
  */
-void GkXmppClient::insertArchiveMessage(const QXmppMessage &message)
+void GkXmppClient::insertArchiveMessage(const QXmppMessage &message, const bool &enqueue)
 {
-    emit procFirstPartyMsg(message);
-    emit procThirdPartyMsg(message);
+    try {
+        if (message.isXmppStanza() && !message.body().isEmpty()) {
+            emit procFirstPartyMsg(message, enqueue);
+            emit procThirdPartyMsg(message, enqueue);
+
+            return;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
 
     return;
 }

@@ -231,8 +231,9 @@ private slots:
     void recvXmppMsgUpdate(const QXmppMessage &message);
     void archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply);
     void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
-    void handleFirstPartyMsg(const QXmppMessage &message);
-    void handleThirdPartyMsg(const QXmppMessage &message);
+    void handleFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
+    void handleThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
+    void filterIncomingResults(QXmppMessage &message);
 
     //
     // QXmppMamManager handling
@@ -273,17 +274,19 @@ signals:
     // Message handling and QXmppArchiveManager-related
     void xmppMsgUpdate(const QXmppMessage &message);
     void updateMsgHistory();
+    void sendIncomingResults(QXmppMessage &message);
 
     //
     // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
     void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
     void msgRecved(const bool &setValid);
-    void procFirstPartyMsg(const QXmppMessage &message);
-    void procThirdPartyMsg(const QXmppMessage &message);
+    void procFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
+    void procThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
+    void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
 
 private:
-    void insertArchiveMessage(const QXmppMessage &message);
+    void insertArchiveMessage(const QXmppMessage &message, const bool &enqueue = true);
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
