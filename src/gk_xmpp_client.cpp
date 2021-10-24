@@ -2477,43 +2477,31 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
     Q_UNUSED(complete);
 
     try {
-        for (auto roster = m_rosterList.begin(); roster != m_rosterList.end(); ++roster) {
-            if (roster->msg_queue.size() != roster->messages.size()) {
-                for (qint32 i = 0; i < roster->msg_queue.size(); ++i) {
-                    if (roster->msg_queue[i].message.isXmppStanza() && !roster->msg_queue[i].message.id().isEmpty() && !roster->msg_queue[i].message.body().isEmpty()) {
-                        if (!roster->messages.isEmpty()) {
-                            for (qint32 j = 0; j < roster->messages.size(); ++j) {
-                                //
-                                // Messages that have been sent towards/from the third-party!
-                                if ((roster->bareJid == roster->msg_queue[i].message.to() || roster->bareJid == roster->msg_queue[i].message.from()) && roster->party == GkXmppParty::ThirdParty) {
-                                    if (roster->messages[j].message.id() != roster->msg_queue[i].message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
-                                        emit sendIncomingResults(roster->msg_queue[i].message); // This object does not exist in memory yet!
-                                    }
-                                }
-
-                                //
-                                // Messages that have been received towards/from the first-party!
-                                if ((m_connDetails.jid == roster->msg_queue[i].message.to() || m_connDetails.jid == roster->msg_queue[i].message.from()) && roster->party == GkXmppParty::FirstParty) {
-                                    if (roster->messages[j].message.id() != roster->msg_queue[i].message.id()) {
-                                        emit sendIncomingResults(roster->msg_queue[i].message); // This object does not exist in memory yet!
-                                    }
-                                }
+        if (!m_rosterList.isEmpty()) {
+            for (auto roster = m_rosterList.begin(); roster != m_rosterList.end();) {
+                const auto queue = roster->msg_queue;
+                if (!queue.isEmpty()) {
+                    qint32 idx = 1;
+                    const qint32 target = queue.size();
+                    for (qint32 i = 0; i < queue.size(); ++i) {
+                        if (queue[i].message.isXmppStanza() && !queue[i].message.id().isEmpty() && !queue[i].message.body().isEmpty()) {
+                            emit sendIncomingResults(queue[i].message); // This object does not exist in memory yet!
+                            ++idx;
+                            if (idx == target) {
+                                roster->msg_queue.clear();
+                                ++roster;
+                                break;
                             }
-                        } else {
-                            emit sendIncomingResults(roster->msg_queue[i].message); // This object does not exist in memory yet!
                         }
                     }
+
+                    //
+                    // Tell the program that receiving of all (applicable) messages from the archives of the given XMPP server has been
+                    // accomplished and is (hopefully) successful!
+                    emit msgArchiveSuccReceived();
                 }
-            } else {
-                roster->msg_queue.clear();
-                break;
             }
         }
-
-        //
-        // Tell the program that receiving of all (applicable) messages from the archives of the given XMPP server has been
-        // accomplished and is (hopefully) successful!
-        emit msgArchiveSuccReceived();
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
     }
