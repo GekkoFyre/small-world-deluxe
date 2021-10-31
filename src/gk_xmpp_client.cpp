@@ -565,33 +565,18 @@ QXmppPresence GkXmppClient::getBareJidPresence(const QString &bareJid, const QSt
 }
 
 /**
- * @brief GkXmppClient::getJidNickname
+ * @brief GkXmppClient::getJidNickname removes everything after and including the last slash.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
  * @return
  */
 QString GkXmppClient::getJidNickname(const QString &bareJid)
 {
-    for (const auto &roster: m_rosterList) { // Have to remove the, "<username>/GekkoFyre", etc. if present!
-        if (roster.bareJid == bareJid) {
-            QString ret;
-            if (!roster.vCard.nickName().isEmpty()) {
-                ret = roster.vCard.nickName();
-            }
+    QString ret = bareJid;
+    qint32 pos = bareJid.lastIndexOf(QChar('/'));
 
-            if (!roster.vCard.fullName().isEmpty() && ret.isEmpty()) {
-                ret = roster.vCard.fullName();
-            }
 
-            if (!roster.vCard.email().isEmpty() && ret.isEmpty()) {
-                ret = roster.vCard.email();
-            }
-
-            return ret;
-        }
-    }
-
-    return QString();
+    return ret.left(pos);
 }
 
 /**
@@ -2386,7 +2371,7 @@ void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message, const bool &
             // Messages that have been received towards/from the first-party!
             for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
                 if (iter->bareJid == m_connDetails.jid && iter->party == GkXmppParty::FirstParty) {
-                    if (m_connDetails.jid == message.to() || m_connDetails.jid == message.from()) {
+                    if (m_connDetails.jid == message.to() || m_connDetails.jid == getJidNickname(message.from())) {
                         GkXmppMamMsg mam_msg;
                         mam_msg.message = message;
                         mam_msg.presented = false;
@@ -2424,7 +2409,7 @@ void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message, const bool &
             //
             // Messages that have been sent towards/from the third-party!
             for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-                if ((iter->bareJid == message.to() || iter->bareJid == message.from()) && iter->party == GkXmppParty::ThirdParty) {
+                if ((iter->bareJid == message.to() || iter->bareJid == getJidNickname(message.from())) && iter->party == GkXmppParty::ThirdParty) {
                     GkXmppMamMsg mam_msg;
                     mam_msg.message = message;
                     mam_msg.presented = false;
@@ -2481,13 +2466,11 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
             for (auto roster = m_rosterList.begin(); roster != m_rosterList.end();) {
                 const auto queue = roster->msg_queue;
                 if (!queue.isEmpty()) {
-                    qint32 idx = 1;
                     const qint32 target = queue.size();
                     for (qint32 i = 0; i < queue.size(); ++i) {
                         if (queue[i].message.isXmppStanza() && !queue[i].message.id().isEmpty() && !queue[i].message.body().isEmpty()) {
                             emit sendIncomingResults(queue[i].message); // This object does not exist in memory yet!
-                            ++idx;
-                            if (idx == target) {
+                            if (i + 1 == queue.size()) {
                                 roster->msg_queue.clear();
                                 ++roster;
                                 break;
@@ -2499,6 +2482,9 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
                     // Tell the program that receiving of all (applicable) messages from the archives of the given XMPP server has been
                     // accomplished and is (hopefully) successful!
                     emit msgArchiveSuccReceived();
+                    return;
+                } else {
+                    break;
                 }
             }
         }
