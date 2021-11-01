@@ -157,6 +157,9 @@ signals:
     void updatePendingTableViewModel();
     void updateBlockedTableViewModel();
 
+    void launchMsgDlg(const QString &bareJid, const qint32 &tabIdx);
+    void launchMsgDlg(const QStringList &bareJids, const qint32 &tabIdx);
+
 private:
     Ui::GkXmppRosterDialog *ui;
 
@@ -222,8 +225,6 @@ private:
     QByteArray m_clientAvatarImgBa;
 
     void reconnectToXmpp();
-    void launchMsgDlg(const QString &bareJid);
-    void launchMsgDlg(const QStringList &bareJids);
     void prefillAvailComboBox();
 };
 

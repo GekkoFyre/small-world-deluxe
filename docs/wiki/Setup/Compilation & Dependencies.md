@@ -146,11 +146,17 @@ If you are using a Linux-based system to compile `Small World Deluxe`, you will 
 - `libogg-dev`
 - `libopus-dev`
 - `libssl-dev`
-- `libenchant-2-dev`
 - `libaria2-0-dev`
 - `libtag1-dev`
 - `libtagc0`
 - `libtagc0-dev`
+- `libicu-dev`
+- `libhunspell-dev`
+- `hunspell-en-au`
+- `hunspell-en-ca`
+- `hunspell-en-us`
+- `hunspell-en-gb`
+- `libenchant-dev`
 
 And the following is a *recommended* list of the required packages in regards to the `Qt5` library for a Debian-based system since we use that project for the GUI and primary internals of `Small World Deluxe`. Not all of these packages will be required and we appreciate suggestions on how to clean up the list, but for now, we like to be extra sure by covering all of our bases:
 
@@ -260,10 +266,41 @@ You are now done and complete! Please let us know if we've missed anything, as w
 
 #### Linux (Arch/Pacman-based)
 
-The instructions for Linux distributions based on [pacman](https://wiki.archlinux.org/title/pacman) (such as [Arch Linux](https://archlinux.org/) or [Manjaro Linux](https://manjaro.org/)) are quite similar to those of that based on Debian-oriented distros, only in this instance, you substitute `apt-get` for `pacman` instead along with the packages which are unique to this environment.
+The instructions for Linux distributions based on [pacman](https://wiki.archlinux.org/title/pacman) (such as [Arch Linux](https://archlinux.org/) or [Manjaro Linux](https://manjaro.org/)) are quite similar to those of that based on Debian-oriented distros, only in this instance, you substitute `apt-get` for `pacman` instead, along with the packages which are unique to this environment.
 
-NOTE: We do not have a complete dependency list yet for this flavour of Linux, so please only compile `Small World Deluxe` via `Arch Linux` at your own risk! We therefore only offer bare-bones support so far for `pacman`-based distributions.
+We have thus far found that `Small World Deluxe` compiles best with `GCC`/`G++` within this flavour of Linux, based on our own experiences with `Manjaro Linux`. You may therefore want to configure your environment to use such for compiling in order to avoid any extraneous errors. We would very much appreciate any feedback on your experiences with `Arch Linux` and related in regards to `Small World Deluxe`, so please share for the benefit of the greater community!
 
-That said, we have thus far found that `Small World Deluxe` compiles best with `GCC`/`G++` within this flavour of Linux, based on our own experiences with `Manjaro Linux`. You may therefore want to configure your environment to use such for compiling in order to avoid any extraneous errors. We would very much appreciate any feedback on your experiences with `Arch Linux` and related in regards to `Small World Deluxe`, so please share for the benefit of the greater community!
+It should also be noted that we do use an Arch Linux-based [Docker image](https://hub.docker.com/u/gekkofyre) for compiling `Small World Deluxe` via our [GitLab Runner](https://docs.gitlab.com/runner/) (i.e. Continuous Integration/Deployment) services and related (such as [Jenkins](https://www.jenkins.io/) for Artifactory management). It is semi-regularly kept up-to-date and might be an excellent resource if you, as the end-user, wish to reverse engineer the script otherwise until we provide further support in this area. Or in any case, public binaries for `Small World Deluxe` itself once it becomes stable enough.
 
-Lastly, we do use an Arch Linux-based [Docker image](https://hub.docker.com/u/gekkofyre) for compiling `Small World Deluxe` via our [GitLab Runner](https://docs.gitlab.com/runner/) (i.e. Continuous Integration/Deployment) services and related (such as [Jenkins](https://www.jenkins.io/) for Artifactory management). It is semi-regularly kept up-to-date and might be an excellent resource if you, as the end-user, wish to reverse engineer the script otherwise until we provide further support in this area. Or in any case, public binaries for `Small World Deluxe` itself once it becomes stable enough.
+Otherwise, the dependencies list we do currently have for Arch-based distributions is otherwise incomplete and only a recommendation. Please proceed with caution if you wish to go down this path! We take no responsibility.
+
+- `icu`
+- `hunspell`
+- `hunspell-en_us`
+- `hunspell-en_gb`
+- `hunspell-en_ca`
+- `hunspell-en_au`
+- `nuspell`
+- `enchant`
+- `zstd`
+- `libusb`
+- `hidapi`
+- `lz4`
+- `zlib`
+- `leveldb`
+- `libusb`
+- `fftw`
+- `snappy`
+- `qwt`
+- `libogg`
+- `libvorbis`
+- `opus`
+- `opusfile`
+- `texinfo`
+- `libusb-compat`
+- `cmake`
+- `wget`
+- `aria2`
+- `openal`
+- `ffmpeg`
+- `taglib`

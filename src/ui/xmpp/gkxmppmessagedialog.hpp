@@ -81,9 +81,12 @@ class GkXmppMessageDialog : public QDialog
 public:
     explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
-                                 QWidget *parent = nullptr);
+                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
+
+public slots:
+    void openMsgDlg(const QString &bareJid, const qint32 &tabIdx);
+    void openMsgDlg(const QStringList &bareJids, const qint32 &tabIdx);
 
 private slots:
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
@@ -113,8 +116,15 @@ private slots:
     void dlArchivedMessages();
     void getArchivedMessagesFromDb(const QXmppMessage &message, const bool &wipeExistingHistory = false);
 
+    //
+    // Miscellaneous
+    void procGlobal(const QString &bareJid, const qint32 &tabIdx);
+    void procGlobal(const QStringList &bareJids, const qint32 &tabIdx);
+
 signals:
     void updateToolbar(const QString &value);
+    void updateGlobal(const QString &bareJid, const qint32 &tabIdx);
+    void updateGlobal(const QStringList &bareJids, const qint32 &tabIdx);
 
     //
     // Message handling and QXmppArchiveManager-related
@@ -159,6 +169,8 @@ private:
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QStringList m_bareJids;
     QString m_clientNickname;
+
+    void updateUsersHelper();
 
 };
 

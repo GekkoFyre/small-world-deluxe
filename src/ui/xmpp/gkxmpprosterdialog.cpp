@@ -120,6 +120,12 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         ui->lineEdit_search_roster->setEnabled(false);
         ui->actionEdit_Nickname->setEnabled(false);
 
+        //
+        // Message dialog signals/slots and actions!
+        QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, this);
+        QObject::connect(this, SIGNAL(launchMsgDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QString &, const qint32 &)));
+        QObject::connect(this, SIGNAL(launchMsgDlg(const QStringList &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QStringList &, const qint32 &)));
+
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &, const QString &)), this, SLOT(recvClientAvatarImg(const QByteArray &, const QString &)));
@@ -716,48 +722,6 @@ void GkXmppRosterDialog::reconnectToXmpp()
     if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
         m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password,
                                                gkConnDetails.jid, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::launchMsgDlg
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user we are in communiqué with!
- */
-void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
-{
-    QStringList bareJids;
-    bareJids << bareJid;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, bareJids, this);
-    if (gkXmppMsgDlg) {
-        if (!gkXmppMsgDlg->isVisible()) {
-            gkXmppMsgDlg->setWindowFlags(Qt::Window);
-            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-            gkXmppMsgDlg->show();
-        }
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::launchMsgDlg
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid A list of all the users we are in communiqué with!
- */
-void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
-{
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, bareJids, this);
-    if (gkXmppMsgDlg) {
-        if (!gkXmppMsgDlg->isVisible()) {
-            gkXmppMsgDlg->setWindowFlags(Qt::Window);
-            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-            gkXmppMsgDlg->show();
-        }
     }
 
     return;
@@ -1556,7 +1520,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QMode
         enablePresenceTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            emit launchMsgDlg(bareJid);
             return;
         }
 
@@ -1606,7 +1570,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QMod
         enableBlockedTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            emit launchMsgDlg(bareJid);
             return;
         }
 
