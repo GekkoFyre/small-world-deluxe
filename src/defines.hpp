@@ -350,6 +350,8 @@ namespace GekkoFyre {
 //
 // (Q)Xmpp messaging window
 #define GK_XMPP_MSG_WINDOW_NEW_TAB_IDX (-1)
+#define GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX (-1000)
+#define GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX (-2)
 #define GK_XMPP_MSG_WINDOW_EXISTING_EQUAL_OR_GREATER_RANGE_TAB_IDX (0)
 
 // Hamlib related

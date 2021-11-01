@@ -661,11 +661,9 @@ bool GkMultimedia::decodeAudioFile(const QFileInfo &file_path)
     if (file_path.isReadable() && file_path.exists()) {
         if (file_path.isFile()) {
             GkAudioFramework::GkAudioFileDecoded decoded;
-            char *str1 = const_cast<char *>(file_path.completeBaseName().toStdString().c_str());
-            char *str2 = const_cast<char *>(General::GkAudio::audioFileExtensionRaw);
-            std::strcat(str1, str2);
-            convFileCanonicalPath = str1;
-            convFile = fopen(str1, "w+");
+            const std::string concat_str = file_path.completeBaseName().toStdString() + General::GkAudio::audioFileExtensionRaw;
+            convFileCanonicalPath = QString::fromStdString(concat_str);
+            convFile = fopen(concat_str.c_str(), "w+");
 
             if (convFile == nullptr) {
                 gkEventLogger->publishEvent(tr("Unable to open output file, \"%1\"!")

@@ -98,8 +98,8 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  */
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                          QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                         QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent) : QDialog(parent),
-                                         ui(new Ui::GkXmppMessageDialog)
+                                         QPointer<GekkoFyre::GkXmppClient> xmppClient, std::shared_ptr<QList<GkXmppCallsign>> rosterList,
+                                         QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
@@ -109,6 +109,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkDb = std::move(database);
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
+        m_rosterList = std::move(rosterList);
 
         //
         // Setup and initialize signals and slots...
@@ -301,9 +302,8 @@ void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
 void GkXmppMessageDialog::updateInterface(const QStringList &bareJids)
 {
     ui->label_callsign_1_stats->setText(tr("%1 users in chat").arg(QString::number(bareJids.count() + 1))); // Includes both the user in communique and the client themselves!
-    auto tmpRosterList = m_xmppClient->getRosterMap();
     for (const auto &bareJid: bareJids) {
-        for (const auto &rosterJid: tmpRosterList) {
+        for (const auto &rosterJid: *m_rosterList) {
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
                     ui->tabWidget_chat_window->setTabText(0, gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));
@@ -459,10 +459,9 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
 {
     // TODO: Refactor this code!
-    auto rosterMap = m_xmppClient->getRosterMap();
-    if (!rosterMap.isEmpty()) {
+    if (!m_rosterList->isEmpty()) {
         gkXmppRecvMsgsTableViewModel.clear();
-        for (const auto &roster: rosterMap) {
+        for (const auto &roster: *m_rosterList) {
             if (roster.bareJid == bareJid) {
                 if (!roster.archive_messages.isEmpty()) {
                     for (const auto &message: roster.archive_messages) {

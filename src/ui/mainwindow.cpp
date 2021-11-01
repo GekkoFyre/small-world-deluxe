@@ -791,7 +791,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -850,7 +849,12 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg();
+    try {
+        launchXmppRosterDlg();
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     return;
 }
 
@@ -2040,17 +2044,31 @@ void MainWindow::readEnchantSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
-        if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
-            gkXmppRosterDlg->setWindowFlags(Qt::Window);
-            gkXmppRosterDlg->show();
+    try {
+        if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
+            if (!gkXmppRosterDlg) {
+                m_rosterList.reset(m_xmppClient->getRosterMap());
+                gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
+            }
+
+            if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!
+                if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
+                    gkXmppRosterDlg->setWindowFlags(Qt::Window);
+                    gkXmppRosterDlg->show();
+                    return;
+                }
+            } else {
+                throw std::runtime_error(tr("Unable to create Roster dialog! Out of memory?").toStdString());
+            }
+
             return;
         }
 
-        return;
+        launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
-    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp);
     return;
 }
 
@@ -2756,18 +2774,27 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg();
+    try {
+        launchXmppRosterDlg();
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     return;
 }
 
 void MainWindow::on_actionSign_in_triggered()
 {
-    if (m_xmppClient->isConnected()) {
-        m_xmppClient->killConnectionFromServer(false);
-    }
+    try {
+        if (m_xmppClient->isConnected()) {
+            m_xmppClient->killConnectionFromServer(false);
+        }
 
-    createXmppConnection();
-    launchXmppRosterDlg();
+        createXmppConnection();
+        launchXmppRosterDlg();
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
 
     return;
 }

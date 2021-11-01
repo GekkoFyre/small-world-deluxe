@@ -151,6 +151,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_isMuc = false;
         m_msgRecved = false;
 
+        //
+        // Initialize other variables, which are also shared amongst other classes!
+        m_rosterList = std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>();
+
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
         if (!vcard_save_path.exists()) {
@@ -396,7 +400,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
-            m_rosterList.clear(); // Clear the roster-list upon disconnection from given XMPP server!
+            m_rosterList->clear(); // Clear the roster-list upon disconnection from given XMPP server!
         });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error: %1").arg(QString::fromStdString(e.what())).toStdString()));
@@ -613,7 +617,7 @@ GekkoFyre::Network::GkXmpp::GkNetworkState GkXmppClient::getNetworkState() const
  */
 bool GkXmppClient::isJidExist(const QString &bareJid)
 {
-    for (const auto &entry: m_rosterList) {
+    for (const auto &entry: *m_rosterList) {
         if (entry.bareJid == bareJid) {
             return true;
         }
@@ -630,7 +634,7 @@ bool GkXmppClient::isJidExist(const QString &bareJid)
  */
 bool GkXmppClient::isJidOnline(const QString &bareJid)
 {
-    for (const auto &entry: m_rosterList) {
+    for (const auto &entry: *m_rosterList) {
         if (entry.bareJid == bareJid) {
             switch (entry.presence->availableStatusType()) {
                 case QXmppPresence::Online:
@@ -689,17 +693,17 @@ bool GkXmppClient::isAvatarImgScaleOk(const QByteArray &avatar_img, const QStrin
  * @param msg_history The given list of XMPP messages to calculate the most minimum QDateTime timestamp from.
  * @return The most mimimum QDateTime timestamp applicable to the given list of XMPP messages.
  */
-QDateTime GkXmppClient::calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GkXmppCallsign> &msg_history)
+QDateTime GkXmppClient::calcMinTimestampForXmppMsgHistory(const QString &bareJid, const std::shared_ptr<QList<GkXmppCallsign>> &msg_history)
 {
     try {
-        if (!msg_history.isEmpty()) {
+        if (!msg_history->isEmpty()) {
             QDateTime min_timestamp = QDateTime::currentDateTimeUtc();
-            for (const auto &stanza: msg_history) {
+            for (const auto &stanza: *msg_history) {
                 if (stanza.bareJid == bareJid) {
                     for (const auto &mam: stanza.messages) {
                         if (mam.message.isXmppStanza() && !mam.message.body().isEmpty()) {
                             min_timestamp = stanza.messages.at(0).message.stamp();
-                            if (msg_history.size() > 1) {
+                            if (msg_history->size() > 1) {
                                 if (min_timestamp < mam.message.stamp()) {
                                     min_timestamp = mam.message.stamp();
                                 }
@@ -730,12 +734,12 @@ QDateTime GkXmppClient::calcMinTimestampForXmppMsgHistory(const QString &bareJid
  * @param msg_history The given list of XMPP messages to calculate the most maxmimum QDateTime timestamp from.
  * @return The most maximum QDateTime timestamp applicable to the given list of XMPP messages.
  */
-QDateTime GkXmppClient::calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history)
+QDateTime GkXmppClient::calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const std::shared_ptr<QList<GkXmppCallsign>> &msg_history)
 {
     try {
-        if (!msg_history.isEmpty()) {
-            if (msg_history.size() > 1) {
-                for (const auto &stanza: msg_history) {
+        if (!msg_history->isEmpty()) {
+            if (msg_history->size() > 1) {
+                for (const auto &stanza: *msg_history) {
                     if (stanza.bareJid == bareJid) {
                         QDateTime max_timestamp = stanza.messages.at(0).message.stamp();
                         for (const auto &mam: stanza.messages) {
@@ -792,29 +796,13 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
+QList<GkXmppCallsign> *GkXmppClient::getRosterMap()
 {
-    if (!m_rosterList.isEmpty()) {
-        return m_rosterList;
+    if (!m_rosterList->isEmpty()) {
+        return m_rosterList.get();
     }
 
-    return QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>();
-}
-
-/**
- * @brief GkXmppClient::updateRosterMap will update the roster list, `m_rosterList`, with new information and data.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param rosterList
- */
-void GkXmppClient::updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList)
-{
-    if (!rosterList.isEmpty()) {
-        std::lock_guard<std::mutex> lock_guard(m_updateRosterMapMtx);
-        m_rosterList.clear();
-        std::copy(rosterList.begin(), rosterList.end(), std::back_inserter(m_rosterList));
-    }
-
-    return;
+    return new QList<GkXmppCallsign>();
 }
 
 /**
@@ -1199,8 +1187,9 @@ void GkXmppClient::clientConnected()
     client_callsign.vCard.nickName() = m_connDetails.nickname;
     client_callsign.server = m_connDetails.server;
     client_callsign.bareJid = m_connDetails.jid;
+    client_callsign.msg_window_idx = GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX;
     client_callsign.party = GkXmppParty::FirstParty;
-    m_rosterList.push_back(client_callsign);
+    m_rosterList->push_back(client_callsign);
     emit updateRoster();
 
     return;
@@ -1221,6 +1210,7 @@ void GkXmppClient::handleRosterReceived()
             GkXmppCallsign callsign;
             callsign.bareJid = jidItem.bareJid();
             callsign.party = GkXmppParty::ThirdParty;
+            callsign.msg_window_idx = GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX;
             callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unavailable);
             callsign.subStatus = jidItem.subscriptionType();
             switch (jidItem.subscriptionType()) {
@@ -1231,7 +1221,7 @@ void GkXmppClient::handleRosterReceived()
                 case QXmppRosterIq::Item::Both:
                 case QXmppRosterIq::Item::To:
                 case QXmppRosterIq::Item::From:
-                    m_rosterList.push_back(callsign);
+                    m_rosterList->push_back(callsign);
                     m_vCardManager->requestVCard(callsign.bareJid);
                     emit retractSubscriptionRequest(callsign.bareJid);
                     emit addJidToRoster(callsign.bareJid);
@@ -1240,7 +1230,7 @@ void GkXmppClient::handleRosterReceived()
                     emit retractSubscriptionRequest(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::NotSet:
-                    m_rosterList.push_back(callsign);
+                    m_rosterList->push_back(callsign);
                     notifyNewSubscription(callsign.bareJid);
                     break;
                 default:
@@ -1296,7 +1286,7 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         }
 
         QByteArray photo = vCard.photo();
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+        for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter->vCard = vCard;
                 break;
@@ -1362,7 +1352,7 @@ void GkXmppClient::clientVCardReceived()
         // Read/write out avatar information!
         if (imgFileLoc.absoluteDir().exists() && imgFileLoc.absoluteDir().isReadable()) {
             QByteArray photo = m_clientVCard.photo();
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
                 if (iter->bareJid == m_connDetails.jid) {
                     iter->vCard = m_clientVCard;
                     break;
@@ -1422,7 +1412,7 @@ void GkXmppClient::updateClientVCard(const QXmppVCardIq &vCard)
 void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resource)
 {
     try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+        for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
                 emit updateRoster();
@@ -1447,7 +1437,7 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
 void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 {
     try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+        for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == m_connDetails.jid && iter->party == GkXmppParty::FirstParty) {
                 m_presence->setType(pres);
                 iter->presence.reset();
@@ -1473,8 +1463,8 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
  */
 std::shared_ptr<QXmppPresence> GkXmppClient::getPresence(const QString &bareJid)
 {
-    if (!bareJid.isEmpty() && !m_rosterList.isEmpty()) {
-        for (const auto &entry: m_rosterList) {
+    if (!bareJid.isEmpty() && !m_rosterList->isEmpty()) {
+        for (const auto &entry: *m_rosterList) {
             if (bareJid == entry.bareJid && entry.party == GkXmppParty::ThirdParty) {
                 return entry.presence;
             }
@@ -2133,8 +2123,9 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
             callsign.bareJid = bareJid;
             callsign.presence = std::make_shared<QXmppPresence>(presence);
             callsign.subStatus = QXmppRosterIq::Item::SubscriptionType::NotSet; // TODO: Change this so it is set dynamically, and therefore can handle more possible situations!
+            callsign.msg_window_idx = GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX;
             callsign.party = GkXmppParty::ThirdParty;
-            m_rosterList.push_back(callsign);
+            m_rosterList->push_back(callsign);
             emit updateRoster();
             if (!presence.statusText().isEmpty()) {
                 emit sendSubscriptionRequest(bareJid, presence.statusText());
@@ -2301,7 +2292,7 @@ void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
 void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply)
 {
     for (const auto &chat: chats) {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+        for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == chat.with()) {
                 QList<GkXmppArchiveMsg> msg_struct_list;
                 for (const auto &message: chat.messages()) {
@@ -2333,7 +2324,7 @@ void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, con
  */
 void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply)
 {
-    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+    for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
         if (iter->bareJid == chat.with()) {
             QList<GkXmppArchiveMsg> arch_msg_list;
             for (const auto &message: chat.messages()) {
@@ -2369,7 +2360,7 @@ void GkXmppClient::handleFirstPartyMsg(const QXmppMessage &message, const bool &
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             //
             // Messages that have been received towards/from the first-party!
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
                 if (iter->bareJid == m_connDetails.jid && iter->party == GkXmppParty::FirstParty) {
                     if (m_connDetails.jid == message.to() || m_connDetails.jid == getJidNickname(message.from())) {
                         GkXmppMamMsg mam_msg;
@@ -2408,7 +2399,7 @@ void GkXmppClient::handleThirdPartyMsg(const QXmppMessage &message, const bool &
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             //
             // Messages that have been sent towards/from the third-party!
-            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
                 if ((iter->bareJid == message.to() || iter->bareJid == getJidNickname(message.from())) && iter->party == GkXmppParty::ThirdParty) {
                     GkXmppMamMsg mam_msg;
                     mam_msg.message = message;
@@ -2462,8 +2453,8 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
     Q_UNUSED(complete);
 
     try {
-        if (!m_rosterList.isEmpty()) {
-            for (auto roster = m_rosterList.begin(); roster != m_rosterList.end();) {
+        if (!m_rosterList->isEmpty()) {
+            for (auto roster = m_rosterList->begin(); roster != m_rosterList->end();) {
                 const auto queue = roster->msg_queue;
                 if (!queue.isEmpty()) {
                     const qint32 target = queue.size();

@@ -81,7 +81,9 @@ class GkXmppMessageDialog : public QDialog
 public:
     explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
+                                 QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                 std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> rosterList,
+                                 QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 public slots:
@@ -117,7 +119,7 @@ private slots:
     void getArchivedMessagesFromDb(const QXmppMessage &message, const bool &wipeExistingHistory = false);
 
     //
-    // Miscellaneous
+    // XMPP Roster management and related
     void procGlobal(const QString &bareJid, const qint32 &tabIdx);
     void procGlobal(const QStringList &bareJids, const qint32 &tabIdx);
 
@@ -167,6 +169,7 @@ private:
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;
     QStringList m_bareJids;
     QString m_clientNickname;
 

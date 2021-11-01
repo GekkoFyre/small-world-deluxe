@@ -77,6 +77,7 @@ public:
     explicit GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
                                 QPointer<GekkoFyre::GkSystem> system, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> rosterList,
                                 const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
@@ -107,7 +108,6 @@ private slots:
     void subscriptionRequestRecv(const QString &bareJid);
     void subscriptionRequestRecv(const QString &bareJid, const QString &reason);
     void subscriptionRequestRetracted(const QString &bareJid);
-    void updateRoster();
     void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
     void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
@@ -203,7 +203,7 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;
 
     //
     // Miscellaneous

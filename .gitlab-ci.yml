@@ -122,9 +122,7 @@ spotbugs-sast:
   script:
   - "/analyzer run -compile=false"
   variables:
-    SAST_DEFAULT_ANALYZERS: flawfinder, gitleaks, trufflehog, secrets
-    SAST_EXCLUDED_PATHS: assets, po, toolchains, contrib, spec, test, tests, tmp
-      src/contrib/**
+    SAST_EXCLUDED_PATHS: assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp
     SAST_GOSEC_LEVEL: 2
     SAST_FLAWFINDER_LEVEL: 2
     SECRET_DETECTION_HISTORIC_SCAN: 'true'
@@ -135,5 +133,6 @@ spotbugs-sast:
   allow_failure: true
 sast:
   variables:
-    SAST_DEFAULT_ANALYZERS: bandit, eslint, flawfinder, kubesec, gosec
+    SAST_EXCLUDED_PATHS: assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp
+    SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, gosec, kubesec, nodejs-scan, phpcs-security-audit, pmd-apex, security-code-scan, semgrep, sobelow, spotbugs
   stage: test

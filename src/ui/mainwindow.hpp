@@ -448,6 +448,7 @@ private:
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     QPointer<GkXmppRosterDialog> gkXmppRosterDlg;
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Spectrograph related
