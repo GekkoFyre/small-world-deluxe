@@ -134,15 +134,14 @@ public:
 
     //
     // Date & Time Management
-    [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
-    [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+    [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QString &bareJid, const std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> &msg_history);
+    [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> &msg_history);
     [[nodiscard]] qint64 compareTimestamps(const std::vector<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data, const qint64 &value);
 
     //
     // User, roster and presence details
     [[nodiscard]] std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    [[nodiscard]] QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
-    void updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
+    [[nodiscard]] QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> *getRosterMap();
     [[nodiscard]] QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     [[nodiscard]] Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     [[nodiscard]] QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
@@ -233,7 +232,8 @@ private slots:
     void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
     void handleFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void handleThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
-    void filterIncomingResults(QXmppMessage &message);
+    void filterIncomingResults(QXmppMessage message);
+    void insertArchiveMessage(const QXmppMessage &message, const bool &enqueue = true);
 
     //
     // QXmppMamManager handling
@@ -274,7 +274,7 @@ signals:
     // Message handling and QXmppArchiveManager-related
     void xmppMsgUpdate(const QXmppMessage &message);
     void updateMsgHistory();
-    void sendIncomingResults(QXmppMessage &message);
+    void sendIncomingResults(QXmppMessage message);
 
     //
     // Message handling and QXmppMamManager handling
@@ -286,8 +286,6 @@ signals:
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
 
 private:
-    void insertArchiveMessage(const QXmppMessage &message, const bool &enqueue = true);
-
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkSystem> gkSystem;
@@ -319,7 +317,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Filesystem & Directories
@@ -344,7 +342,6 @@ private:
     //
     // Multithreading, mutexes, etc.
     //
-    std::mutex m_updateRosterMapMtx;
     std::mutex m_archivedMsgsFineMtx;
     std::thread m_archivedMsgsFineThread;
 

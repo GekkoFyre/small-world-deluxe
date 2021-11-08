@@ -53,7 +53,6 @@
 #include <AL/alc.h>
 #include <AL/alext.h>
 #include <taglib/audioproperties.h>
-#include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppMessage.h>
@@ -95,6 +94,9 @@
 #include <icftypes.h>
 #include <comdef.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
+#include <qwt-qt5/qwt_interval.h>
+#else
+#include <qwt/qwt_interval.h>
 #endif
 
 #ifdef __cplusplus
@@ -347,6 +349,13 @@ namespace GekkoFyre {
 #define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX (2)
 #define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (3)
 
+//
+// (Q)Xmpp messaging window
+#define GK_XMPP_MSG_WINDOW_NEW_TAB_IDX (-1)
+#define GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX (-1000)
+#define GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX (-2)
+#define GK_XMPP_MSG_WINDOW_EXISTING_EQUAL_OR_GREATER_RANGE_TAB_IDX (0)
+
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -562,6 +571,7 @@ namespace Network {
             QList<GkXmppArchiveMsg> archive_messages;
             QList<GkXmppMamMsg> messages;
             QQueue<GkXmppMamMsg> msg_queue;
+            qint32 msg_window_idx;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
         };

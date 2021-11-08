@@ -269,13 +269,6 @@ float GkMultimedia::getSample(const AVCodecContext *codecCtx, uint8_t *buffer, i
 bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
 {
     //
-    // Initalize all the muxers, demuxers, and protocols for the libavformat library!
-    // NOTE: Does nothing if called twice during the course of a program's execution...
-    av_register_all();
-
-    qint32 ret = 0;
-
-    //
     // Obtain the formatCtx from the given audio file!
     AVFormatContext *formatCtx = avformat_alloc_context();
     if (avformat_open_input(&formatCtx, file_path.canonicalFilePath().toStdString().c_str(), nullptr, 0) != 0) {
@@ -309,7 +302,7 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     // Find the index of the first audio stream!
     qint32 stream_index =- 1;
     for (qint32 i = 0; i < formatCtx->nb_streams; ++i) {
-        if (formatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             stream_index = i;
             break;
         }
@@ -383,12 +376,10 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
     }
 
     // Prepare the packet.
-    AVPacket packet;
+    AVPacket *packet;
+    packet = av_packet_alloc();
 
-    // Set default values.
-    av_init_packet(&packet);
-
-    while ((err = av_read_frame(formatCtx, &packet)) != AVERROR_EOF) {
+    while ((err = av_read_frame(formatCtx, packet)) != AVERROR_EOF) {
         if(err != 0) {
             gkEventLogger->publishEvent(tr("Read error #%1 whilst processing file, \"%2\"!")
             .arg(QString::number(err), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
@@ -397,20 +388,20 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
 
         //
         // Does the packet belong to the correct stream?
-        if (packet.stream_index != audioStreamIndex) {
+        if (packet->stream_index != audioStreamIndex) {
             //
             // Free the buffers used by the frame and reset all fields!
-            av_packet_unref(&packet);
+            av_packet_unref(packet);
             continue;
         }
 
         //
         // We have a valid packet => send it to the decoder!
-        if ((err = avcodec_send_packet(codecCtx, &packet)) == 0) {
+        if ((err = avcodec_send_packet(codecCtx, packet)) == 0) {
             //
             // The packet was sent successfully. We don't need it anymore.
             // => Free the buffers used by the frame and reset all fields.
-            av_packet_unref(&packet);
+            av_packet_unref(packet);
         } else {
             //
             // Something went wrong...
@@ -504,13 +495,17 @@ void GkMultimedia::updateStream(const ALuint source, const ALenum &format, const
         return;
     }
 
+    //
+    // Create outside the loop for performance reasons...
+    ALsizei dataSize = GK_AUDIO_STREAM_BUF_SIZE;
+    char *data = new char[dataSize];
+
     while (--buffersProcessed) {
         ALuint buffer;
         alCall(alSourceUnqueueBuffers, source, 1, &buffer);
 
-        ALsizei dataSize = GK_AUDIO_STREAM_BUF_SIZE;
-
-        char *data = new char[dataSize];
+        //
+        // Initialize the buffer with a padding of zeroes!
         std::memset(data, 0, dataSize);
 
         std::size_t dataSizeToCopy = GK_AUDIO_STREAM_BUF_SIZE;
@@ -657,11 +652,9 @@ bool GkMultimedia::decodeAudioFile(const QFileInfo &file_path)
     if (file_path.isReadable() && file_path.exists()) {
         if (file_path.isFile()) {
             GkAudioFramework::GkAudioFileDecoded decoded;
-            char *str1 = const_cast<char *>(file_path.completeBaseName().toStdString().c_str());
-            char *str2 = const_cast<char *>(General::GkAudio::audioFileExtensionRaw);
-            std::strcat(str1, str2);
-            convFileCanonicalPath = str1;
-            convFile = fopen(str1, "w+");
+            const std::string concat_str = file_path.completeBaseName().toStdString() + General::GkAudio::audioFileExtensionRaw;
+            convFileCanonicalPath = QString::fromStdString(concat_str);
+            convFile = fopen(concat_str.c_str(), "w+");
 
             if (convFile == nullptr) {
                 gkEventLogger->publishEvent(tr("Unable to open output file, \"%1\"!")

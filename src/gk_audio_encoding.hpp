@@ -45,8 +45,6 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
-#include <sndfile.h>
-#include <sndfile.hh>
 #include <mutex>
 #include <thread>
 #include <cstdio>

@@ -175,7 +175,10 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-serialport \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
-        mingw-w64-python-bin
+        mingw-w64-python-bin \
+		mingw-w64-ffmpeg \
+		mingw-w64-openal \
+		mingw-w64-taglib
 
 # Cleanup
 USER root
@@ -209,6 +212,14 @@ RUN pacman -S autoconf-archive --noconfirm
 RUN pacman -S libtool --noconfirm
 RUN pacman -S openssl --noconfirm
 RUN pacman -S boost --noconfirm
+RUN pacman -S icu --noconfirm
+RUN pacman -S hunspell --noconfirm
+RUN pacman -S hunspell-en_us --noconfirm
+RUN pacman -S hunspell-en_gb --noconfirm
+RUN pacman -S hunspell-en_ca --noconfirm
+RUN pacman -S hunspell-en_au --noconfirm
+RUN pacman -S nuspell --noconfirm
+RUN pacman -S enchant --noconfirm
 RUN pacman -S qt5-base --noconfirm
 RUN pacman -S qt5-tools --noconfirm
 RUN pacman -S qt5-serialport --noconfirm
@@ -243,9 +254,15 @@ RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
 RUN pacman -S openal --noconfirm
 RUN pacman -S ffmpeg --noconfirm
+RUN pacman -S taglib --noconfirm
 
 USER devel
 RUN yay -S conan --noconfirm
+RUN yay -S libiconv --noconfirm
+RUN yay -S codec2 --noconfirm
+RUN yay -S hamlib-git --noconfirm
+RUN yay -S libopusenc --noconfirm
+RUN yay -S qxmpp --noconfirm
 
 # Make sure to cleanup after all the updates and installations are completed!
 USER root
@@ -265,89 +282,7 @@ CMD echo "project=small-world-deluxe" >> ~/.sentryclirc
 CMD echo "url=https://sentry.gekkofyre.io/" >> ~/.sentryclirc
 
 #
-# Compile the following programs...
-#
-RUN [ "wget", "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz" ]
-RUN tar -xvzf libiconv-1.16.tar.gz
-CMD cd libiconv-1.16
-CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./..
-CMD rm -rvf libiconv-1.16
-CMD [ "git", "clone https://github.com/drowe67/codec2.git" ]
-CMD cd codec2
-CMD mkdir build
-CMD cd build
-CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./../..
-CMD rm -rvf codec2
-RUN [ "wget", "https://github.com/hunspell/hunspell/files/2573619/hunspell-1.7.0.tar.gz" ]
-RUN tar -xvzf hunspell-1.7.0.tar.gz
-CMD cd hunspell-1.7.0
-CMD autoreconf -vfi
-CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./..
-CMD rm -rvf hunspell-1.7.0
-CMD [ "git", "clone https://gitlab.xiph.org/xiph/libopusenc.git" ]
-CMD cd libopusenc
-CMD [ "git", "submodule update --init --recursive" ]
-CMD sh autogen.sh
-CMD [ "./configure", "--enable-static" ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./..
-CMD rm -rvf libopusenc
-CMD [ "git", "clone https://github.com/qxmpp-project/qxmpp.git" ]
-CMD cd qxmpp
-CMD [ "git", "submodule update --init --recursive" ]
-CMD mkdir build
-CMD cd build
-CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./../..
-CMD rm -rvf qxmpp
-CMD [ "git", "clone https://github.com/google/snappy.git" ]
-CMD cd snappy
-CMD [ "git", "submodule update --init --recursive" ]
-CMD mkdir build
-CMD cd build
-CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF .." ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./../..
-CMD rm -rvf snappy
-
-#
-# We had to login to the Docker image itself and compile this by hand manually!
-#
-# RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.3.1/hamlib-4.3.1.tar.gz" ]
-# RUN tar -xvzf hamlib-4.1.tar.gz
-# CMD cd hamlib-4.1
-# CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
-# CMD [ "make", "-j$(nproc)" ]
-# CMD [ "make", "install" ]
-# CMD cd ./..
-# CMD rm -rvf hamlib-4.1
-
-#
 # Make it so that the Qt5 libraries (i.e. specifically `libQt5Core.so.5`) can run with Small World Deluxe, and thusly 
 # this version of Arch Linux's package!
 #
 RUN strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-
-#
-# Compile the final library required!
-#
-CMD cd src/contrib/QtUsb
-CMD mkdir build
-CMD cd build
-CMD [ "qmake", "-makefile .." ]
-CMD [ "make", "-j$(nproc)" ]
-CMD [ "make", "install" ]
-CMD cd ./../../../..

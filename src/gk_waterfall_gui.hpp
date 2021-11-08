@@ -45,6 +45,43 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_spectro_color_maps.hpp"
 #include "src/gk_waterfall_data.hpp"
+#include <mutex>
+#include <cmath>
+#include <vector>
+#include <thread>
+#include <future>
+#include <chrono>
+#include <QList>
+#include <QTimer>
+#include <QObject>
+#include <QWidget>
+#include <QVector>
+#include <QPointer>
+#include <QDateTime>
+#include <QMouseEvent>
+#include <QSharedPointer>
+#include <QScopedPointer>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <qwt-qt5/qwt.h>
+#include <qwt-qt5/qwt_plot.h>
+#include <qwt-qt5/qwt_plot_spectrogram.h>
+#include <qwt-qt5/qwt_plot_zoomer.h>
+#include <qwt-qt5/qwt_color_map.h>
+#include <qwt-qt5/qwt_matrix_raster_data.h>
+#include <qwt-qt5/qwt_plot_canvas.h>
+#include <qwt-qt5/qwt_raster_data.h>
+#include <qwt-qt5/qwt_plot_panner.h>
+#include <qwt-qt5/qwt_interval.h>
+#include <qwt-qt5/qwt_scale_widget.h>
+#include <qwt-qt5/qwt_scale_draw.h>
+#include <qwt-qt5/qwt_plot_curve.h>
+#include <qwt-qt5/qwt_scale_engine.h>
+#include <qwt-qt5/qwt_date_scale_engine.h>
+#include <qwt-qt5/qwt_date_scale_draw.h>
+#include <qwt-qt5/qwt_plot_marker.h>
+#include <qwt-qt5/qwt_text.h>
+#else
 #include <qwt/qwt.h>
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_spectrogram.h>
@@ -63,23 +100,7 @@
 #include <qwt/qwt_date_scale_draw.h>
 #include <qwt/qwt_plot_marker.h>
 #include <qwt/qwt_text.h>
-#include <mutex>
-#include <cmath>
-#include <vector>
-#include <thread>
-#include <future>
-#include <memory>
-#include <chrono>
-#include <QList>
-#include <QTimer>
-#include <QObject>
-#include <QWidget>
-#include <QVector>
-#include <QPointer>
-#include <QDateTime>
-#include <QMouseEvent>
-#include <QSharedPointer>
-#include <QScopedPointer>
+#endif
 
 namespace GekkoFyre {
 

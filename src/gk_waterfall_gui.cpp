@@ -40,18 +40,27 @@
  ****************************************************************************************************/
 
 #include "src/gk_waterfall_gui.hpp"
-#include <qwt/qwt_picker_machine.h>
-#include <qwt/qwt_plot_layout.h>
-#include <qwt/qwt_plot_grid.h>
-#include <qwt/qwt_panner.h>
 #include <algorithm>
 #include <stdexcept>
 #include <exception>
 #include <utility>
+#include <memory>
 #include <QPen>
 #include <QColormap>
 #include <QGridLayout>
 #include <QApplication>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <qwt-qt5/qwt_picker_machine.h>
+#include <qwt-qt5/qwt_plot_layout.h>
+#include <qwt-qt5/qwt_plot_grid.h>
+#include <qwt-qt5/qwt_panner.h>
+#else
+#include <qwt/qwt_picker_machine.h>
+#include <qwt/qwt_plot_layout.h>
+#include <qwt/qwt_plot_grid.h>
+#include <qwt/qwt_panner.h>
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -273,13 +282,13 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         m_plotVertCurve->setTitle(" ");
 
         {
-            QwtPlotGrid* horCurveGrid = new QwtPlotGrid;
+            std::unique_ptr<QwtPlotGrid> horCurveGrid = std::make_unique<QwtPlotGrid>();
             horCurveGrid->enableXMin(true);
             horCurveGrid->setMinorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->setMajorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->attach(m_plotHorCurve.get());
 
-            QwtPlotGrid* vertCurveGrid = new QwtPlotGrid;
+            std::unique_ptr<QwtPlotGrid> vertCurveGrid = std::make_unique<QwtPlotGrid>();
             vertCurveGrid->enableXMin(true);
             vertCurveGrid->setMinorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
             vertCurveGrid->setMajorPen(QPen(Qt::lightGray, 0, Qt::DotLine));

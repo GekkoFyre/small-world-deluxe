@@ -10,9 +10,7 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 
 * `base-devel`
 * `mingw-w64-x86_64-toolchain`
-* `mingw-w64-x86_64-qt5-static`
 * `mingw-w64-x86_64-kdeclarative-qt5`
-* `mingw-w64-x86_64-qwt`
 * `mingw-w64-x86_64-uasm`
 * `icu-devel`
 * `cmake`
@@ -25,10 +23,70 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 * `mingw-w64-x86_64-libvorbis`
 * `mingw-w64-x86_64-opus`
 * `mingw-w64-x86_64-libopusenc`
-* `mingw-w64-x86_64-libsndfile`
 * `mingw-w64-x86_64-qxmpp`
 * `mingw-w64-x86_64-enchant`
 * `mingw-w64-x86_64-nuspell`
+* `mingw-w64-x86_64-aria2`
+* `mingw-w64-x86_64-ffmpeg`
+* `mingw-w64-x86_64-taglib`
+* `mingw-w64-x86_64-qwt-qt5`
+
+Lastly, you will need to install all the required libraries for [Qt Project](https://www.qt.io/), and they too are listed below this paragraph. It is upon the `Qt` libraries that the foundation of `Small World Deluxe` is built upon; the GUI, all the glue code, etc. so we are in debt to its contributors for their hard, selfless work. Some libraries are likely not needed from the list below, but we have included them anyhow to be extra sure that the end-user is not left out on any missing dependencies. Onto the list!
+
+- `mingw-w64-x86_64-qt5`
+- `mingw-w64-x86_64-qt5-3d`
+- `mingw-w64-x86_64-qt5-base`
+- `mingw-w64-x86_64-qt5-charts`
+- `mingw-w64-x86_64-qt5-connectivity`
+- `mingw-w64-x86_64-qt5-datavis3d`
+- `mingw-w64-x86_64-qt5-declarative`
+- `mingw-w64-x86_64-qt5-imageformats`
+- `mingw-w64-x86_64-qt5-multimedia`
+- `mingw-w64-x86_64-qt5-networkauth`
+- `mingw-w64-x86_64-qt5-quick3d`
+- `mingw-w64-x86_64-qt5-quickcontrols`
+- `mingw-w64-x86_64-qt5-quickcontrols2`
+- `mingw-w64-x86_64-qt5-quicktimeline`
+- `mingw-w64-x86_64-qt5-remoteobjects`
+- `mingw-w64-x86_64-qt5-script`
+- `mingw-w64-x86_64-qt5-scxml`
+- `mingw-w64-x86_64-qt5-serialbus`
+- `mingw-w64-x86_64-qt5-serialport`
+- `mingw-w64-x86_64-qt5-speech`
+- `mingw-w64-x86_64-qt5-svg`
+- `mingw-w64-x86_64-qt5-tools`
+- `mingw-w64-x86_64-qt5-translations`
+- `mingw-w64-x86_64-qt5-websockets`
+- `mingw-w64-x86_64-qt5-winextras`
+
+If you require the *debug* libraries for performing development work on the source code of `Small World Deluxe`, then you will additionally require the following packages. As of November 5th, 2021, this list is up-to-date for `MSYS2`:
+
+* `mingw-w64-x86_64-qt5-debug`
+* `mingw-w64-x86_64-qt5-3d-debug`
+* `mingw-w64-x86_64-qt5-base-debug`
+* `mingw-w64-x86_64-qt5-charts-debug`
+* `mingw-w64-x86_64-qt5-connectivity-debug`
+* `mingw-w64-x86_64-qt5-datavis3d-debug`
+* `mingw-w64-x86_64-qt5-declarative-debug`
+* `mingw-w64-x86_64-qt5-imageformats-debug`
+* `mingw-w64-x86_64-qt5-multimedia-debug`
+* `mingw-w64-x86_64-qt5-networkauth-debug`
+* `mingw-w64-x86_64-qt5-quick3d-debug`
+* `mingw-w64-x86_64-qt5-quickcontrols-debug`
+* `mingw-w64-x86_64-qt5-quickcontrols2-debug`
+* `mingw-w64-x86_64-qt5-quicktimeline-debug`
+* `mingw-w64-x86_64-qt5-remoteobjects-debug`
+* `mingw-w64-x86_64-qt5-script-debug`
+* `mingw-w64-x86_64-qt5-scxml-debug`
+* `mingw-w64-x86_64-qt5-serialbus-debug`
+* `mingw-w64-x86_64-qt5-serialport-debug`
+* `mingw-w64-x86_64-qt5-speech-debug`
+* `mingw-w64-x86_64-qt5-svg-debug`
+* `mingw-w64-x86_64-qt5-tools-debug`
+* `mingw-w64-x86_64-qt5-websockets-debug`
+* `mingw-w64-x86_64-qt5-winextras-debug`
+
+Now that you have installed all the `Qt` library dependencies, if you wish to compile `FFmpeg` yourself from their own source code, then please note we only provide light instructions at best, and that's for Debian-based distributions right now. [You may find those instructions here](#ffmpeg-for-linux-based-systems). `FFmpeg` is a very complex set of tools, binaries, and libraries and we highly recommend that you try and get it through a package manager where possible.
 
 Once you have compiled [Boost C++](#compilation-of-boost-c-under-mingw-via-msys2), [Hamlib](#compilation-of-hamlib-under-mingw-via-msys2), and then [Codec2](#compilation-of-codec2-under-mingw-via-msys2) for the [MSYS2](https://www.msys2.org/) subsystem, you may proceed with the compilation and installation of `Small World Deluxe` itself! [CMake](https://cmake.org/) is required for this operation and we recommend that you create a separate `build` directory for the compilation (as shown below). Once the dependencies have all been set up, you only need to execute the following commands under an MSYS2 shell, from within the root of the `Small World Deluxe` project directory:
 
@@ -67,7 +125,7 @@ As mentioned above, the second, alternative route is to compile `Hamlib` yoursel
 ```bash
 mkdir build && cd build
 ./../configure --disable-shared CFLAGS="-fdata-sections -ffunction-sections" LDFLAGS="-Wl,--gc-sections" --prefix="C:/msys64/mingw64"
-mingw32-make
+mingw32-make -j$(nproc)
 mingw32-make install
 ```
 
@@ -82,11 +140,35 @@ Once the sources have been extracted into the applicable home directory of your 
 ```bash
 mkdir build && cd build
 cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO -DCMAKE_INSTALL_PREFIX="/mingw64" ..
-mingw32-make
+mingw32-make -j$(nproc)
 mingw32-make install
 ```
 
-The operation is now complete! If you encountered any problems and/or have questions, then please open them within our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues), thank you. Otherwise, you may now progress towards the compilation of `Small World Deluxe` itself!
+If you happen to receive the following error when executing the last command:
+
+```bash
+...
+...
+Consolidate compiler generated dependencies of target vq_mbest
+[100%] Built target vq_mbest
+Install the project...
+-- Install configuration: "Debug"
+CMake Error at cmake/GetDependencies.cmake:14 (include):
+  include could not find requested file:
+
+    C:/msys64/home/phobo/codec2/cmake/GetPrerequisites.cmake
+Call Stack (most recent call first):
+  cmake_install.cmake:41 (include)
+
+
+mingw32-make: *** [Makefile:144: install] Error 1
+
+phobo@GekkoPC MINGW64 ~/codec2/build
+```
+
+Then you need to download the [following file](https://github.com/Kitware/CMake/blob/master/Modules/GetPrerequisites.cmake) towards the `./cmake` folder within the root of `Codec2`'s source directory, before attempting to execute the `mingw32-make install` command once more.
+
+By now the operation should be complete! If you encountered any problems and/or have questions, then please open them within our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues), thank you. Otherwise, you may now progress towards the compilation of `Small World Deluxe` itself!
 
 ------
 
@@ -117,12 +199,18 @@ If you are using a Linux-based system to compile `Small World Deluxe`, you will 
 - `libvorbis-dev`
 - `libogg-dev`
 - `libopus-dev`
-- `libsndfile1`
-- `libcurl4`
-- `libsndfile1-dev`
 - `libssl-dev`
-- `libcurl4-openssl-dev`
-- `libenchant-2-dev`
+- `libaria2-0-dev`
+- `libtag1-dev`
+- `libtagc0`
+- `libtagc0-dev`
+- `libicu-dev`
+- `libhunspell-dev`
+- `hunspell-en-au`
+- `hunspell-en-ca`
+- `hunspell-en-us`
+- `hunspell-en-gb`
+- `libenchant-dev`
 
 And the following is a *recommended* list of the required packages in regards to the `Qt5` library for a Debian-based system since we use that project for the GUI and primary internals of `Small World Deluxe`. Not all of these packages will be required and we appreciate suggestions on how to clean up the list, but for now, we like to be extra sure by covering all of our bases:
 
@@ -132,7 +220,6 @@ And the following is a *recommended* list of the required packages in regards to
 - `qt5-default`
 - `qttools5-dev`
 - `libqwt-qt5-dev`
-- `qtmultimedia5-dev`
 - `libqt5svg5-dev`
 - `libqt5serialbus5-dev`
 - `libqt5serialport5-dev`
@@ -153,6 +240,29 @@ sudo make install
 ```
 
 That's it! You may now begin using `Small World Deluxe` but please note we are very much in the pre-alpha stages right now, and there is much development going on. The look and feel of the application may change somewhat as the months wear on.
+
+##### FFmpeg for Linux-based systems
+
+Regarding the usage of [FFmpeg](https://www.ffmpeg.org/) within `Small World Deluxe`, you will further require the following dependencies listed just below if you make use of a Debian-based distribution.
+
+- `libavcodec-dev`
+- `libavformat-dev`
+- `libavutil-dev`
+- `libswresample-dev`
+
+If doing a compilation of `FFmpeg` of your own, then you will need to specify the following flags *at least*, otherwise you may encounter incompatibility issues, especially when trying to build a copy of `Small World Deluxe` yourself without resorting to one of the binaries we provide (either in the future or now):
+
+```bash
+-lavcodec-ffmpeg -lavformat-ffmpeg -lavutil -lswresample
+```
+
+Depending on your system and installation, it could also be the following that you may need to specify:
+
+```bash
+-lavcodec -lavformat -lavutil -lswresample
+```
+
+Please feel free to contact us if you encounter any troubles and/or require assistance or advice.
 
 ##### Compilation of `libopusenc` for Linux-based systems
 
@@ -210,10 +320,41 @@ You are now done and complete! Please let us know if we've missed anything, as w
 
 #### Linux (Arch/Pacman-based)
 
-The instructions for Linux distributions based on [pacman](https://wiki.archlinux.org/title/pacman) (such as [Arch Linux](https://archlinux.org/) or [Manjaro Linux](https://manjaro.org/)) are quite similar to those of that based on Debian-oriented distros, only in this instance, you substitute `apt-get` for `pacman` instead along with the packages which are unique to this environment.
+The instructions for Linux distributions based on [pacman](https://wiki.archlinux.org/title/pacman) (such as [Arch Linux](https://archlinux.org/) or [Manjaro Linux](https://manjaro.org/)) are quite similar to those of that based on Debian-oriented distros, only in this instance, you substitute `apt-get` for `pacman` instead, along with the packages which are unique to this environment.
 
-NOTE: We do not have a complete dependency list yet for this flavour of Linux, so please only compile `Small World Deluxe` via `Arch Linux` at your own risk! We therefore only offer bare-bones support so far for `pacman`-based distributions.
+We have thus far found that `Small World Deluxe` compiles best with `GCC`/`G++` within this flavour of Linux, based on our own experiences with `Manjaro Linux`. You may therefore want to configure your environment to use such for compiling in order to avoid any extraneous errors. We would very much appreciate any feedback on your experiences with `Arch Linux` and related in regards to `Small World Deluxe`, so please share for the benefit of the greater community!
 
-That said, we have thus far found that `Small World Deluxe` compiles best with `GCC`/`G++` within this flavour of Linux, based on our own experiences with `Manjaro Linux`. You may therefore want to configure your environment to use such for compiling in order to avoid any extraneous errors. We would very much appreciate any feedback on your experiences with `Arch Linux` and related in regards to `Small World Deluxe`, so please share for the benefit of the greater community!
+It should also be noted that we do use an Arch Linux-based [Docker image](https://hub.docker.com/u/gekkofyre) for compiling `Small World Deluxe` via our [GitLab Runner](https://docs.gitlab.com/runner/) (i.e. Continuous Integration/Deployment) services and related (such as [Jenkins](https://www.jenkins.io/) for Artifactory management). It is semi-regularly kept up-to-date and might be an excellent resource if you, as the end-user, wish to reverse engineer the script otherwise until we provide further support in this area. Or in any case, public binaries for `Small World Deluxe` itself once it becomes stable enough.
 
-Lastly, we do use an Arch Linux-based [Docker image](https://hub.docker.com/u/gekkofyre) for compiling `Small World Deluxe` via our [GitLab Runner](https://docs.gitlab.com/runner/) (i.e. Continuous Integration/Deployment) services and related (such as [Jenkins](https://www.jenkins.io/) for Artifactory management). It is semi-regularly kept up-to-date and might be an excellent resource if you, as the end-user, wish to reverse engineer the script otherwise until we provide further support in this area. Or in any case, public binaries for `Small World Deluxe` itself once it becomes stable enough.
+Otherwise, the dependencies list we do currently have for Arch-based distributions is otherwise incomplete and only a recommendation. Please proceed with caution if you wish to go down this path! We take no responsibility.
+
+- `icu`
+- `hunspell`
+- `hunspell-en_us`
+- `hunspell-en_gb`
+- `hunspell-en_ca`
+- `hunspell-en_au`
+- `nuspell`
+- `enchant`
+- `zstd`
+- `libusb`
+- `hidapi`
+- `lz4`
+- `zlib`
+- `leveldb`
+- `libusb`
+- `fftw`
+- `snappy`
+- `qwt`
+- `libogg`
+- `libvorbis`
+- `opus`
+- `opusfile`
+- `texinfo`
+- `libusb-compat`
+- `cmake`
+- `wget`
+- `aria2`
+- `openal`
+- `ffmpeg`
+- `taglib`

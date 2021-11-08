@@ -25,6 +25,10 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `QXmpp - Copyright © 2008 - 2020 The QXmpp Developers.`
 
+`FFmpeg - Copyright © 2021 Michael Niedermayer and Marton Balint et al.`
+
+`TagLib - Copyright © 2021 Scott Wheeler.`
+
 `SingleApplication -- Copyright © 2015 - 2020 Itay Grudev.`
 
 `KissFFT -- Copyright © 2003 - 2010 Mark Borgerding . All rights reserved.`
@@ -35,13 +39,13 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 ------
 
-```
+```markdown
 Opus
 ----------------------------------
 Copyright © 2001 - 2011 Xiph.Org, Skype Limited, Octasic, Jean-Marc Valin, Timothy B. Terriberry, CSIRO, Gregory Maxwell, Mark Borgerding, Erik de Castro Lopo.
 ```
 
-```
+```markdown
 libopusenc
 ----------------------------------
 Copyright © 1994 - 2013 Xiph.Org Foundation and contributors.
@@ -89,17 +93,44 @@ Copyright © 2017 Jean-Marc Valin.
 
 ------
 
-```
-libcurl
+```markdown
+OpenAL Soft
 ----------------------------------
-Copyright © 1996 - 2021 Daniel Stenberg et al. All rights reserved.
+Copyright © 2015 - 2019 Archontis Politis, Anis A. Hireche, Christopher Robinson, et al. All rights reserved.
 ```
 
-> Permission to use, copy, modify, and distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+> Portions of this software are licensed under the BSD 3-Clause license.
 >
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+> Copyright © 2015, Archontis Politis.
+> Copyright © 2019, Anis A. Hireche.
+> Copyright © 2019, Christopher Robinson.
 >
-> Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
+> All rights reserved.
+>
+> Redistribution and use in source and binary forms, with or without
+> modification, are permitted provided that the following conditions are met:
+>
+> * Redistributions of source code must retain the above copyright notice, this
+>   list of conditions and the following disclaimer.
+>
+> * Redistributions in binary form must reproduce the above copyright notice,
+>   this list of conditions and the following disclaimer in the documentation
+>   and/or other materials provided with the distribution.
+>
+> * Neither the name of Spherical-Harmonic-Transform nor the names of its
+>   contributors may be used to endorse or promote products derived from
+>   this software without specific prior written permission.
+>
+> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+> AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+> IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+> DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+> FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+> DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+> SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+> CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+> OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+> OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ------
 

@@ -84,7 +84,7 @@ GkQDateTimeFilterProxyModel::~GkQDateTimeFilterProxyModel()
 void GkQDateTimeFilterProxyModel::setFilterMinimumDateTime(QDateTime timestamp)
 {
     if (timestamp.isValid()) {
-        minTimestamp = timestamp;
+        minTimestamp = std::move(timestamp);
         invalidateFilter();
     }
 
@@ -99,7 +99,7 @@ void GkQDateTimeFilterProxyModel::setFilterMinimumDateTime(QDateTime timestamp)
 void GkQDateTimeFilterProxyModel::setFilterMaximumDateTime(QDateTime timestamp)
 {
     if (timestamp.isValid()) {
-        maxTimestamp = timestamp;
+        maxTimestamp = std::move(timestamp);
         invalidateFilter();
     }
 

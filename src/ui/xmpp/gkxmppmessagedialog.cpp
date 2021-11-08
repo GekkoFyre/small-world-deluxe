@@ -98,7 +98,7 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  */
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                          QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                         QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
+                                         QPointer<GekkoFyre::GkXmppClient> xmppClient, std::shared_ptr<QList<GkXmppCallsign>> rosterList,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
@@ -109,10 +109,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkDb = std::move(database);
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
-        m_bareJids = bareJids;
+        m_rosterList = std::move(rosterList);
 
         //
         // Setup and initialize signals and slots...
+        QObject::connect(this, SIGNAL(updateGlobal(const QString &, const qint32 &)), this, SLOT(procGlobal(const QString &, const qint32 &)));
+        QObject::connect(this, SIGNAL(updateGlobal(const QStringList &, const qint32 &)), this, SLOT(procGlobal(const QStringList &, const qint32 &)));
         QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
         QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
@@ -157,19 +159,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
             ui->textEdit_tx_msg_dialog->setEnabled(false);
         }
 
-        if (m_xmppClient->isConnected()) {
-            ui->textEdit_tx_msg_dialog->setEnabled(true);
-            dlArchivedMessages(); // Gather anything possible from the Google LevelDB database!
-        }
-
-        QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-            ui->textEdit_tx_msg_dialog->setEnabled(true);
-
-            //
-            // Now gather any data possible from the given XMPP server via the Internet!
-            dlArchivedMessages();
-        });
-
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
             ui->textEdit_tx_msg_dialog->setEnabled(false);
         });
@@ -184,6 +173,36 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 GkXmppMessageDialog::~GkXmppMessageDialog()
 {
     delete ui;
+}
+
+/**
+ * @brief GkXmppMessageDialog::openMsgDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * manager, so that the end-user may send/receive messages to other end-users.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The end-user to open the one-on-one message dialog we are in communiqué with!
+ * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
+ * a new tab should be opened for a brand new chat.
+ */
+void GkXmppMessageDialog::openMsgDlg(const QString &bareJid, const qint32 &tabIdx)
+{
+    emit updateGlobal(bareJid, tabIdx);
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::openMsgDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * manager, so that the end-user may send/receive messages to other end-users.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJids The end-users to open the message dialog we are in communiqué with, as a IRC-styled chat-room.
+ * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
+ * a new tab should be opened for a brand new chat.
+ */
+void GkXmppMessageDialog::openMsgDlg(const QStringList &bareJids, const qint32 &tabIdx)
+{
+    emit updateGlobal(bareJids, tabIdx);
+
+    return;
 }
 
 /**
@@ -283,9 +302,8 @@ void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
 void GkXmppMessageDialog::updateInterface(const QStringList &bareJids)
 {
     ui->label_callsign_1_stats->setText(tr("%1 users in chat").arg(QString::number(bareJids.count() + 1))); // Includes both the user in communique and the client themselves!
-    auto tmpRosterList = m_xmppClient->getRosterMap();
     for (const auto &bareJid: bareJids) {
-        for (const auto &rosterJid: tmpRosterList) {
+        for (const auto &rosterJid: *m_rosterList) {
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
                     ui->tabWidget_chat_window->setTabText(0, gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));
@@ -441,10 +459,9 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
 {
     // TODO: Refactor this code!
-    auto rosterMap = m_xmppClient->getRosterMap();
-    if (!rosterMap.isEmpty()) {
+    if (!m_rosterList->isEmpty()) {
         gkXmppRecvMsgsTableViewModel.clear();
-        for (const auto &roster: rosterMap) {
+        for (const auto &roster: *m_rosterList) {
             if (roster.bareJid == bareJid) {
                 if (!roster.archive_messages.isEmpty()) {
                     for (const auto &message: roster.archive_messages) {
@@ -548,6 +565,149 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
         }
 
         ui->tableView_recv_msg_dlg->scrollToBottom();
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::procGlobal updates important variables within this class of, GkXmppMessageDialog().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username we are in communiqué with!
+ * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
+ * a new tab should be opened for a brand new chat.
+ * @note Phlucious <https://stackoverflow.com/a/13921390>.
+ * @see GkXmppMessageDialog::openMsgDlg().
+ */
+void GkXmppMessageDialog::procGlobal(const QString &bareJid, const qint32 &tabIdx)
+{
+    try {
+        if (tabIdx == GK_XMPP_MSG_WINDOW_NEW_TAB_IDX) {
+            //
+            // Open a new chat window!
+            QPointer<QTabWidget> tabWidget = new QTabWidget(ui->tabWidget_chat_window);
+            tabWidget->setObjectName(tr("%1").arg(bareJid));
+            QPointer<QWidget> createTab = new QWidget(this);
+            tabWidget->addTab(createTab, QString::number(tabIdx));
+
+            //
+            // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
+            // widgets hierarchy and may cause flicker. To prevent this, you can set the QWidget::updatesEnabled property
+            // to false prior to changes; remember to set the property to true when the changes are done, making the
+            // widget receive paint events again.
+            //
+        } else if (tabIdx >= GK_XMPP_MSG_WINDOW_EXISTING_EQUAL_OR_GREATER_RANGE_TAB_IDX) {
+            //
+            // We are dealing with a pre-existing chat window!
+            ui->tabWidget_chat_window->setCurrentIndex(tabIdx);
+        } else {
+            //
+            // Unknown value!
+            throw std::invalid_argument(tr("Invalid tab index given when creating or determining what chat window to use!").toStdString());
+        }
+
+        m_bareJids << bareJid;
+        updateUsersHelper();
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::procGlobal updates important variables within this class of, GkXmppMessageDialog().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJids The usernames we are in communiqué with!
+ * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
+ * a new tab should be opened for a brand new chat.
+ * @note Phlucious <https://stackoverflow.com/a/13921390>.
+ * @see GkXmppMessageDialog::openMsgDlg().
+ */
+void GkXmppMessageDialog::procGlobal(const QStringList &bareJids, const qint32 &tabIdx)
+{
+    try {
+        if (tabIdx == GK_XMPP_MSG_WINDOW_NEW_TAB_IDX) {
+            //
+            // Open a new chat window!
+            QPointer<QTabWidget> tabWidget = new QTabWidget(ui->tabWidget_chat_window);
+            if (bareJids.count() > 2) {
+                QString jid_one;
+                QString jid_two;
+                for (qint32 i = 0; i < bareJids.size(); ++i) {
+                    jid_one = bareJids.at(0);
+                    jid_two = bareJids.at(1);
+                }
+
+                tabWidget->setObjectName(tr("%1, %2, etc.").arg(jid_one, jid_two));
+            } else {
+                QString jid_one;
+                QString jid_two;
+                for (qint32 i = 0; i < bareJids.size(); ++i) {
+                    jid_one = bareJids.at(0);
+                    jid_two = bareJids.at(1);
+                }
+
+                tabWidget->setObjectName(tr("%1 and %2").arg(jid_one, jid_two));
+            }
+
+            QPointer<QWidget> createTab = new QWidget(this);
+            tabWidget->addTab(createTab, QString::number(tabIdx));
+
+            //
+            // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
+            // widgets hierarchy and may cause flicker. To prevent this, you can set the QWidget::updatesEnabled property
+            // to false prior to changes; remember to set the property to true when the changes are done, making the
+            // widget receive paint events again.
+            //
+        } else if (tabIdx >= GK_XMPP_MSG_WINDOW_EXISTING_EQUAL_OR_GREATER_RANGE_TAB_IDX) {
+            //
+            // We are dealing with a pre-existing chat window!
+            ui->tabWidget_chat_window->setCurrentIndex(tabIdx);
+        } else {
+            //
+            // Unknown value!
+            throw std::invalid_argument(tr("Invalid tab index given when creating or determining what chat window to use!").toStdString());
+        }
+
+        m_bareJids.append(bareJids);
+        updateUsersHelper();
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::updateUsersHelper is simply a helper function for processing updates with regard to the
+ * variable, `m_bareJids`.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see GkXmppMessageDialog::openMsgDlg(), GkXmppMessageDialog::procGlobal().
+ */
+void GkXmppMessageDialog::updateUsersHelper()
+{
+    try {
+        if (!isVisible()) {
+            setWindowFlags(Qt::Window);
+            setAttribute(Qt::WA_DeleteOnClose, true);
+            show();
+        }
+
+        if (m_xmppClient->isConnected()) {
+            ui->textEdit_tx_msg_dialog->setEnabled(true);
+            dlArchivedMessages(); // Gather anything possible from the Google LevelDB database!
+        }
+
+        QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+            ui->textEdit_tx_msg_dialog->setEnabled(true);
+
+            //
+            // Now gather any data possible from the given XMPP server via the Internet!
+            dlArchivedMessages();
+        });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }

@@ -75,8 +75,9 @@ using namespace Security;
 GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
                                        QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
                                        QPointer<GekkoFyre::GkSystem> system, QPointer<GkEventLogger> eventLogger,
-                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
-                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+                                       std::shared_ptr<QList<GkXmppCallsign>> rosterList, const bool &skipConnectionCheck,
+                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
+                                       ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -87,6 +88,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         gkDb = std::move(database);
         gkSystem = std::move(system);
         gkEventLogger = std::move(eventLogger);
+        m_rosterList = std::move(rosterList);
 
         m_progressBar = new QProgressBar(nullptr);
         m_initAppLaunch = true;
@@ -119,6 +121,12 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         ui->pushButton_self_avatar->setEnabled(false);
         ui->lineEdit_search_roster->setEnabled(false);
         ui->actionEdit_Nickname->setEnabled(false);
+
+        //
+        // Message dialog signals/slots and actions!
+        QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, m_rosterList, this);
+        QObject::connect(this, SIGNAL(launchMsgDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QString &, const qint32 &)));
+        QObject::connect(this, SIGNAL(launchMsgDlg(const QStringList &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QStringList &, const qint32 &)));
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
@@ -239,13 +247,11 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
         QObject::connect(ui->tableView_callsigns_groups->selectionModel(), &QItemSelectionModel::selectionChanged, this,
                          &GkXmppRosterDialog::updateActions);
-        QObject::connect(m_xmppClient, SIGNAL(updateRoster()), this, SLOT(updateRoster()));
 
         QObject::connect(this, SIGNAL(updatePresenceTableViewModel()), this, SLOT(recvUpdatePresenceTableViewModel()));
         QObject::connect(this, SIGNAL(updatePendingTableViewModel()), this, SLOT(recvUpdatePendingTableViewModel()));
         QObject::connect(this, SIGNAL(updateBlockedTableViewModel()), this, SLOT(recvUpdateBlockedTableViewModel()));
 
-        updateRoster();
         shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
         if (!shownXmppPreviewNotice) {
             QMessageBox msgBox;
@@ -330,9 +336,8 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
  */
 void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const QString &reason)
 {
-    if (!bareJid.isEmpty()) {
-        updateRoster();
-        for (const auto &entry: m_rosterList) {
+    if (!bareJid.isEmpty() && !m_rosterList->isEmpty()) {
+        for (const auto &entry: *m_rosterList) {
             if (entry.bareJid == bareJid) {
                 if (!reason.isEmpty()) {
                     insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickName());
@@ -368,16 +373,6 @@ void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
 }
 
 /**
- * @brief GkXmppRosterDialog::updateRoster
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppRosterDialog::updateRoster()
-{
-    m_rosterList = m_xmppClient->getRosterMap();
-    return;
-}
-
-/**
  * @brief GkXmppRosterDialog::addJidToRoster is executed when the roster entry of a particular bareJid is added as a
  * result of roster push.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -385,9 +380,8 @@ void GkXmppRosterDialog::updateRoster()
  */
 void GkXmppRosterDialog::addJidToRoster(const QString &bareJid)
 {
-    if (!bareJid.isEmpty()) {
-        updateRoster();
-        for (const auto &entry: m_rosterList) {
+    if (!bareJid.isEmpty() && !m_rosterList->isEmpty()) {
+        for (const auto &entry: *m_rosterList) {
             if (entry.bareJid == bareJid) {
                 if (m_xmppClient->isJidOnline(bareJid)) {
                     insertRosterPresenceTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
@@ -410,8 +404,8 @@ void GkXmppRosterDialog::addJidToRoster(const QString &bareJid)
  */
 void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
 {
-    if (!bareJid.isEmpty()) {
-        for (const auto &entry: m_rosterList) {
+    if (!bareJid.isEmpty() && !m_rosterList->isEmpty()) {
+        for (const auto &entry: *m_rosterList) {
             if (entry.bareJid == bareJid) {
                 removeRosterPresenceTable(bareJid);
                 break;
@@ -419,7 +413,6 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
         }
     }
 
-    updateRoster();
     return;
 }
 
@@ -493,7 +486,6 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
 qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = 0;
         for (const auto &entry: m_presenceRosterData) {
             if (entry.bareJid == bareJid) {
@@ -525,7 +517,6 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = removeRosterPresenceTable(bareJid);
         insertRosterPresenceTable(presence, bareJid, nickname, ret);
     }
@@ -591,7 +582,6 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
 qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = 0;
         for (const auto &entry: m_pendingRosterData) {
             if (entry.bareJid == bareJid) {
@@ -624,7 +614,6 @@ qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
 void GkXmppRosterDialog::updateRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = removeRosterPendingTable(bareJid);
         if (!reason.isEmpty()) {
             insertRosterPendingTable(online_status, bareJid, nickname, reason, ret);
@@ -667,7 +656,6 @@ void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const 
 qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = 0;
         for (const auto &entry: m_blockedRosterData) {
             if (entry.bareJid == bareJid) {
@@ -698,7 +686,6 @@ qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 void GkXmppRosterDialog::updateRosterBlockedTable(const QString &bareJid, const QString &reason)
 {
     if (!bareJid.isEmpty()) {
-        updateRoster();
         qint32 ret = removeRosterBlockedTable(bareJid);
         insertRosterBlockedTable(bareJid, reason, ret);
     }
@@ -716,48 +703,6 @@ void GkXmppRosterDialog::reconnectToXmpp()
     if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
         m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password,
                                                gkConnDetails.jid, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::launchMsgDlg
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user we are in communiqué with!
- */
-void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
-{
-    QStringList bareJids;
-    bareJids << bareJid;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, bareJids, this);
-    if (gkXmppMsgDlg) {
-        if (!gkXmppMsgDlg->isVisible()) {
-            gkXmppMsgDlg->setWindowFlags(Qt::Window);
-            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-            gkXmppMsgDlg->show();
-        }
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::launchMsgDlg
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid A list of all the users we are in communiqué with!
- */
-void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
-{
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient, bareJids, this);
-    if (gkXmppMsgDlg) {
-        if (!gkXmppMsgDlg->isVisible()) {
-            gkXmppMsgDlg->setWindowFlags(Qt::Window);
-            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-            gkXmppMsgDlg->show();
-        }
     }
 
     return;
@@ -914,7 +859,6 @@ void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
 {
     QModelIndex idx = ui->tableView_callsigns_groups->indexAt(ui->actionEdit_Contact->data().toPoint());
     QVariant data = ui->tableView_callsigns_groups->model()->data(idx);
-    QString text = data.toString();
 
     return;
 }
@@ -1133,13 +1077,12 @@ void GkXmppRosterDialog::updateClientAvatar(const QByteArray &avatar_img, const 
  */
 void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
 {
-    updateRoster();
     GkPresenceTableViewModel presence_model;
     presence_model.bareJid = vCard.from();
     presence_model.added = false;
 
-    if (!m_rosterList.isEmpty()) {
-        for (const auto &entry: m_rosterList) {
+    if (!m_rosterList->isEmpty()) {
+        for (const auto &entry: *m_rosterList) {
             if (!entry.bareJid.isEmpty()) {
                 if (entry.bareJid == presence_model.bareJid) {
                     presence_model.presence = m_xmppClient->presenceToIcon(entry.presence->availableStatusType());
@@ -1557,7 +1500,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QMode
         enablePresenceTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            emit launchMsgDlg(bareJid, GK_XMPP_MSG_WINDOW_NEW_TAB_IDX); // TODO: Improve upon this so it works as it should!
             return;
         }
 
@@ -1607,7 +1550,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QMod
         enableBlockedTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            emit launchMsgDlg(bareJid, GK_XMPP_MSG_WINDOW_NEW_TAB_IDX); // TODO: Improve upon this so it works as it should!
             return;
         }
 
