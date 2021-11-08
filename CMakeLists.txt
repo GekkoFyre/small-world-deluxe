@@ -769,7 +769,7 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
-	src/models/splash/gk_splash_disp_model.cpp
+	# src/models/splash/gk_splash_disp_model.cpp
     src/models/system/gk_network_ping_model.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp
@@ -870,7 +870,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
-	src/models/splash/gk_splash_disp_model.hpp
+	# src/models/splash/gk_splash_disp_model.hpp
     src/models/system/gk_network_ping_model.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp
