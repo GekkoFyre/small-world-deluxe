@@ -93,6 +93,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                               m_xmppCarbonMgr(findExtension<QXmppCarbonManager>()),
                                               m_xmppLogger(QXmppLogger::getLogger()),
                                               m_discoMgr(findExtension<QXmppDiscoveryManager>()),
+                                              m_rosterList(std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>()),
                                               QXmppClient(parent)
 {
     try {
@@ -150,10 +151,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_sslIsEnabled = false;
         m_isMuc = false;
         m_msgRecved = false;
-
-        //
-        // Initialize other variables, which are also shared amongst other classes!
-        m_rosterList = std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>();
 
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
@@ -796,13 +793,9 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QList<GkXmppCallsign> *GkXmppClient::getRosterMap()
+std::shared_ptr<QList<GkXmppCallsign>> GkXmppClient::getRosterMap()
 {
-    if (!m_rosterList->isEmpty()) {
-        return m_rosterList.get();
-    }
-
-    return new QList<GkXmppCallsign>();
+    return m_rosterList;
 }
 
 /**
