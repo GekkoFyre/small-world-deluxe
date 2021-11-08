@@ -1103,38 +1103,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-    #
-    # https://clang.llvm.org/docs/AddressSanitizer.html
-    #
-    if(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER)
-        set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-        set (CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -lasan -static-libasan")
-    endif()
-    if (CMAKE_CXX_COMPILER_ID MATCHES "clang")
-        #
-        # Using regular Clang or AppleClang
-        if(MSYS OR MINGW)
-            set(CMAKE_C_COMPILER "/mingw64/bin/clang")
-            set(CMAKE_CXX_COMPILER "/mingw64/bin/clang++")
-        else()
-            set(CMAKE_C_COMPILER "/usr/bin/clang")
-            set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-        endif()
-        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        #
-        # Using GCC
-        if(MSYS OR MINGW)
-            #
-            # Nothing!
-        else()
-            set(CMAKE_C_COMPILER "/usr/bin/gcc")
-            set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-        endif()
-        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        # Using Intel C++
-    endif()
+	add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # Using Microsoft Visual Studio C++
@@ -1144,16 +1113,6 @@ elseif(WIN32)
             add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
         endif()
     endif()
-endif()
-
-if (GFYRE_ENABLE_PVS_STUDIO)
-    include(PVS-Studio.cmake)
-    pvs_studio_add_target(TARGET smallworld.analyze ALL
-                          PREPROCESSOR clang
-                          OUTPUT FORMAT errorfile
-                          ANALYZE smallworld galaxy
-                          LOG swd.err)
-    message(STATUS "Enabled static analysis with PVS-Studio!")
 else()
-    message(STATUS "Disabled static analysis with PVS-Studio!")
+	add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
 endif()
