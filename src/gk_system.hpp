@@ -83,12 +83,6 @@ public:
     #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
     HRESULT WindowsFirewallInitialize(OUT INetFwProfile **fwProfile);
     HRESULT WindowsFirewallIsOn(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
-    HRESULT WindowsFirewallAppIsEnabled(IN INetFwProfile *fwProfile, IN const wchar_t *fwProcessImageFileName, OUT BOOL *fwAppEnabled);
-    HRESULT WindowsFirewallTurnOn(IN INetFwProfile *fwProfile);
-    HRESULT WindowsFirewallTurnOff(IN INetFwProfile *fwProfile);
-    HRESULT WindowsFirewallAddApp(IN INetFwProfile *fwProfile, IN const wchar_t *fwProcessImageFileName, IN const wchar_t *fwName);
-    HRESULT WindowsFirewallPortIsEnabled(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, OUT BOOL *fwPortEnabled);
-    HRESULT WindowsFirewallPortAdd(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, IN const wchar_t *name);
 
     static QString processHResult(const HRESULT &hr);
     #endif

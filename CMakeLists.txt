@@ -769,7 +769,7 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
-	src/models/splash/gk_splash_disp_model.cpp
+	# src/models/splash/gk_splash_disp_model.cpp
     src/models/system/gk_network_ping_model.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp
@@ -870,7 +870,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
-	src/models/splash/gk_splash_disp_model.hpp
+	# src/models/splash/gk_splash_disp_model.hpp
     src/models/system/gk_network_ping_model.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp
@@ -1103,7 +1103,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers -Wno-deprecated-declarations)
+	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # Using Microsoft Visual Studio C++
@@ -1114,5 +1115,6 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers -Wno-deprecated-declarations)
+	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()

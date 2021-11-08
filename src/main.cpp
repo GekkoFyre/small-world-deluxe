@@ -139,10 +139,10 @@ int main(int argc, char *argv[])
     //
     // For some reason this too interferes with Valgrind, Dr. Memory, etc. and other such
     // diagnostic tools for reasons that are currently unknown.
-    std::unique_ptr<GekkoFyre::GkSplashDispModel> splash_model = std::make_unique<GekkoFyre::GkSplashDispModel>(&app);
-    splash_model->show();
-    splash_model->setProgress(10);
-    QTimer::singleShot(3000, splash_model.get(), &QWidget::close);
+    // std::unique_ptr<GekkoFyre::GkSplashDispModel> splash_model = std::make_unique<GekkoFyre::GkSplashDispModel>(&app);
+    // splash_model->show();
+    // splash_model->setProgress(10);
+    // QTimer::singleShot(3000, splash_model.get(), &QWidget::close);
     #endif
 
     //
