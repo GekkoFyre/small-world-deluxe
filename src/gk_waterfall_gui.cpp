@@ -40,10 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/gk_waterfall_gui.hpp"
-#include <qwt/qwt_picker_machine.h>
-#include <qwt/qwt_plot_layout.h>
-#include <qwt/qwt_plot_grid.h>
-#include <qwt/qwt_panner.h>
 #include <algorithm>
 #include <stdexcept>
 #include <exception>
@@ -53,6 +49,18 @@
 #include <QColormap>
 #include <QGridLayout>
 #include <QApplication>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <qwt-qt5/qwt_picker_machine.h>
+#include <qwt-qt5/qwt_plot_layout.h>
+#include <qwt-qt5/qwt_plot_grid.h>
+#include <qwt-qt5/qwt_panner.h>
+#else
+#include <qwt/qwt_picker_machine.h>
+#include <qwt/qwt_plot_layout.h>
+#include <qwt/qwt_plot_grid.h>
+#include <qwt/qwt_panner.h>
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;

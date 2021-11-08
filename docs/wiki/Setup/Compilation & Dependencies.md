@@ -10,9 +10,7 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 
 * `base-devel`
 * `mingw-w64-x86_64-toolchain`
-* `mingw-w64-x86_64-qt5-static`
 * `mingw-w64-x86_64-kdeclarative-qt5`
-* `mingw-w64-x86_64-qwt`
 * `mingw-w64-x86_64-uasm`
 * `icu-devel`
 * `cmake`
@@ -31,8 +29,64 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 * `mingw-w64-x86_64-aria2`
 * `mingw-w64-x86_64-ffmpeg`
 * `mingw-w64-x86_64-taglib`
+* `mingw-w64-x86_64-qwt-qt5`
 
-If you wish to compile `FFmpeg` yourself from their own source code, then please note we only provide light instructions at best, and that's for Debian-based distributions right now. [You may find those instructions here](#ffmpeg-for-linux-based-systems). `FFmpeg` is a very complex set of tools, binaries, and libraries and we highly recommend that you try and get it through a package manager where possible.
+Lastly, you will need to install all the required libraries for [Qt Project](https://www.qt.io/), and they too are listed below this paragraph. It is upon the `Qt` libraries that the foundation of `Small World Deluxe` is built upon; the GUI, all the glue code, etc. so we are in debt to its contributors for their hard, selfless work. Some libraries are likely not needed from the list below, but we have included them anyhow to be extra sure that the end-user is not left out on any missing dependencies. Onto the list!
+
+- `mingw-w64-x86_64-qt5`
+- `mingw-w64-x86_64-qt5-3d`
+- `mingw-w64-x86_64-qt5-base`
+- `mingw-w64-x86_64-qt5-charts`
+- `mingw-w64-x86_64-qt5-connectivity`
+- `mingw-w64-x86_64-qt5-datavis3d`
+- `mingw-w64-x86_64-qt5-declarative`
+- `mingw-w64-x86_64-qt5-imageformats`
+- `mingw-w64-x86_64-qt5-multimedia`
+- `mingw-w64-x86_64-qt5-networkauth`
+- `mingw-w64-x86_64-qt5-quick3d`
+- `mingw-w64-x86_64-qt5-quickcontrols`
+- `mingw-w64-x86_64-qt5-quickcontrols2`
+- `mingw-w64-x86_64-qt5-quicktimeline`
+- `mingw-w64-x86_64-qt5-remoteobjects`
+- `mingw-w64-x86_64-qt5-script`
+- `mingw-w64-x86_64-qt5-scxml`
+- `mingw-w64-x86_64-qt5-serialbus`
+- `mingw-w64-x86_64-qt5-serialport`
+- `mingw-w64-x86_64-qt5-speech`
+- `mingw-w64-x86_64-qt5-svg`
+- `mingw-w64-x86_64-qt5-tools`
+- `mingw-w64-x86_64-qt5-translations`
+- `mingw-w64-x86_64-qt5-websockets`
+- `mingw-w64-x86_64-qt5-winextras`
+
+If you require the *debug* libraries for performing development work on the source code of `Small World Deluxe`, then you will additionally require the following packages. As of November 5th, 2021, this list is up-to-date for `MSYS2`:
+
+* `mingw-w64-x86_64-qt5-debug`
+* `mingw-w64-x86_64-qt5-3d-debug`
+* `mingw-w64-x86_64-qt5-base-debug`
+* `mingw-w64-x86_64-qt5-charts-debug`
+* `mingw-w64-x86_64-qt5-connectivity-debug`
+* `mingw-w64-x86_64-qt5-datavis3d-debug`
+* `mingw-w64-x86_64-qt5-declarative-debug`
+* `mingw-w64-x86_64-qt5-imageformats-debug`
+* `mingw-w64-x86_64-qt5-multimedia-debug`
+* `mingw-w64-x86_64-qt5-networkauth-debug`
+* `mingw-w64-x86_64-qt5-quick3d-debug`
+* `mingw-w64-x86_64-qt5-quickcontrols-debug`
+* `mingw-w64-x86_64-qt5-quickcontrols2-debug`
+* `mingw-w64-x86_64-qt5-quicktimeline-debug`
+* `mingw-w64-x86_64-qt5-remoteobjects-debug`
+* `mingw-w64-x86_64-qt5-script-debug`
+* `mingw-w64-x86_64-qt5-scxml-debug`
+* `mingw-w64-x86_64-qt5-serialbus-debug`
+* `mingw-w64-x86_64-qt5-serialport-debug`
+* `mingw-w64-x86_64-qt5-speech-debug`
+* `mingw-w64-x86_64-qt5-svg-debug`
+* `mingw-w64-x86_64-qt5-tools-debug`
+* `mingw-w64-x86_64-qt5-websockets-debug`
+* `mingw-w64-x86_64-qt5-winextras-debug`
+
+Now that you have installed all the `Qt` library dependencies, if you wish to compile `FFmpeg` yourself from their own source code, then please note we only provide light instructions at best, and that's for Debian-based distributions right now. [You may find those instructions here](#ffmpeg-for-linux-based-systems). `FFmpeg` is a very complex set of tools, binaries, and libraries and we highly recommend that you try and get it through a package manager where possible.
 
 Once you have compiled [Boost C++](#compilation-of-boost-c-under-mingw-via-msys2), [Hamlib](#compilation-of-hamlib-under-mingw-via-msys2), and then [Codec2](#compilation-of-codec2-under-mingw-via-msys2) for the [MSYS2](https://www.msys2.org/) subsystem, you may proceed with the compilation and installation of `Small World Deluxe` itself! [CMake](https://cmake.org/) is required for this operation and we recommend that you create a separate `build` directory for the compilation (as shown below). Once the dependencies have all been set up, you only need to execute the following commands under an MSYS2 shell, from within the root of the `Small World Deluxe` project directory:
 

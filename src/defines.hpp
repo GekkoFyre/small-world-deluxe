@@ -53,7 +53,6 @@
 #include <AL/alc.h>
 #include <AL/alext.h>
 #include <taglib/audioproperties.h>
-#include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppMessage.h>
@@ -95,6 +94,9 @@
 #include <icftypes.h>
 #include <comdef.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
+#include <qwt-qt5/qwt_interval.h>
+#else
+#include <qwt/qwt_interval.h>
 #endif
 
 #ifdef __cplusplus

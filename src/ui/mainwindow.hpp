@@ -67,7 +67,6 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
-#include <qwt/qwt_legend_data.h>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -99,6 +98,12 @@
 #include <QPushButton>
 #include <QSystemTrayIcon>
 #include <QCommandLineParser>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <qwt-qt5/qwt_legend_data.h>
+#else
+#include <qwt/qwt_legend_data.h>
+#endif
 
 namespace Ui {
 class MainWindow;

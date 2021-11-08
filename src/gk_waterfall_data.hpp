@@ -1,7 +1,11 @@
 #ifndef WATERFALLDATA_H
 #define WATERFALLDATA_H
 
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <qwt-qt5/qwt_matrix_raster_data.h>
+#else
 #include <qwt/qwt_matrix_raster_data.h>
+#endif
 
 #include <ctime>
 

@@ -43,7 +43,7 @@ pkg_check_modules(PC_QWT QUIET "qwt")
 set(QWT_DEFINITIONS ${PC_QWT_CFLAGS_OTHER})
 
 find_path(QWT_INCLUDE_DIR
-    NAMES "qwt/qwt.h"
+    NAMES "qwt/qwt.h" "qwt-qt5/qwt.h"
     HINTS ${PC_QWT_INCLUDE_DIR} ${PC_QWT_INCLUDE_DIRS}
     PATHS "/usr/local/include" "/usr/include" "/usr/include/qwt")
 
