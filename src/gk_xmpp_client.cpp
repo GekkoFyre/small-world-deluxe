@@ -93,6 +93,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                               m_xmppCarbonMgr(findExtension<QXmppCarbonManager>()),
                                               m_xmppLogger(QXmppLogger::getLogger()),
                                               m_discoMgr(findExtension<QXmppDiscoveryManager>()),
+                                              m_rosterList(std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>()),
                                               QXmppClient(parent)
 {
     try {
@@ -150,10 +151,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_sslIsEnabled = false;
         m_isMuc = false;
         m_msgRecved = false;
-
-        //
-        // Initialize other variables, which are also shared amongst other classes!
-        m_rosterList = std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>();
 
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
@@ -796,13 +793,9 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QList<GkXmppCallsign> *GkXmppClient::getRosterMap()
+std::shared_ptr<QList<GkXmppCallsign>> GkXmppClient::getRosterMap()
 {
-    if (!m_rosterList->isEmpty()) {
-        return m_rosterList.get();
-    }
-
-    return new QList<GkXmppCallsign>();
+    return m_rosterList;
 }
 
 /**
@@ -1256,33 +1249,38 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
-        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + bareJid + ".png");
-        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + bareJid + ".xml");
+        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + getHostname(bareJid) + "/" +
+                getUsername(bareJid) + ".png");
+        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + getHostname(bareJid) + "/" +
+                getUsername(bareJid) + ".xml");
 
-        QFile xmlFile(xmlFileName.canonicalFilePath());
-        if (xmlFile.exists()) {
-            if (!xmlFile.remove()) {
-                throw std::runtime_error(tr("An error was encountered with removing file, \"%1\"!")
-                .arg(xmlFileName.canonicalFilePath()).toStdString());
+        if (!QDir(xmlFileName.absolutePath()).exists()) {
+            //
+            // The host sub-folder does not exist!
+            if (!QDir().mkdir(xmlFileName.absolutePath())) {
+                throw std::runtime_error(tr("An error was encountered with creating directory, \"%1\"!")
+                .arg(xmlFileName.absolutePath()).toStdString());
             }
         }
 
-        if (xmlFile.open(QIODevice::ReadWrite)) {
-            QXmlStreamWriter stream(&xmlFile);
-            vCard.toXml(&stream);
-            xmlFile.close();
-            emit sendUserVCard(vCard);
-
-            gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for user, \"%1\"").arg(bareJid),
-                                        GkSeverity::Debug, "", false, true, false, false);
+        QFile xmlFile(xmlFileName.filePath());
+        if (!xmlFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            return;
         }
 
-        QFile imgFile(imgFileName.canonicalFilePath());
-        if (imgFile.exists()) {
-            if (!imgFile.remove()) {
-                throw std::runtime_error(tr("An error was encountered with removing file, \"%1\"!")
-                .arg(imgFileName.canonicalFilePath()).toStdString());
-            }
+        QXmlStreamWriter stream(&xmlFile);
+        vCard.toXml(&stream);
+        xmlFile.commitTransaction();
+        emit sendUserVCard(vCard);
+        xmlFile.close();
+
+        gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for user, \"%1\"").arg(bareJid),
+                                    GkSeverity::Debug, "", false, true, false, false);
+
+        const QString img_file_path = imgFileName.filePath();
+        QFile imgFile(img_file_path);
+        if (!imgFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            return;
         }
 
         QByteArray photo = vCard.photo();
@@ -1295,17 +1293,16 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
 
         if (!photo.isNull() && !photo.isEmpty()) {
             QPointer<QBuffer> buffer = new QBuffer(&photo, this);
-            buffer->open(QIODevice::ReadOnly);
+            buffer->open(QIODevice::WriteOnly);
             QImageReader imageReader(buffer, vCard.photoType().toStdString().c_str());
             QImage image = imageReader.read();
-            QDir::setCurrent(imgFileName.canonicalPath()); // Set the working directory to this!
-            if (image.save(imgFileName.canonicalFilePath())) {
+            if (image.save(img_file_path)) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
                                             GkSeverity::Debug, "", false, true, false, false);
                 return;
             } else {
                 throw std::runtime_error(tr("Error encountered with saving image data for file, \"%1\"!")
-                .arg(imgFileName.canonicalFilePath()).toStdString());
+                .arg(img_file_path).toStdString());
             }
         }
     } catch (const std::exception &e) {

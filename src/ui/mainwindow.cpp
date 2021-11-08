@@ -1883,7 +1883,7 @@ void MainWindow::launchXmppRosterDlg()
     try {
         if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
             if (!gkXmppRosterDlg) {
-                m_rosterList.reset(m_xmppClient->getRosterMap());
+                m_rosterList = std::move(m_xmppClient->getRosterMap());
                 gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
             }
 
