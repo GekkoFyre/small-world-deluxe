@@ -611,7 +611,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                     .arg(it->audio_dev_str).toStdString());
                                 }
 
-                                gkAudioDevices->captureAlcSamples(it->alDevice, mInputDeviceBuf->data(), audioFrameSampleCountPerChannel);
+                                //
+                                // Initiate the while-loop for the capture of actual audio samples!
+                                capture_input_audio_samples = std::thread(&MainWindow::captureAlcSamples, this, it->alDevice, audioFrameSampleCountPerChannel);
+                                capture_input_audio_samples.detach();
 
                                 //
                                 // Start the audio input thread!
@@ -776,6 +779,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, nullptr);
+        QObject::connect(&gkXmppClientThread, &QThread::finished, m_xmppClient, &QObject::deleteLater);
+        m_xmppClient->moveToThread(&gkXmppClientThread);
+        gkXmppClientThread.start();
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -790,6 +796,11 @@ MainWindow::~MainWindow()
 {
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
+    if (gkXmppClientThread.isRunning()) {
+        gkXmppClientThread.quit();
+        gkXmppClientThread.wait();
+    }
+
     if (gkAudioInputThread.isRunning()) {
         gkAudioInputThread.quit();
         gkAudioInputThread.wait();
@@ -802,6 +813,10 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
+    }
+
+    if (rig_thread.joinable()) {
+        rig_thread.join();
     }
 
     for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
@@ -820,6 +835,10 @@ MainWindow::~MainWindow()
             ALCboolean audio_input_closed;
             alcCall(alcCaptureCloseDevice, audio_input_closed, it->alDevice, it->alDevice);
         }
+    }
+
+    if (capture_input_audio_samples.joinable()) {
+        capture_input_audio_samples.join();
     }
 
     // delete db;
@@ -1473,6 +1492,24 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 }
 
 /**
+ * @brief MainWindow::captureAlcSamples for the capturing/recording of audio samples.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device
+ * @param samples
+ * @note Radosław Cybulski <https://stackoverflow.com/a/56651424>.
+ */
+void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
+{
+    while (true) {
+        std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
+        alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
+        alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::calcVolumeFactor since we don't want the maximum volume level given to `gkAudioInput` or
  * `gkAudioOutput` to be a full 100%, we set it to something like 75% instead. But we still need to show the user a
  * corrected value in order to minimize confusion, so this is where this function comes into play.
@@ -1885,6 +1922,7 @@ void MainWindow::launchXmppRosterDlg()
             if (!gkXmppRosterDlg) {
                 m_rosterList = std::move(m_xmppClient->getRosterMap());
                 gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
+                gkXmppRosterDlg->moveToThread(&gkXmppClientThread);
             }
 
             if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!
@@ -2647,6 +2685,7 @@ void MainWindow::on_actionSign_out_triggered()
 void MainWindow::on_action_Register_Account_triggered()
 {
     QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
+    gkXmppRegistrationDlg->moveToThread(&gkXmppClientThread);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 

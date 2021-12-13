@@ -343,6 +343,7 @@ private:
     // Multithreading, mutexes, etc.
     //
     std::mutex m_archivedMsgsFineMtx;
+    std::mutex m_archivedMsgsBulkMtx;
     std::thread m_archivedMsgsFineThread;
 
     //
