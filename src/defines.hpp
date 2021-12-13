@@ -623,6 +623,13 @@ namespace Network {
             QString nickName;       // The nickname of the given bareJid.
             QString message;        // The message the user wishes to send.
         };
+
+        struct GkClientMsgRecved {
+            QDateTime timestamp;                            // The timestamp of when the client created/sent the message to the other party!
+            QString mesg;                                   // The message itself and the contents herein.
+            bool received = false;                          // Whether the message has been successfully received or not.
+            bool presented = false;                         // Whether the message has been shown/presented to the GUI.
+        };
     }
 }
 

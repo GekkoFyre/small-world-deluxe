@@ -106,6 +106,28 @@
 
 namespace GekkoFyre {
 
+class GkXmppMessageHandler : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkXmppMessageHandler(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkXmppMessageHandler() override;
+
+    [[nodiscard]] std::vector<QDateTime> get();
+    [[nodiscard]] size_t size();
+    [[nodiscard]] size_t count();
+    void erase(const QDateTime &timestamp);
+    void pop();
+
+public slots:
+    void set(const bool &setValid, const QDateTime &timestamp);
+    void addToQueue(const QDateTime &msg);
+
+private:
+    std::vector<QDateTime> m_msgRecved;
+
+};
+
 class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
@@ -150,15 +172,15 @@ public:
     [[nodiscard]] QString obtainAvatarFilePath(const QString &set_dir_path = "");
 
     //
-    // Message and QXmppMamManager handling
-    [[nodiscard]] bool getMsgRecved() const;
-
-    //
     // vCard management
     [[nodiscard]] QByteArray processImgToByteArray(const QFileInfo &filePath);
     [[nodiscard]] QPixmap rescaleAvatarImg(const QByteArray &avatar_img, const QString &img_type);
 
     [[nodiscard]] QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
+
+    //
+    // Miscellaneous & Sub-classing
+    size_t msgHandlerCount();
 
 public slots:
     void clientConnected();
@@ -239,7 +261,6 @@ private slots:
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
-    void setMsgRecved(const bool &setValid);
 
 signals:
     //
@@ -280,7 +301,7 @@ signals:
     // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
     void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
-    void msgRecved(const bool &setValid);
+    void msgRecved(const bool &setValid, const QDateTime &timestamp);
     void procFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void procThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
@@ -292,6 +313,7 @@ private:
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkNetworkPingModel> gkNetworkPing;
+    QPointer<GkXmppMessageHandler> gkXmppMsgHandler;
     QList<QDnsServiceRecord> m_dnsRecords;
 
     //
@@ -311,11 +333,9 @@ private:
     //
     // User, roster and presence details
     //
-    GekkoFyre::Network::GkXmpp::GkHost m_host;
     Network::GkXmpp::GkOnlineStatus m_status;
     std::shared_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
-    QStringList rosterGroups;
     QVector<QString> m_blockList;
     std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
@@ -337,7 +357,6 @@ private:
     //
     // Message handling
     void getArchivedMessagesFine(qint32 recursion, const QString &from = QString(), const QDateTime &preset_time = {});
-    bool m_msgRecved;
 
     //
     // Multithreading, mutexes, etc.

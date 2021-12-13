@@ -538,9 +538,7 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
 void GkXmppMessageDialog::dlArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        std::thread m_archivedMsgsBulkThread = std::thread(&GkXmppClient::getArchivedMessagesBulk, m_xmppClient, bareJid); // Get archived messages sent by the Jid in question!
-        m_archivedMsgsBulkThread.detach();
-        m_archivedMsgsBulkThreadVec.push_back(std::move(m_archivedMsgsBulkThread));
+        m_archivedMsgsBulkThreadVec.emplace_back(&GkXmppClient::getArchivedMessagesBulk, m_xmppClient, bareJid);
     }
 
     return;
@@ -567,7 +565,7 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
 
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             gkXmppRecvMsgsTableViewModel->insertData(message.from(), message.body(), message.stamp());
-            if (!m_xmppClient->getMsgRecved()) {
+            if (m_xmppClient->msgHandlerCount() == 0) {
                 emit msgRecved(true);
             }
         }
