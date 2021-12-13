@@ -114,7 +114,6 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QThread gkAudioInputThread;
     QThread gkAudioOutputThread;
-    QThread gkXmppClientThread;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -359,6 +358,8 @@ private:
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus gkSysOutputDevStatus;
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus gkSysInputDevStatus;
     qint32 audioFrameSampleCountPerChannel;
     qint32 audioFrameSampleCountTotal;
     ALCsizei circBufSize;
@@ -521,7 +522,6 @@ Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::AudioEventType);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

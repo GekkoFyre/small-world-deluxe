@@ -134,7 +134,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
-    qRegisterMetaType<GekkoFyre::GkAudioFramework::AudioEventType>("GekkoFyre::GkAudioFramework::AudioEventType");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -613,6 +612,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                                 //
                                 // Initiate the while-loop for the capture of actual audio samples!
+                                gkSysInputDevStatus = GkAudioRecordStatus::Active;
                                 capture_input_audio_samples = std::thread(&MainWindow::captureAlcSamples, this, it->alDevice, audioFrameSampleCountPerChannel);
                                 capture_input_audio_samples.detach();
 
@@ -779,9 +779,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, nullptr);
-        QObject::connect(&gkXmppClientThread, &QThread::finished, m_xmppClient, &QObject::deleteLater);
-        m_xmppClient->moveToThread(&gkXmppClientThread);
-        gkXmppClientThread.start();
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -795,12 +792,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 MainWindow::~MainWindow()
 {
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
-    if (gkXmppClientThread.isRunning()) {
-        gkXmppClientThread.quit();
-        gkXmppClientThread.wait();
-    }
-
     if (gkAudioInputThread.isRunning()) {
         gkAudioInputThread.quit();
         gkAudioInputThread.wait();
@@ -819,6 +810,10 @@ MainWindow::~MainWindow()
         rig_thread.join();
     }
 
+    if (capture_input_audio_samples.joinable()) {
+        capture_input_audio_samples.join();
+    }
+
     for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
         if (it->alDeviceCtx && it->alc_error == AL_NO_ERROR) { // Confirm that the pointer exists and that there have been no errors otherwise!
             alcCall(alcDestroyContext, it->alDevice, it->alDeviceCtx);
@@ -835,10 +830,6 @@ MainWindow::~MainWindow()
             ALCboolean audio_input_closed;
             alcCall(alcCaptureCloseDevice, audio_input_closed, it->alDevice, it->alDevice);
         }
-    }
-
-    if (capture_input_audio_samples.joinable()) {
-        capture_input_audio_samples.join();
     }
 
     // delete db;
@@ -1500,7 +1491,7 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  */
 void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
 {
-    while (true) {
+    while (gkSysInputDevStatus == GkAudioRecordStatus::Active) {
         std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
         alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
         alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
@@ -1922,7 +1913,6 @@ void MainWindow::launchXmppRosterDlg()
             if (!gkXmppRosterDlg) {
                 m_rosterList = std::move(m_xmppClient->getRosterMap());
                 gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
-                gkXmppRosterDlg->moveToThread(&gkXmppClientThread);
             }
 
             if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!
@@ -2685,7 +2675,6 @@ void MainWindow::on_actionSign_out_triggered()
 void MainWindow::on_action_Register_Account_triggered()
 {
     QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
-    gkXmppRegistrationDlg->moveToThread(&gkXmppClientThread);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 
