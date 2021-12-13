@@ -436,21 +436,6 @@ qreal GkAudioDevices::getPeakValue(const ALenum &audio_format, const qint32 &bit
 }
 
 /**
- * @brief GkAudioDevices::captureAlcSamples for the capturing/recording of audio samples.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param device
- * @param buffer
- * @param samples
- */
-void GkAudioDevices::captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples)
-{
-    alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
-    alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(buffer), samples);
-
-    return;
-}
-
-/**
  * @brief GkAudioDevices::fwrite16le
  * @author OpenAL soft <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>
  * @param val The value to be worked upon.

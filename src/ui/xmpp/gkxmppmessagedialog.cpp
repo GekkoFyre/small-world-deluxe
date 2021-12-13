@@ -172,6 +172,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
 GkXmppMessageDialog::~GkXmppMessageDialog()
 {
+    for (auto &archivedMsgsThread: m_archivedMsgsBulkThreadVec) {
+        if (archivedMsgsThread.joinable()) {
+            archivedMsgsThread.join();
+        }
+    }
+
     delete ui;
 }
 
@@ -532,7 +538,9 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
 void GkXmppMessageDialog::dlArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        m_xmppClient->getArchivedMessagesBulk(bareJid); // Get archived messages sent by the Jid in question!
+        std::thread m_archivedMsgsBulkThread = std::thread(&GkXmppClient::getArchivedMessagesBulk, m_xmppClient, bareJid); // Get archived messages sent by the Jid in question!
+        m_archivedMsgsBulkThread.detach();
+        m_archivedMsgsBulkThreadVec.push_back(std::move(m_archivedMsgsBulkThread));
     }
 
     return;

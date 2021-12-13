@@ -358,6 +358,8 @@ private:
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus gkSysOutputDevStatus;
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus gkSysInputDevStatus;
     qint32 audioFrameSampleCountPerChannel;
     qint32 audioFrameSampleCountTotal;
     ALCsizei circBufSize;
@@ -365,6 +367,7 @@ private:
     //
     // Audio sub-system
     //
+    void captureAlcSamples(ALCdevice *device, ALCsizei samples);
     qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
@@ -375,9 +378,11 @@ private:
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
     std::timed_mutex btn_record_mtx;
+    std::mutex gkCaptureAudioSamplesMtx;
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
+    std::thread capture_input_audio_samples;
 
     //
     // USB & RS232
@@ -517,7 +522,6 @@ Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::AudioEventType);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

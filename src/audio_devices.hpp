@@ -98,7 +98,6 @@ public:
     bool isMonoChannelSource(ALCdevice *device);
     qreal getPeakValue(const ALenum &audio_format, const qint32 &bitrate, const bool &is_signed = true);
 
-    static void captureAlcSamples(ALCdevice *device, ALshort *buffer, ALCsizei samples);
     static void fwrite16le(ALushort val, FILE *f);
     static void fwrite32le(ALuint val, FILE *f);
     static void applyGain(ALshort *buffer, const quint32 &buffer_size, const qreal &gain_factor);

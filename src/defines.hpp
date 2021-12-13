@@ -753,6 +753,15 @@ namespace System {
     }
 }
 
+namespace GkAudioFramework {
+    enum GkAudioRecordStatus {
+        Active,
+        Finished,
+        Paused,
+        Defunct
+    };
+}
+
 namespace Database {
     namespace Settings {
         namespace Language {
@@ -971,6 +980,7 @@ namespace Database {
                 ALCboolean alDeviceCtxCurr;                                         // The current context of the openAL device.
                 QString audio_dev_str;                                              // The referred towards name of the device, as a formatted string.
                 GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
+                GkAudioFramework::GkAudioRecordStatus status;                       // The device's status, whether the audio stream is active, paused, stopped, etc.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
                 bool isEnabled;                                                     // Whether this device (as the `output` or `input`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
@@ -1206,20 +1216,6 @@ namespace GkAudioFramework {
         FLAC,
         Unsupported,
         Unknown
-    };
-
-    enum AudioEventType {
-        start,
-        stop,
-        record,
-        loopback
-    };
-
-    enum GkAudioRecordStatus {
-        Active,
-        Finished,
-        Paused,
-        Defunct
     };
 
     enum GkBitrate {

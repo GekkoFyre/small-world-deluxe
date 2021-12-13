@@ -408,6 +408,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
 GkXmppClient::~GkXmppClient()
 {
+    if (m_archivedMsgsFineThread.joinable()) {
+        m_archivedMsgsFineThread.join();
+    }
+
     if (isConnected() || m_netState == GkNetworkState::Connecting) {
         killConnectionFromServer(false);
     }
@@ -1672,17 +1676,12 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
 void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
 {
     if (msg.isXmppStanza()) {
+        std::lock_guard<std::mutex> lck_guard(m_archivedMsgsFineMtx);
         const bool msg_sent_succ = sendPacket(msg);
         if (msg_sent_succ) {
-            if (m_archivedMsgsFineThread.joinable()) {
-                m_archivedMsgsFineThread.join();
-            }
-
-            if (!m_archivedMsgsFineThread.joinable()) {
-                const QDateTime curr_time = QDateTime::currentDateTimeUtc();
-                m_archivedMsgsFineThread = std::thread(&GkXmppClient::getArchivedMessagesFine, this, 0, msg.to(), curr_time);
-                m_archivedMsgsFineThread.detach();
-            }
+            const QDateTime curr_time = QDateTime::currentDateTimeUtc();
+            m_archivedMsgsFineThread = std::thread(&GkXmppClient::getArchivedMessagesFine, this, 0, msg.to(), curr_time);
+            m_archivedMsgsFineThread.detach();
 
             emit msgRecved(false);
         }

@@ -154,6 +154,7 @@ private:
     // Multithreading, mutexes, etc.
     //
     std::mutex m_archivedMsgsFromDbMtx;
+    std::vector<std::thread> m_archivedMsgsBulkThreadVec;
 
     //
     // Miscellaneous

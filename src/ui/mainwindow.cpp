@@ -134,7 +134,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
-    qRegisterMetaType<GekkoFyre::GkAudioFramework::AudioEventType>("GekkoFyre::GkAudioFramework::AudioEventType");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -611,7 +610,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                     .arg(it->audio_dev_str).toStdString());
                                 }
 
-                                gkAudioDevices->captureAlcSamples(it->alDevice, mInputDeviceBuf->data(), audioFrameSampleCountPerChannel);
+                                //
+                                // Initiate the while-loop for the capture of actual audio samples!
+                                gkSysInputDevStatus = GkAudioRecordStatus::Active;
+                                capture_input_audio_samples = std::thread(&MainWindow::captureAlcSamples, this, it->alDevice, audioFrameSampleCountPerChannel);
+                                capture_input_audio_samples.detach();
 
                                 //
                                 // Start the audio input thread!
@@ -789,7 +792,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 MainWindow::~MainWindow()
 {
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
     if (gkAudioInputThread.isRunning()) {
         gkAudioInputThread.quit();
         gkAudioInputThread.wait();
@@ -802,6 +804,14 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
+    }
+
+    if (rig_thread.joinable()) {
+        rig_thread.join();
+    }
+
+    if (capture_input_audio_samples.joinable()) {
+        capture_input_audio_samples.join();
     }
 
     for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
@@ -1470,6 +1480,24 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
     QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> mmap;
     mmap.insert(-1, std::make_tuple(nullptr, "", GekkoFyre::AmateurRadio::rig_type::Unknown));
     return mmap;
+}
+
+/**
+ * @brief MainWindow::captureAlcSamples for the capturing/recording of audio samples.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device
+ * @param samples
+ * @note Radosław Cybulski <https://stackoverflow.com/a/56651424>.
+ */
+void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
+{
+    while (gkSysInputDevStatus == GkAudioRecordStatus::Active) {
+        std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
+        alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
+        alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
+    }
+
+    return;
 }
 
 /**
