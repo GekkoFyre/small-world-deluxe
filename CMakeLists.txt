@@ -719,6 +719,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
+	src/ui/gkupdateinfodialog.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui)
@@ -741,6 +742,7 @@ set(GALAXY_UI_CPP
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
     src/ui/sendreportdialog.cpp
+	src/ui/gkupdateinfodialog.cpp
     src/ui/xmpp/gkxmpprosterdialog.cpp
     src/ui/xmpp/gkxmppmessagedialog.cpp
     src/ui/xmpp/gkxmppregistrationdialog.cpp
@@ -755,7 +757,6 @@ set(GALAXY_UI_CPP
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
-	src/gk_xmpp_msg_handler.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -841,6 +842,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/sendreportdialog.hpp
+	src/ui/gkupdateinfodialog.hpp
     src/ui/xmpp/gkxmpprosterdialog.hpp
     src/ui/xmpp/gkxmppmessagedialog.hpp
     src/ui/xmpp/gkxmppregistrationdialog.hpp
@@ -855,7 +857,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
-	src/gk_xmpp_msg_handler.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp

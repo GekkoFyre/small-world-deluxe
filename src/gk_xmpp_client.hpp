@@ -47,7 +47,6 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/gk_xmpp_msg_handler.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppIq.h>
 #include <qxmpp/QXmppStanza.h>

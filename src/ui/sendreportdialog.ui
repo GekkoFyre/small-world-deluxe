@@ -76,17 +76,17 @@
            <x>0</x>
            <y>0</y>
            <width>462</width>
-           <height>594</height>
+           <height>592</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QFrame" name="frame_main_heading">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout">
              <property name="leftMargin">
@@ -116,6 +116,12 @@
              </item>
              <item>
               <widget class="QLabel" name="label_main_heading">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="text">
                 <string>Send your feedback!</string>
                </property>
@@ -140,10 +146,10 @@
           <item>
            <widget class="QFrame" name="frame_form_layout">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
             <layout class="QFormLayout" name="formLayout">
              <property name="leftMargin">

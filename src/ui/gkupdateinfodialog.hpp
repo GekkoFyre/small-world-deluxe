@@ -1,15 +1,11 @@
 /**
- **     __                 _ _   __    __           _     _ 
- **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
- **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
- **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
- **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -42,21 +38,20 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <memory>
-#include <QString>
-#include <QThread>
-#include <QObject>
-#include <QPointer>
-#include <QCoreApplication>
+#include <QDialog>
 
-namespace GekkoFyre {
+namespace Ui {
+class GkUpdateInfoDialog;
+}
 
-class GkXmppMsgHandler : public QObject {
+class GkUpdateInfoDialog : public QDialog
+{
     Q_OBJECT
 
 public:
-    explicit GkXmppMsgHandler(QObject *parent = nullptr);
-    ~GkXmppMsgHandler() override;
+    explicit GkUpdateInfoDialog(QWidget *parent = nullptr);
+    ~GkUpdateInfoDialog();
 
-};
+private:
+    Ui::GkUpdateInfoDialog *ui;
 };
