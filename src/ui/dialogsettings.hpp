@@ -45,6 +45,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include <QtSpell.hpp>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -91,6 +92,7 @@ public:
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
+                            QPointer<QtSpell::TextEditChecker> spellChecker,
                             const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
@@ -335,7 +337,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();

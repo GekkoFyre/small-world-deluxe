@@ -99,7 +99,8 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                          QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, std::shared_ptr<QList<GkXmppCallsign>> rosterList,
-                                         QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
+                                         QPointer<QtSpell::TextEditChecker> spellChecker, QWidget *parent) : QDialog(parent),
+                                         ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
@@ -110,6 +111,11 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         m_rosterList = std::move(rosterList);
+        m_spellChecker = std::move(spellChecker);
+
+        //
+        // Initialize spelling and grammar checker, dictionaries, etc.
+        m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
 
         //
         // Setup and initialize signals and slots...
@@ -149,7 +155,13 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
         QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
         ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
-        // m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
+
+        // QObject::connect(m_spellChecker, &QtSpell::TextEditChecker::undoAvailable, buttonUndo, &QPushButton::setEnabled);
+        // QObject::connect(m_spellChecker, &QtSpell::TextEditChecker::redoAvailable, buttonRedo, &QPushButton::setEnabled);
+        // QObject::connect(buttonUndo, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::undo);
+        // QObject::connect(buttonRedo, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::redo);
+        // QObject::connect(buttonClear, &QPushButton::clicked, ui->textEdit_tx_msg_dialog, &QTextEdit::clear);
+        // QObject::connect(buttonClear, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::clearUndoRedo);
 
         determineNickname();
         updateInterface(m_bareJids);

@@ -964,7 +964,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                gkSysInputAudioDevs, gkSysOutputAudioDevs, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
+                                                               gkEventLogger, gkTextToSpeech, m_spellChecker, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1894,12 +1894,28 @@ void MainWindow::readEnchantSettings()
 {
     try {
         QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
-        if (curr_chosen_dict.isEmpty()) {
+        m_spellChecker = new QtSpell::TextEditChecker(this);
+        if (m_spellChecker->getSpellingEnabled()) {
+            if (!m_spellChecker->getLanguage().isEmpty()) {
+                gkEventLogger->publishEvent(tr("Currently used dictionary for spell-checking purposes is: %1. This may be changed in the settings dialog at the end-user's leisure.")
+                .arg(m_spellChecker->getLanguage()), GkSeverity::Info, "", false, true, true, false, false);
+
+                m_spellChecker->setDecodeLanguageCodes(true);
+                m_spellChecker->setShowCheckSpellingCheckbox(true);
+                m_spellChecker->setUndoRedoEnabled(true);
+            } else {
+                gkEventLogger->publishEvent(tr("No suitable dictionary for this computer system's language could be found! Therefore, spell-checking is disabled and awaiting further configuration by the end-user."),
+                                            GkSeverity::Info, "", false, true, true, false, false);
+                curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
+            }
+        } else {
+            gkEventLogger->publishEvent(tr("Spell-checking is currently disabled, as either by end-user's choice or because no suitable dictionary could be found!"),
+                                        GkSeverity::Info, "", false, true, true, false, false);
             curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
         if (!curr_chosen_dict.isEmpty()) {
-            // m_spellChecker->setLanguage(curr_chosen_dict);
+            m_spellChecker->setLanguage(curr_chosen_dict);
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
@@ -1919,7 +1935,8 @@ void MainWindow::launchXmppRosterDlg()
         if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
             if (!gkXmppRosterDlg) {
                 m_rosterList = std::move(m_xmppClient->getRosterMap());
-                gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
+                gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb,
+                                                         gkSystem, m_spellChecker, gkEventLogger, m_rosterList, true, this);
             }
 
             if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!

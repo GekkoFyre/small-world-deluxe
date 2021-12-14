@@ -67,6 +67,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <QtSpell.hpp>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -445,7 +446,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // QFileDialog related

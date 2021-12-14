@@ -55,3 +55,9 @@
 [submodule "src/contrib/taglib"]
 	path = src/contrib/taglib
 	url = https://github.com/taglib/taglib.git
+[submodule "src/contrib/qtspell"]
+	path = src/contrib/qtspell
+	url = https://github.com/manisandro/qtspell.git
+[submodule "src/contrib/language/myspell/dictionaries"]
+	path = src/contrib/language/myspell/dictionaries
+	url = https://github.com/LibreOffice/dictionaries.git
