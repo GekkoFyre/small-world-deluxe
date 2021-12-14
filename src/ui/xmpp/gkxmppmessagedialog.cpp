@@ -122,7 +122,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
         QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
                          this, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
-        QObject::connect(this, SIGNAL(msgRecved(const bool &)), m_xmppClient, SIGNAL(msgRecved(const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -538,9 +537,7 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
 void GkXmppMessageDialog::dlArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        std::thread m_archivedMsgsBulkThread = std::thread(&GkXmppClient::getArchivedMessagesBulk, m_xmppClient, bareJid); // Get archived messages sent by the Jid in question!
-        m_archivedMsgsBulkThread.detach();
-        m_archivedMsgsBulkThreadVec.push_back(std::move(m_archivedMsgsBulkThread));
+        m_archivedMsgsBulkThreadVec.emplace_back(&GkXmppClient::getArchivedMessagesBulk, m_xmppClient, bareJid);
     }
 
     return;
@@ -567,9 +564,6 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
 
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             gkXmppRecvMsgsTableViewModel->insertData(message.from(), message.body(), message.stamp());
-            if (!m_xmppClient->getMsgRecved()) {
-                emit msgRecved(true);
-            }
         }
 
         ui->tableView_recv_msg_dlg->scrollToBottom();

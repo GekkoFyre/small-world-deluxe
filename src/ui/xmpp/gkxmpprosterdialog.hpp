@@ -133,6 +133,7 @@ private slots:
     void procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void cleanupTables();
     void checkProgressBar(const qint32 &percentage);
+    bool eventFilter(QObject *obj, QEvent *event);
 
     void recvUpdatePresenceTableViewModel();
     void recvUpdatePendingTableViewModel();

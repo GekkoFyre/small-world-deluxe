@@ -150,10 +150,6 @@ public:
     [[nodiscard]] QString obtainAvatarFilePath(const QString &set_dir_path = "");
 
     //
-    // Message and QXmppMamManager handling
-    [[nodiscard]] bool getMsgRecved() const;
-
-    //
     // vCard management
     [[nodiscard]] QByteArray processImgToByteArray(const QFileInfo &filePath);
     [[nodiscard]] QPixmap rescaleAvatarImg(const QByteArray &avatar_img, const QString &img_type);
@@ -239,7 +235,7 @@ private slots:
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
-    void setMsgRecved(const bool &setValid);
+    void updateQueues(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
 
 signals:
     //
@@ -280,7 +276,7 @@ signals:
     // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
     void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
-    void msgRecved(const bool &setValid);
+    void msgRecved(const QDateTime &timestamp);
     void procFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void procThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
@@ -311,11 +307,9 @@ private:
     //
     // User, roster and presence details
     //
-    GekkoFyre::Network::GkXmpp::GkHost m_host;
     Network::GkXmpp::GkOnlineStatus m_status;
     std::shared_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
-    QStringList rosterGroups;
     QVector<QString> m_blockList;
     std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
@@ -333,11 +327,11 @@ private:
     // Queue's relating to XMPP
     //
     std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
+    std::queue<QDateTime> m_msgRetrievalTimestamps;
 
     //
     // Message handling
-    void getArchivedMessagesFine(qint32 recursion, const QString &from = QString(), const QDateTime &preset_time = {});
-    bool m_msgRecved;
+    void getArchivedMessagesFine(qint32 recursion, const QString &from = QString());
 
     //
     // Multithreading, mutexes, etc.

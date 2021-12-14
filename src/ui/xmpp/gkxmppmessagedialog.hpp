@@ -135,7 +135,6 @@ signals:
     //
     // QXmppMamManager handling
     void updateTableModel();
-    void msgRecved(const bool &setValid);
 
 private:
     Ui::GkXmppMessageDialog *ui;
