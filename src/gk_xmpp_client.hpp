@@ -106,28 +106,6 @@
 
 namespace GekkoFyre {
 
-class GkXmppMessageHandler : public QObject {
-    Q_OBJECT
-
-public:
-    explicit GkXmppMessageHandler(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppMessageHandler() override;
-
-    [[nodiscard]] std::vector<QDateTime> get();
-    [[nodiscard]] size_t size();
-    [[nodiscard]] size_t count();
-    void erase(const QDateTime &timestamp);
-    void pop();
-
-public slots:
-    void set(const bool &setValid, const QDateTime &timestamp);
-    void addToQueue(const QDateTime &msg);
-
-private:
-    std::vector<QDateTime> m_msgRecved;
-
-};
-
 class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
@@ -177,10 +155,6 @@ public:
     [[nodiscard]] QPixmap rescaleAvatarImg(const QByteArray &avatar_img, const QString &img_type);
 
     [[nodiscard]] QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
-
-    //
-    // Miscellaneous & Sub-classing
-    size_t msgHandlerCount();
 
 public slots:
     void clientConnected();
@@ -261,6 +235,7 @@ private slots:
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+    void updateQueues(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
 
 signals:
     //
@@ -301,7 +276,7 @@ signals:
     // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
     void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
-    void msgRecved(const bool &setValid, const QDateTime &timestamp);
+    void msgRecved(const QDateTime &timestamp);
     void procFirstPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void procThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
@@ -313,7 +288,6 @@ private:
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkNetworkPingModel> gkNetworkPing;
-    QPointer<GkXmppMessageHandler> gkXmppMsgHandler;
     QList<QDnsServiceRecord> m_dnsRecords;
 
     //
@@ -353,10 +327,11 @@ private:
     // Queue's relating to XMPP
     //
     std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
+    std::queue<QDateTime> m_msgRetrievalTimestamps;
 
     //
     // Message handling
-    void getArchivedMessagesFine(qint32 recursion, const QString &from = QString(), const QDateTime &preset_time = {});
+    void getArchivedMessagesFine(qint32 recursion, const QString &from = QString());
 
     //
     // Multithreading, mutexes, etc.

@@ -122,7 +122,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
         QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
                          this, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
-        QObject::connect(this, SIGNAL(msgRecved(const bool &)), m_xmppClient, SIGNAL(msgRecved(const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -565,9 +564,6 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
 
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             gkXmppRecvMsgsTableViewModel->insertData(message.from(), message.body(), message.stamp());
-            if (m_xmppClient->msgHandlerCount() == 0) {
-                emit msgRecved(true);
-            }
         }
 
         ui->tableView_recv_msg_dlg->scrollToBottom();
