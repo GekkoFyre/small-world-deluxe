@@ -118,6 +118,7 @@ extern "C"
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                                     // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
+#define GK_EXIT_INPUT_AUDIO_TIMEOUT_MILLISECS (1000)            // The amount of time, in milliseconds, to wait for the input audio device (via OpenAL) to terminate any processing and clean itself up.
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)                       // This value is mostly for error correction purposes.

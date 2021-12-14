@@ -810,6 +810,13 @@ MainWindow::~MainWindow()
         rig_thread.join();
     }
 
+    //
+    // Terminate input audio (via OpenAL) and then wait a short period for it to clean itself up!
+    gkSysInputDevStatus = GkAudioRecordStatus::Finished;
+    std::this_thread::sleep_for(std::chrono::milliseconds(GK_EXIT_INPUT_AUDIO_TIMEOUT_MILLISECS));
+
+    //
+    // Join any input audio (via OpenAL) threads after cleanup just above!
     if (capture_input_audio_samples.joinable()) {
         capture_input_audio_samples.join();
     }

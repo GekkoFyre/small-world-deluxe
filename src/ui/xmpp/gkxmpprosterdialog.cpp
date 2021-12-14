@@ -165,6 +165,15 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         // Fill out the presence status ComboBox!
         prefillAvailComboBox();
 
+        //
+        // Try to remember the last presence setting, if the end-user has already made use of this dialog!
+        const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
+        if (!last_online_pres_str.isEmpty()) {
+            const qint32 last_online_pres_idx = last_online_pres_str.toInt();
+            ui->comboBox_current_status->setCurrentIndex(last_online_pres_idx);
+            m_presenceManuallySet = false;
+        }
+
         QObject::connect(m_xmppClient, &GkXmppClient::connecting, this, [=]() {
             if (!m_connectingInit) {
                 //
@@ -189,17 +198,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
             ui->actionEdit_Nickname->setEnabled(true);
-
-            const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
-            if (!last_online_pres_str.isEmpty()) {
-                if (!m_presenceManuallySet) {
-                    const qint32 last_online_pres_idx = last_online_pres_str.toInt();
-                    ui->comboBox_current_status->setCurrentIndex(last_online_pres_idx);
+            if (m_presenceManuallySet) {
+                if (ui->comboBox_current_status->currentIndex() == GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX) {
+                    ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX);
                 }
-            }
-
-            if (ui->comboBox_current_status->currentIndex() == GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX) {
-                ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX);
             }
         });
 
@@ -210,6 +212,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
             ui->lineEdit_search_roster->setEnabled(false);
             ui->actionEdit_Nickname->setEnabled(false);
 
+            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
             cleanupTables();
         });
 
@@ -278,6 +281,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         } else {
             ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
         }
+
+        //
+        // See GkXmppRosterDialog::eventFilter() for further details!
+        installEventFilter(this);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
@@ -287,7 +294,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
-    // gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
     cleanupTables();
 
     delete ui;
@@ -1623,6 +1629,24 @@ void GkXmppRosterDialog::checkProgressBar(const qint32 &percentage)
     }
 
     return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::eventFilter
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param obj
+ * @param event
+ * @return
+ */
+bool GkXmppRosterDialog::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::Close) {  // QEvent::Hide is another potential candidate!
+        if (qobject_cast<QObject *>(this) == obj) {
+            gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
+        }
+    }
+
+    return QObject::eventFilter(obj, event);
 }
 
 /**
