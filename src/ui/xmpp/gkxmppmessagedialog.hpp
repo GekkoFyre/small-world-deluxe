@@ -43,10 +43,11 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
-#include <QtSpell.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
 #include <mutex>
@@ -84,7 +85,7 @@ public:
                                  QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                  QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                  std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> rosterList,
-                                 QPointer<QtSpell::TextEditChecker> spellChecker, QWidget *parent = nullptr);
+                                 QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 public slots:
@@ -144,11 +145,7 @@ private:
     // QTableView and related
     //
     QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
-
-    //
-    // Spell-checking, dictionaries, etc.
-    //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    // QPointer<GekkoFyre::GkXmppMsgEngine> gkXmppMsgEngine;
 
     //
     // Multithreading, mutexes, etc.

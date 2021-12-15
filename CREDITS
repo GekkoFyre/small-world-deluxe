@@ -62,13 +62,12 @@ KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
 
-Nuspell by Dimitrij Mijoski and Sander van Geloven
-    <https://github.com/nuspell/nuspell>
-        GNU Lesser General Public License (LGPL, version 3)
-
-Enchant by Reuben Thomas et al.
-    <https://github.com/AbiWord/enchant>
-        GNU Lesser General Public License (LGPL, version 2.1)
+Sonnet by KDE Project
+	<https://api.kde.org/frameworks/sonnet/html/index.html>
+		BSD 3-clause License
+		CC0 1.0 Universal (CC0 1.0) Public Domain Dedication [ https://creativecommons.org/publicdomain/zero/1.0/ ]
+		GNU Lesser General Public License (LGPL, version 2.0+)
+		GNU Lesser General Public License (LGPL, version 2.1+)
 
 FFmpeg by Michael Niedermayer and Marton Balint et al.
     <https://github.com/FFmpeg/FFmpeg>

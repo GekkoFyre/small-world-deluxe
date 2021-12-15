@@ -50,7 +50,6 @@
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/gk_logger.hpp"
-#include <QtSpell.hpp>
 #include <memory>
 #include <QList>
 #include <QImage>
@@ -77,8 +76,7 @@ class GkXmppRosterDialog : public QDialog
 public:
     explicit GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<GekkoFyre::GkSystem> system, QPointer<QtSpell::TextEditChecker> spellChecker,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                QPointer<GekkoFyre::GkSystem> system, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                 std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> rosterList,
                                 const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
@@ -196,11 +194,6 @@ private:
     qint32 removeRosterBlockedTable(const QString &bareJid);
     void updateRosterBlockedTable(const QString &bareJid, const QString &reason);
     void updateActions();
-
-    //
-    // Spell-checking, dictionaries, etc.
-    //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // QXmpp and XMPP related

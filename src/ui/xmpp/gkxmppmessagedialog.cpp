@@ -41,6 +41,7 @@
 
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
+#include "src/models/spelling/gk_text_edit_spelling_highlight.hpp"
 #include <chrono>
 #include <thread>
 #include <utility>
@@ -99,8 +100,7 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                          QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, std::shared_ptr<QList<GkXmppCallsign>> rosterList,
-                                         QPointer<QtSpell::TextEditChecker> spellChecker, QWidget *parent) : QDialog(parent),
-                                         ui(new Ui::GkXmppMessageDialog)
+                                         QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
@@ -111,11 +111,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         m_rosterList = std::move(rosterList);
-        m_spellChecker = std::move(spellChecker);
 
         //
         // Initialize spelling and grammar checker, dictionaries, etc.
-        m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
+        QPointer<GkTextEditSpellHighlight> gkSpellCheckerHighlighter = new GkTextEditSpellHighlight(gkEventLogger);
+        ui->verticalLayout_4->removeWidget(ui->textEdit_tx_msg_dialog);
+        ui->verticalLayout_4->addWidget(gkSpellCheckerHighlighter);
 
         //
         // Setup and initialize signals and slots...
@@ -132,7 +133,9 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         //
         // Setup and initialize QTableView's...
         gkXmppRecvMsgsTableViewModel = new GkXmppRecvMsgsTableViewModel(ui->tableView_recv_msg_dlg, m_xmppClient, this);
+        // gkXmppMsgEngine = new GkXmppMsgEngine(this);
         ui->tableView_recv_msg_dlg->setModel(gkXmppRecvMsgsTableViewModel);
+        // ui->tableView_recv_msg_dlg->setItemDelegate(gkXmppMsgEngine);
 
         ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX, QHeaderView::ResizeToContents);
         ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX, QHeaderView::ResizeToContents);
@@ -155,13 +158,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
         QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
         ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
-
-        // QObject::connect(m_spellChecker, &QtSpell::TextEditChecker::undoAvailable, buttonUndo, &QPushButton::setEnabled);
-        // QObject::connect(m_spellChecker, &QtSpell::TextEditChecker::redoAvailable, buttonRedo, &QPushButton::setEnabled);
-        // QObject::connect(buttonUndo, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::undo);
-        // QObject::connect(buttonRedo, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::redo);
-        // QObject::connect(buttonClear, &QPushButton::clicked, ui->textEdit_tx_msg_dialog, &QTextEdit::clear);
-        // QObject::connect(buttonClear, &QPushButton::clicked, m_spellChecker, &QtSpell::TextEditChecker::clearUndoRedo);
 
         determineNickname();
         updateInterface(m_bareJids);

@@ -67,7 +67,6 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
-#include <QtSpell.hpp>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -444,11 +443,6 @@ private:
     void updateVolumeDisplayWidgets();
 
     //
-    // Spell-checking, dictionaries, etc.
-    //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
-
-    //
     // QFileDialog related
     //
     bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
@@ -490,11 +484,6 @@ private:
     // XMPP and related
     //
     void createXmppConnection();
-
-    //
-    // Spell-checking, dictionaries, etc.
-    //
-    void readEnchantSettings();
 
     //
     // System tray icon related functions

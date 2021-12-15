@@ -101,7 +101,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
-                               QPointer<QtSpell::TextEditChecker> spellChecker,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -123,7 +122,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         m_xmppClient = std::move(xmppClient);
         gkEventLogger = std::move(eventLogger);
         gkTextToSpeech = std::move(textToSpeechPtr);
-        m_spellChecker = std::move(spellChecker);
         gkSerialPortMap = com_ports;
 
         //
@@ -924,17 +922,13 @@ void DialogSettings::prefill_uri_lookup_method()
  */
 void DialogSettings::prefill_lang_dictionaries()
 {
-    const auto langList = m_spellChecker->getLanguageList();
-    if (!langList.empty()) {
-        for (const auto &lang: langList) {
-            if (!lang.isEmpty()) {
-                ui->comboBox_accessibility_dict->addItem(lang);
-            }
-        }
-    } else {
-        ui->comboBox_accessibility_dict->setEnabled(false);
-        ui->comboBox_accessibility_dict->setToolTip(tr("No dictionaries/languages were detected! Please check your system settings and/or dependencies."));
-    }
+    m_sonnetDcb = new Sonnet::DictionaryComboBox(this);
+    ui->horizontalLayout_56->removeWidget(ui->comboBox_accessibility_dict);
+    ui->horizontalLayout_56->addWidget(m_sonnetDcb);
+    m_sonnetDcb->setToolTip(tr("Choose a suitable dictionary/language for spell-checking purposes!"));
+
+    QObject::connect(m_sonnetDcb, &Sonnet::DictionaryComboBox::dictionaryChanged, this, &DialogSettings::spellDictChanged);
+    QObject::connect(m_sonnetDcb, &Sonnet::DictionaryComboBox::dictionaryNameChanged, this, &DialogSettings::spellDictNameChanged);
 
     return;
 }
@@ -3334,5 +3328,45 @@ void DialogSettings::on_checkBox_accessibility_appearance_enbl_custom_font_toggl
  */
 void DialogSettings::on_fontComboBox_accessibility_appearance_custom_font_currentFontChanged(const QFont &f)
 {
+    return;
+}
+
+/**
+ * @brief DialogSettings::spellDictDump
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::spellDictDump()
+{
+    gkEventLogger->publishEvent(tr("Current spelling dictionary in use: %1").arg(m_sonnetDcb->currentDictionary()), GkSeverity::Debug,
+                                "", true, true, false, false, false);
+    gkEventLogger->publishEvent(tr("Human-readable name of spelling dictionary in use: %1").arg(m_sonnetDcb->currentDictionaryName()), GkSeverity::Debug,
+                                "", true, true, false, false, false);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::spellDictChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param name
+ */
+void DialogSettings::spellDictChanged(const QString &name)
+{
+    gkEventLogger->publishEvent(tr("Current spelling dictionary changed: %1").arg(name), GkSeverity::Info,
+                                "", true, true, false, false, false);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::spellDictNameChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param name
+ */
+void DialogSettings::spellDictNameChanged(const QString &name)
+{
+    gkEventLogger->publishEvent(tr("Human-readable name of the spelling dictionary which was changed: %1").arg(name), GkSeverity::Info,
+                                "", true, true, false, false, false);
+
     return;
 }

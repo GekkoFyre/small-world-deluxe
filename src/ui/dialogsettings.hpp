@@ -45,7 +45,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
-#include <QtSpell.hpp>
+#include <KF5/SonnetUI/Sonnet/dictionarycombobox.h>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -92,7 +92,6 @@ public:
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
-                            QPointer<QtSpell::TextEditChecker> spellChecker,
                             const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
@@ -244,6 +243,13 @@ private slots:
     void on_checkBox_accessibility_appearance_enbl_custom_font_toggled(bool checked);
     void on_fontComboBox_accessibility_appearance_custom_font_currentFontChanged(const QFont &f);
 
+    //
+    // Spell-checking, dictionaries, etc.
+    //
+    void spellDictDump();
+    void spellDictChanged(const QString &name);
+    void spellDictNameChanged(const QString &name);
+
 signals:
     void changeSelectedTTSEngine(const QString &name);
 
@@ -337,7 +343,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    QPointer<Sonnet::DictionaryComboBox> m_sonnetDcb;
 
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();

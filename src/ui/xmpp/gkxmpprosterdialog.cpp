@@ -74,10 +74,10 @@ using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
                                        QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                       QPointer<GekkoFyre::GkSystem> system, QPointer<QtSpell::TextEditChecker> spellChecker,
-                                       QPointer<GkEventLogger> eventLogger, std::shared_ptr<QList<GkXmppCallsign>> rosterList,
-                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
-                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+                                       QPointer<GekkoFyre::GkSystem> system, QPointer<GkEventLogger> eventLogger,
+                                       std::shared_ptr<QList<GkXmppCallsign>> rosterList, const bool &skipConnectionCheck,
+                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
+                                       ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -87,7 +87,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
         gkSystem = std::move(system);
-        m_spellChecker = std::move(spellChecker);
         gkEventLogger = std::move(eventLogger);
         m_rosterList = std::move(rosterList);
 
@@ -126,7 +125,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         //
         // Message dialog signals/slots and actions!
         QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails,
-                                                                             m_xmppClient, m_rosterList, m_spellChecker, this);
+                                                                             m_xmppClient, m_rosterList, this);
         QObject::connect(this, SIGNAL(launchMsgDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QString &, const qint32 &)));
         QObject::connect(this, SIGNAL(launchMsgDlg(const QStringList &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QStringList &, const qint32 &)));
 
