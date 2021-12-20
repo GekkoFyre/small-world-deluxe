@@ -413,19 +413,17 @@ else()
 endif(SQLite3_FOUND)
 
 #
-# Nuspell
-# https://nuspell.github.io/
+# Marble by KDE Project
+# https://marble.kde.org/
 #
-if (LINUX OR !MSYS OR !MINGW)
-	find_package(Nuspell REQUIRED)
-	if (NUSPELL_FOUND)
-		include_directories(${NUSPELL_INCLUDE_DIRS})
-		set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
-		message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
-	else()
-		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
-	endif(NUSPELL_FOUND)
-endif()
+find_package(Marble REQUIRED)
+if (MARBLE_FOUND)
+	include_directories(${MARBLE_INCLUDE_DIRS})
+	set(LIBS ${LIBS} ${MARBLE_LIBRARIES})
+	message(STATUS "The 'Marble' virtual globe and world atlas libraries have been configured!")
+else()
+	message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
+endif(MARBLE_FOUND)
 
 #
 # Sonnet
@@ -715,6 +713,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
+	src/ui/gkatlasdialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
 	src/ui/gkupdateinfodialog.ui
@@ -739,6 +738,7 @@ set(GALAXY_UI_CPP
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
+	src/ui/gkatlasdialog.cpp
     src/ui/sendreportdialog.cpp
 	src/ui/gkupdateinfodialog.cpp
     src/ui/xmpp/gkxmpprosterdialog.cpp
@@ -841,6 +841,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
+	src/ui/gkatlasdialog.hpp
     src/ui/sendreportdialog.hpp
 	src/ui/gkupdateinfodialog.hpp
     src/ui/xmpp/gkxmpprosterdialog.hpp

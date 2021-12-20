@@ -61,3 +61,6 @@
 [submodule "src/contrib/extra-cmake-modules"]
 	path = src/contrib/extra-cmake-modules
 	url = https://invent.kde.org/frameworks/extra-cmake-modules.git
+[submodule "src/contrib/marble"]
+	path = src/contrib/marble
+	url = https://invent.kde.org/education/marble.git

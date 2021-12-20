@@ -428,6 +428,7 @@ namespace Filesystem {
     constexpr char defaultDirAppend[] = "SmallWorld";                   // The dir to append at the end of a default path, such as within the user's profile directory.
     constexpr char fileName[] = "settings";                             // The filename for the database itself which is TAR archived and compressed
     constexpr char xmppVCardDir[] = "xmpp-vcards";                      // The directory for where VCards obtained via XMPP are stored within.
+    constexpr char marblePlugins[] = "plugins";                         // The name of the folder where the plugins reside for the Marble API.
     constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files

@@ -49,6 +49,8 @@
 #include "src/models/tableview/gk_callsign_msgs_model.hpp"
 #include "src/gk_codec2.hpp"
 #include "src/contrib/Gist/src/Gist.h"
+#include <marble/AbstractFloatItem.h>
+#include <marble/MarbleDirs.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -767,6 +769,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
 
         //
+        // Initialize mapping routines, atlas, etc.
+        //
+        startMappingRoutines();
+
+        //
         // QXmpp and XMPP related
         //
         readXmppSettings();
@@ -990,6 +997,24 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
 void MainWindow::actionLaunchSettingsWin()
 {
     launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
+    return;
+}
+
+/**
+ * @brief MainWindow::on_actionView_World_Map_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionView_World_Map_triggered()
+{
+    if (!gkAtlasDlg) {
+        gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
+    }
+
+    gkAtlasDlg->setWindowFlags(Qt::Window);
+    gkAtlasDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkAtlasDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    gkAtlasDlg->show();
+
     return;
 }
 
@@ -1618,6 +1643,58 @@ void MainWindow::spectroSamplesUpdated()
         waterfall_samples_vec.mid(n - gkSysInputAudioDev.audio_device_info.preferredFormat().sampleRate(), -1);
     }
      */
+
+    return;
+}
+
+/**
+ * @brief MainWindow::startMappingRoutines
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::startMappingRoutines()
+{
+    try {
+        const fs::path dir_to_append = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend);
+        const fs::path swrld_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                    true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+
+        //
+        // Configure basic settings
+        Marble::MarbleDirs::setMarblePluginPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marblePlugins);
+        Marble::MarbleDirs::setMarbleDataPath(QString::fromStdString(swrld_save_path.string()));
+
+        //
+        // Create the object in memory!
+        m_mapWidget = new Marble::MarbleWidget();
+
+        //
+        // Load the OpenStreetMap!
+        m_mapWidget->setMapThemeId(QCoreApplication::applicationDirPath() + "/" + QStringLiteral("data/maps/earth/openstreetmap/openstreetmap.dgml"));
+
+        //
+        // Enable the cloud cover and enable country borders
+        m_mapWidget->setShowClouds(true);
+        m_mapWidget->setShowBorders(true);
+
+        //
+        // Hide the FloatItems::Compass and FloatItems::StatusBar
+        m_mapWidget->setShowOverviewMap(false);
+        m_mapWidget->setShowScaleBar(false);
+
+        for (const auto &floatItem: m_mapWidget->floatItems()) {
+            if (floatItem && floatItem->nameId() == QStringLiteral("compass")) {
+                //
+                // Put the compass onto the LeftHand side
+                floatItem->setPosition(QPoint(10, 10));
+
+                //
+                // Make the content size of the compass smaller
+                floatItem->setContentSize(QSize(50, 50));
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 
     return;
 }

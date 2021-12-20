@@ -531,8 +531,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>428</width>
-                                <height>180</height>
+                                <width>427</width>
+                                <height>157</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -678,7 +678,7 @@ color: white;</string>
                                 <x>0</x>
                                 <y>0</y>
                                 <width>427</width>
-                                <height>180</height>
+                                <height>157</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -963,8 +963,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>157</width>
-                          <height>172</height>
+                          <width>169</width>
+                          <height>183</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1659,6 +1659,8 @@ QPushButton:disabled {
      <string>&amp;Tools</string>
     </property>
     <addaction name="action_Battery_Calculator"/>
+    <addaction name="separator"/>
+    <addaction name="actionView_World_Map"/>
    </widget>
    <widget class="QMenu" name="menuChat_XMPP">
     <property name="title">
@@ -2038,6 +2040,11 @@ QPushButton:disabled {
   <action name="action_Register_Account">
    <property name="text">
     <string>&amp;Register Account</string>
+   </property>
+  </action>
+  <action name="actionView_World_Map">
+   <property name="text">
+    <string>View World &amp;Map</string>
    </property>
   </action>
  </widget>
