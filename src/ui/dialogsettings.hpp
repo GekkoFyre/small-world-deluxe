@@ -45,7 +45,6 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
-#include <KF5/SonnetUI/Sonnet/DictionaryComboBox>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -66,6 +65,12 @@
 #include <QMultiMap>
 #include <QComboBox>
 #include <QSharedPointer>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <KF5/SonnetUI/Sonnet/DictionaryComboBox>
+#else
+#include <Sonnet/DictionaryComboBox>
+#endif
 
 namespace Ui {
 class DialogSettings;
