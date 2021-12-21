@@ -48,14 +48,14 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 
-image: gekkofyre/swd-debug-arch-linux:latest
+image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe:latest
 stages:
 - sworld_debug_archlinux_x86_64
 - sworld_sentry_archlinux_x86_64
 - test
 include:
-- template: Security/SAST.gitlab-ci.yml
-- template: Security/Secret-Detection.gitlab-ci.yml
+- template: Jobs/SAST.gitlab-ci.yml
+- template: Jobs/Secret-Detection.gitlab-ci.yml
 variables:
   SAST_DISABLE_DIND: 'true'
   GIT_SUBMODULE_STRATEGY: recursive
@@ -68,7 +68,7 @@ variables:
 
 sworld_debug_archlinux_x86_64:
   stage: sworld_debug_archlinux_x86_64
-  image: gekkofyre/swd-debug-arch-linux:latest
+  image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe:latest
   before_script:
   - pacman -Sy --noconfirm
   - pacman -Syyu --noconfirm
@@ -98,7 +98,7 @@ sworld_sentry_archlinux_x86_64:
   script:
   - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o
     $GK_SENTRY_ORG -p small-world-deluxe ./src_build/ --include-sources --log-level=error
-  - sentry-cli releases new $MAJOR.$MINOR.$PATCH --url $GK_SENTRY_URL --org $GK_SENTRY_ORG --project small-world-deluxe
+  - sentry-cli releases new $MAJOR.$MINOR.$PATCH --url $GK_SENTRY_URL --project small-world-deluxe
   - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH --auto
   after_script:
   - echo "Finished uploading data to Sentry server!"
@@ -107,32 +107,3 @@ sworld_sentry_archlinux_x86_64:
     paths:
     - src_build/
   allow_failure: true
-
-### --------------------------------------------------------------------------------------------------- ###
-
-#
-# https://docs.gitlab.com/ee/user/application_security/sast/
-# https://github.com/antiagainst/codeclimate-cppcheck
-#
-
-spotbugs-sast:
-  stage: test
-  dependencies:
-  - sworld_debug_archlinux_x86_64
-  script:
-  - "/analyzer run -compile=false"
-  variables:
-    SAST_EXCLUDED_PATHS: assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp
-    SAST_GOSEC_LEVEL: 2
-    SAST_FLAWFINDER_LEVEL: 2
-    SECRET_DETECTION_HISTORIC_SCAN: 'true'
-  artifacts:
-    expire_in: 1 week
-    paths:
-    - src_build/
-  allow_failure: true
-sast:
-  variables:
-    SAST_EXCLUDED_PATHS: assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp
-    SAST_EXCLUDED_ANALYZERS: bandit, brakeman, eslint, gosec, kubesec, nodejs-scan, phpcs-security-audit, pmd-apex, security-code-scan, semgrep, sobelow, spotbugs
-  stage: test
