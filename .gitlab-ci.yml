@@ -60,9 +60,12 @@ include:
 variables:
   SAST_DISABLE_DIND: 'true'
   GIT_SUBMODULE_STRATEGY: recursive
-  REPORT_FORMAT: html
-artifacts:
-  paths: [gl-code-quality-report.html]
+
+code_quality:
+  variables:
+    REPORT_FORMAT: html
+  artifacts:
+    paths: [gl-code-quality-report.html]
 
 ### --------------------------------------------------------------------------------------------------- ###
 
