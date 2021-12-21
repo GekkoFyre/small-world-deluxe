@@ -9,7 +9,7 @@ variables:
   SECURE_ANALYZERS_PREFIX: "registry.gitlab.com/gitlab-org/security-products/analyzers"
 
   SAST_EXCLUDED_ANALYZERS: "bandit, brakeman, eslint, gosec, kubesec, nodejs-scan, phpcs-security-audit, pmd-apex, sobelow"
-  SAST_EXCLUDED_PATHS: "assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp, *.c, *.h, *.py"
+  SAST_EXCLUDED_PATHS: "assets, binaries, cmake, docker, docs, lang, po, src/contrib/**, toolchains, spec, test, tests, tmp, *.c, *.h, *.py, *.toml"
   SCAN_KUBERNETES_MANIFESTS: "false"
 
 sast:

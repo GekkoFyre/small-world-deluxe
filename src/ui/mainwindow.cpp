@@ -945,7 +945,8 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                gkSysInputAudioDevs, gkSysOutputAudioDevs, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
+                                                               gkEventLogger, m_mapWidget, gkTextToSpeech, settingsDlgTab,
+                                                               this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1497,10 +1498,20 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  */
 void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
 {
-    while (gkSysInputDevStatus == GkAudioRecordStatus::Active) {
-        std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
-        alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
-        alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
+    try {
+        while (gkSysInputDevStatus == GkAudioRecordStatus::Active) {
+            std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
+            alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
+            alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
+        }
+    } catch (const std::exception &e) {
+        for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+            if (it->isStreaming) {
+                gkEventLogger->publishEvent(tr("Recording from device, \"%1\", has prematurely stopped!").arg(it->audio_dev_str));
+                it->isStreaming = false;
+                return;
+            }
+        }
     }
 
     return;

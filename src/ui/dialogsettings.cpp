@@ -100,6 +100,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                const GkUserConn &connection_details,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               QPointer<Marble::MarbleWidget> mapWidget,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
@@ -121,6 +122,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkFreqTableModel = std::move(freqTableModel);
         m_xmppClient = std::move(xmppClient);
         gkEventLogger = std::move(eventLogger);
+        m_mapWidget = std::move(mapWidget);
         gkTextToSpeech = std::move(textToSpeechPtr);
         gkSerialPortMap = com_ports;
 
@@ -968,6 +970,24 @@ void DialogSettings::init_station_info()
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::launchAtlasDlg
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::launchAtlasDlg()
+{
+    if (!gkAtlasDlg) {
+        gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
+    }
+
+    gkAtlasDlg->setWindowFlags(Qt::Window);
+    gkAtlasDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkAtlasDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    gkAtlasDlg->show();
 
     return;
 }
@@ -2241,6 +2261,16 @@ void DialogSettings::on_comboBox_input_audio_dev_sample_rate_currentIndexChanged
  */
 void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int index)
 {
+    if (index == GK_AUDIO_BITRATE_24_IDX) {
+        QMessageBox::information(this, tr("Apologies"), tr("We are sincerely sorry, but 24-bit processing is not available in this version of %1!\n\nPlease check the official website for the latest updates.")
+        .arg(General::productName), QMessageBox::Ok);
+
+        //
+        // Change the QComboBox to a value which *is* supported!
+        ui->comboBox_input_audio_dev_bitrate->setCurrentIndex(GK_AUDIO_BITRATE_16_IDX);
+        on_comboBox_input_audio_dev_bitrate_currentIndexChanged(GK_AUDIO_BITRATE_16_IDX);
+    }
+
     if (!gkSysInputDevs.empty()) {
         for (auto it = gkSysInputDevs.begin(), end = gkSysInputDevs.end(); it != end; ++it) {
             const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(ui->comboBox_soundcard_input->currentIndex()).toString();
@@ -2878,6 +2908,28 @@ void DialogSettings::on_checkBox_new_msg_audio_notification_stateChanged(int arg
 void DialogSettings::on_checkBox_failed_event_audio_notification_stateChanged(int arg1)
 {
     gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::FailAudioNotif);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_toolButton_rig_maidenhead_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_toolButton_rig_maidenhead_clicked()
+{
+    QMessageBox::information(this, tr("Apologies"), tr("This feature is not implemented yet!"), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_toolButton_rig_gps_coordinates_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_toolButton_rig_gps_coordinates_clicked()
+{
+    launchAtlasDlg();
 
     return;
 }

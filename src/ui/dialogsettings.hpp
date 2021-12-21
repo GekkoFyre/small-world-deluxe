@@ -43,8 +43,10 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/ui/gkatlasdialog.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include <marble/MarbleWidget.h>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -96,6 +98,7 @@ public:
                             const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            QPointer<Marble::MarbleWidget> mapWidget,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
@@ -190,6 +193,11 @@ private slots:
     // General Settings
     void on_checkBox_new_msg_audio_notification_stateChanged(int arg1);
     void on_checkBox_failed_event_audio_notification_stateChanged(int arg1);
+
+    //
+    // Mapping, location, maidenhead, etc.
+    void on_toolButton_rig_maidenhead_clicked();
+    void on_toolButton_rig_gps_coordinates_clicked();
 
     //
     // Text-to-speech Settings
@@ -350,6 +358,12 @@ private:
     //
     QPointer<Sonnet::DictionaryComboBox> m_sonnetDcb;
 
+    //
+    // Mapping and atlas APIs, etc.
+    //
+    QPointer<Marble::MarbleWidget> m_mapWidget;
+    QPointer<GkAtlasDialog> gkAtlasDlg;
+
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();
     void prefill_event_logger();
@@ -359,6 +373,8 @@ private:
     void prefill_lang_dictionaries();
     void prefill_ui_lang();
     void init_station_info();
+
+    void launchAtlasDlg();
 
     void monitorXmppServerChange();
     void createXmppConnectionFromSettings();
