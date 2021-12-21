@@ -72,6 +72,7 @@
 #include <QMultiMap>
 #include <QtGlobal>
 #include <QVariant>
+#include <QProcess>
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
@@ -180,7 +181,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->action_Open->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_archive_226655.svg"));
         ui->action_Print->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
-        ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
+        ui->actionModify_Preferences->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/update.svg"));
         ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/xmpp.svg"));
 
@@ -318,43 +319,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // https://docs.sentry.io/platforms/native/
                     //
                     sen_opt = sentry_options_new();
-
-                    //
-                    // File and directory paths relating to usage of Crashpad...
-                    const QString curr_path = QDir::currentPath();
-                    const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
-                    const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
-                    fs::path handler_to_use;
-
-                    if (fs::exists(crashpad_handler_linux, ec)) {
-                        // The handler exists as if we're under a Linux system!
-                        handler_to_use = crashpad_handler_linux;
-                    } else if (fs::exists(crashpad_handler_windows, ec)) {
-                        // The handler exists as if we're under a Microsoft Windows system!
-                        handler_to_use = crashpad_handler_windows;
-                    } else {
-                        throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
-                    }
-
-                    // The handler is a Crashpad-specific background process
-                    sentry_options_set_handler_path(sen_opt, handler_to_use.string().c_str());
-
-                    const fs::path sentry_crash_dir = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
-                                                                native_slash.string() + Filesystem::gk_sentry_dump_dir);
-                    const fs::path gk_minidump = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                                            true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+                    QDir gk_minidump = QString(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" +
+                            General::companyName + "/" + Filesystem::defaultDirAppend + "/" + Filesystem::gk_sentry_dump_dir);
 
                     const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
-                    const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
-                                                                       + Filesystem::gk_sentry_dump_file_ext);
+                    QDir gk_sentry_attachments = QString(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" +
+                            General::companyName + "/" + Filesystem::defaultDirAppend + "/" + Filesystem::gk_sentry_dump_dir + "/" +
+                            QString::number(sentry_curr_epoch) + Filesystem::gk_sentry_dump_file_ext);
 
-                    if (!fs::exists(gk_minidump, ec)) {
-                        fs::create_directories(gk_minidump, ec);
+                    if (!gk_minidump.exists()) {
+                        gk_minidump.mkpath(QStringLiteral("."));
                     }
 
                     // This is where Minidumps and attachments live before upload
-                    sentry_options_set_database_path(sen_opt, gk_minidump.string().c_str());
-                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.string().c_str());
+                    sentry_options_set_database_path(sen_opt, gk_minidump.canonicalPath().toStdString().c_str());
+                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.canonicalPath().toStdString().c_str());
 
                     // Miscellaneous settings pertaining to Sentry
                     sentry_options_set_auto_session_tracking(sen_opt, true);
@@ -371,7 +350,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Server and URI details!
                     sentry_options_set_dsn(sen_opt, General::gk_sentry_dsn_uri);
 
-                    // Initialize the SDK and start the Crashpad/Breakpad handler
+                    // Initialize the SDK and start the Breakpad handler
                     sentry_init(sen_opt);
 
                     // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
@@ -2078,6 +2057,68 @@ void MainWindow::on_actionAdjust_Volume_triggered()
 }
 
 /**
+ * @brief MainWindow::on_actionModify_Preferences_triggered is located on the drop-down menu at the top.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionModify_Preferences_triggered()
+{
+    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_actionReset_triggered resets all the preferences back to default, after presenting a modal
+ * dialog to the end-user confirming that they are sure of their decision.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionReset_triggered()
+{
+    try {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Do you wish to reset all preferences and configuration variables back to their default values?"));
+        msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Cancel);
+        msgBox.setIcon(QMessageBox::Icon::Warning);
+
+        int ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Ok:
+            {
+                QDir path_to_del = QString(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" +
+                                           General::companyName + "/" + Filesystem::defaultDirAppend + "/" + Filesystem::fileName);
+                if (path_to_del.exists()) {
+                    //
+                    // Note: need to perform the recursively remove command twice!
+                    path_to_del.removeRecursively();
+                    path_to_del.removeRecursively();
+                    QMessageBox::information(nullptr, tr("Restart required"), tr("A restart of %1 is now required!").arg(General::productName), QMessageBox::Ok);
+
+                    //
+                    // TODO: The program doesn't seem to restart as intended, and only quits instead?
+                    QString program = qApp->arguments()[0];
+                    QStringList arguments = qApp->arguments().mid(1);
+                    qApp->quit(); // Terminate the application!
+                    QProcess::startDetached(program, arguments);
+                }
+            }
+
+                return;
+            case QMessageBox::Cancel:
+                return;
+            default:
+                return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_action_Connect_triggered Make a connection to the amateur radio rig, if at all possible.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -2132,16 +2173,6 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 
-    return;
-}
-
-/**
- * @brief MainWindow::on_action_Settings_triggered is located on the drop-down menu at the top.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::on_action_Settings_triggered()
-{
-    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
     return;
 }
 
@@ -2705,11 +2736,6 @@ void MainWindow::on_actionView_Roster_triggered()
 void MainWindow::on_actionSign_in_triggered()
 {
     try {
-        if (m_xmppClient->isConnected()) {
-            m_xmppClient->killConnectionFromServer(false);
-        }
-
-        createXmppConnection();
         launchXmppRosterDlg();
     } catch (const std::exception &e) {
         print_exception(e);

@@ -129,7 +129,8 @@ private slots:
     void on_action_About_Dekoder_triggered();
     void on_actionSet_Offset_triggered();
     void on_actionAdjust_Volume_triggered();
-    void on_action_Settings_triggered();
+    void on_actionModify_Preferences_triggered();
+    void on_actionReset_triggered();
     void on_actionSave_Decoded_triggered();
     void on_actionSave_All_triggered();
     void on_actionOpen_Save_Directory_triggered();
