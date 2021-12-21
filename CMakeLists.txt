@@ -1082,6 +1082,15 @@ add_custom_command(TARGET smallworld
 				${CMAKE_CURRENT_BINARY_DIR}/share/myspell/dicts)
 
 #
+# Copy the data in relation to KDE project's, Marble, library so that the mapping API may work as intended!
+# https://forum.kde.org/viewtopic.php?f=217&t=143315
+#
+add_custom_command(TARGET smallworld
+				COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/marble/data
+				${CMAKE_CURRENT_BINARY_DIR}/marble/data)
+
+#
 # Setup the pathways for installing Small World Deluxe to the proper directories on the end-user's 
 # system, if so desired after compilation!
 #

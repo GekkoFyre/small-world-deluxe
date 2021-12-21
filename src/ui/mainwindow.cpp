@@ -1654,14 +1654,12 @@ void MainWindow::spectroSamplesUpdated()
 void MainWindow::startMappingRoutines()
 {
     try {
-        const fs::path dir_to_append = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend);
-        const fs::path swrld_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                                    true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
-
         //
         // Configure basic settings
-        Marble::MarbleDirs::setMarblePluginPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marblePlugins);
-        Marble::MarbleDirs::setMarbleDataPath(QString::fromStdString(swrld_save_path.string()));
+        Marble::MarbleDirs::setMarblePluginPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marbleDir +
+                                                "/" + Filesystem::marblePlugins);
+        Marble::MarbleDirs::setMarbleDataPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marbleDir +
+                                              "/" + Filesystem::marbleData);
 
         //
         // Create the object in memory!

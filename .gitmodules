@@ -40,9 +40,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
-[submodule "src/contrib/nuspell"]
-	path = src/contrib/nuspell
-	url = https://github.com/nuspell/nuspell.git
 [submodule "src/contrib/aria2"]
 	path = src/contrib/aria2
 	url = https://github.com/aria2/aria2.git
