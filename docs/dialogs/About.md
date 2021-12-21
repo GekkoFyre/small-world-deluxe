@@ -33,8 +33,6 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `KissFFT -- Copyright © 2003 - 2010 Mark Borgerding . All rights reserved.`
 
-`Enchant -- Copyright © 1998 - 2020 AbiSource Community. All rights reserved.`
-
 `QwtWaterfallplot -- Copyright © 2019 Amine Mzoughi.`
 
 ------

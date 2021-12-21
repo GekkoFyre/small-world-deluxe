@@ -196,11 +196,6 @@ private:
     void updateActions();
 
     //
-    // Spell-checking, dictionaries, etc.
-    //
-    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
-
-    //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;

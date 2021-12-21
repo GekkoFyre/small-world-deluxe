@@ -40,9 +40,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
-[submodule "src/contrib/nuspell"]
-	path = src/contrib/nuspell
-	url = https://github.com/nuspell/nuspell.git
 [submodule "src/contrib/aria2"]
 	path = src/contrib/aria2
 	url = https://github.com/aria2/aria2.git
@@ -55,3 +52,12 @@
 [submodule "src/contrib/taglib"]
 	path = src/contrib/taglib
 	url = https://github.com/taglib/taglib.git
+[submodule "src/contrib/language/myspell/dictionaries"]
+	path = src/contrib/language/myspell/dictionaries
+	url = https://github.com/LibreOffice/dictionaries.git
+[submodule "src/contrib/extra-cmake-modules"]
+	path = src/contrib/extra-cmake-modules
+	url = https://invent.kde.org/frameworks/extra-cmake-modules.git
+[submodule "src/contrib/marble"]
+	path = src/contrib/marble
+	url = https://invent.kde.org/education/marble.git

@@ -43,8 +43,10 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
@@ -143,11 +145,7 @@ private:
     // QTableView and related
     //
     QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
-
-    //
-    // Spell-checking, dictionaries, etc.
-    //
-    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    // QPointer<GekkoFyre::GkXmppMsgEngine> gkXmppMsgEngine;
 
     //
     // Multithreading, mutexes, etc.

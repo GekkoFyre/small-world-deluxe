@@ -49,6 +49,8 @@
 #include "src/models/tableview/gk_callsign_msgs_model.hpp"
 #include "src/gk_codec2.hpp"
 #include "src/contrib/Gist/src/Gist.h"
+#include <marble/AbstractFloatItem.h>
+#include <marble/MarbleDirs.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -693,11 +695,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         info_timer->start(1000);
 
         //
-        // Hunspell & Spelling dictionaries
-        //
-        readEnchantSettings();
-
-        //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html
         // https://doc.qt.io/qt-5/qtprintsupport-index.html
@@ -770,6 +767,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(gkDb, this);
         ui->tableView_mesg_active->setModel(gkActiveMsgsTableViewModel);
         ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
+
+        //
+        // Initialize mapping routines, atlas, etc.
+        //
+        startMappingRoutines();
 
         //
         // QXmpp and XMPP related
@@ -995,6 +997,24 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
 void MainWindow::actionLaunchSettingsWin()
 {
     launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
+    return;
+}
+
+/**
+ * @brief MainWindow::on_actionView_World_Map_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionView_World_Map_triggered()
+{
+    if (!gkAtlasDlg) {
+        gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
+    }
+
+    gkAtlasDlg->setWindowFlags(Qt::Window);
+    gkAtlasDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkAtlasDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    gkAtlasDlg->show();
+
     return;
 }
 
@@ -1628,6 +1648,56 @@ void MainWindow::spectroSamplesUpdated()
 }
 
 /**
+ * @brief MainWindow::startMappingRoutines
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::startMappingRoutines()
+{
+    try {
+        //
+        // Configure basic settings
+        Marble::MarbleDirs::setMarblePluginPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marbleDir +
+                                                "/" + Filesystem::marblePlugins);
+        Marble::MarbleDirs::setMarbleDataPath(QCoreApplication::applicationDirPath() + "/" + Filesystem::marbleDir +
+                                              "/" + Filesystem::marbleData);
+
+        //
+        // Create the object in memory!
+        m_mapWidget = new Marble::MarbleWidget();
+
+        //
+        // Load the OpenStreetMap!
+        m_mapWidget->setMapThemeId(QCoreApplication::applicationDirPath() + "/" + QStringLiteral("data/maps/earth/openstreetmap/openstreetmap.dgml"));
+
+        //
+        // Enable the cloud cover and enable country borders
+        m_mapWidget->setShowClouds(true);
+        m_mapWidget->setShowBorders(true);
+
+        //
+        // Hide the FloatItems::Compass and FloatItems::StatusBar
+        m_mapWidget->setShowOverviewMap(false);
+        m_mapWidget->setShowScaleBar(false);
+
+        for (const auto &floatItem: m_mapWidget->floatItems()) {
+            if (floatItem && floatItem->nameId() == QStringLiteral("compass")) {
+                //
+                // Put the compass onto the LeftHand side
+                floatItem->setPosition(QPoint(10, 10));
+
+                //
+                // Make the content size of the compass smaller
+                floatItem->setContentSize(QSize(50, 50));
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qstatusbar.html>
@@ -1886,29 +1956,6 @@ void MainWindow::readXmppSettings()
 }
 
 /**
- * @brief MainWindow::readEnchantSettings reads any settings related to Hunspell and its dictionaries from the Google
- * LevelDB database attached to the Small World Deluxe instance.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::readEnchantSettings()
-{
-    try {
-        QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
-        if (curr_chosen_dict.isEmpty()) {
-            curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
-        }
-
-        if (!curr_chosen_dict.isEmpty()) {
-            // m_spellChecker->setLanguage(curr_chosen_dict);
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
-    }
-
-    return;
-}
-
-/**
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1919,7 +1966,8 @@ void MainWindow::launchXmppRosterDlg()
         if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
             if (!gkXmppRosterDlg) {
                 m_rosterList = std::move(m_xmppClient->getRosterMap());
-                gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, m_rosterList, true, this);
+                gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb,
+                                                         gkSystem, gkEventLogger, m_rosterList, true, this);
             }
 
             if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!

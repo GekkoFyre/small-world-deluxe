@@ -43,6 +43,7 @@
 #include "src/gk_cli.hpp"
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
+#include "src/ui/gkatlasdialog.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_frequency_list.hpp"
@@ -57,6 +58,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/gk_multimedia.hpp"
+#include <marble/MarbleWidget.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -260,6 +262,11 @@ private slots:
     void actionLaunchSettingsWin();
 
     //
+    // Mapping and atlas APIs, etc.
+    //
+    void on_actionView_World_Map_triggered();
+
+    //
     // System tray icon related functions
     //
     void setIcon();
@@ -443,11 +450,6 @@ private:
     void updateVolumeDisplayWidgets();
 
     //
-    // Spell-checking, dictionaries, etc.
-    //
-    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
-
-    //
     // QFileDialog related
     //
     bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
@@ -468,6 +470,12 @@ private:
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
     //
+    // Mapping and atlas APIs, etc.
+    //
+    QPointer<Marble::MarbleWidget> m_mapWidget;
+    QPointer<GkAtlasDialog> gkAtlasDlg;
+
+    //
     // System tray icon
     //
     QPointer<QSystemTrayIcon> m_trayIcon;
@@ -480,6 +488,8 @@ private:
 
     void spectroSamplesUpdated();
 
+    void startMappingRoutines();
+
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
@@ -489,11 +499,6 @@ private:
     // XMPP and related
     //
     void createXmppConnection();
-
-    //
-    // Spell-checking, dictionaries, etc.
-    //
-    void readEnchantSettings();
 
     //
     // System tray icon related functions

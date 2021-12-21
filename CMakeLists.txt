@@ -162,21 +162,6 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
-#
-# Nuspell
-# https://nuspell.github.io/
-#
-if (WIN32 OR MSYS OR MINGW)
-	find_package(Nuspell REQUIRED)
-	if (NUSPELL_FOUND)
-		include_directories(${NUSPELL_INCLUDE_DIRS})
-		set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
-		message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
-	else()
-		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
-	endif(NUSPELL_FOUND)
-endif()
-
 find_package(QWT REQUIRED)
 if (QWT_FOUND)
     include_directories(${QWT_INCLUDE_DIRS})
@@ -428,19 +413,30 @@ else()
 endif(SQLite3_FOUND)
 
 #
-# Nuspell
-# https://nuspell.github.io/
+# Marble by KDE Project
+# https://marble.kde.org/
 #
-if (LINUX OR !MSYS OR !MINGW)
-	find_package(Nuspell REQUIRED)
-	if (NUSPELL_FOUND)
-		include_directories(${NUSPELL_INCLUDE_DIRS})
-		set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
-		message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
-	else()
-		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
-	endif(NUSPELL_FOUND)
-endif()
+find_package(Marble REQUIRED)
+if (MARBLE_FOUND)
+	include_directories(${MARBLE_INCLUDE_DIRS})
+	set(LIBS ${LIBS} ${MARBLE_LIBRARIES})
+	message(STATUS "The 'Marble' virtual globe and world atlas libraries have been configured!")
+else()
+	message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
+endif(MARBLE_FOUND)
+
+#
+# Sonnet
+# https://api.kde.org/frameworks/sonnet/html/index.html
+#
+find_package(KF5Sonnet REQUIRED)
+if (KF5Sonnet_FOUND)
+	include_directories(${SONNET_INCLUDE_DIRS})
+	set(LIBS ${LIBS} ${SONNET_LIBRARIES})
+	message(STATUS "The 'Sonnet' spelling and grammar checking libraries have been configured!")
+else()
+	message(FATAL_ERROR "The 'Sonnet' spelling and grammar checking libraries could not be found!")
+endif(KF5Sonnet_FOUND)
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
@@ -717,6 +713,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
+	src/ui/gkatlasdialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
 	src/ui/gkupdateinfodialog.ui
@@ -741,6 +738,7 @@ set(GALAXY_UI_CPP
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
+	src/ui/gkatlasdialog.cpp
     src/ui/sendreportdialog.cpp
 	src/ui/gkupdateinfodialog.cpp
     src/ui/xmpp/gkxmpprosterdialog.cpp
@@ -781,7 +779,9 @@ set(GALAXY_UI_CPP
 	src/models/tableview/gk_qdatetime_filter_proxy_model.cpp
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
-    src/models/treeview/xmpp/gk_xmpp_roster_model.cpp)
+    src/models/treeview/xmpp/gk_xmpp_roster_model.cpp
+	src/models/xmpp/gk_xmpp_msg_handler.cpp
+	src/models/spelling/gk_text_edit_spelling_highlight.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -841,6 +841,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
+	src/ui/gkatlasdialog.hpp
     src/ui/sendreportdialog.hpp
 	src/ui/gkupdateinfodialog.hpp
     src/ui/xmpp/gkxmpprosterdialog.hpp
@@ -882,7 +883,9 @@ set(GALAXY_OBJ_HEADERS
 	src/models/tableview/gk_qdatetime_filter_proxy_model.hpp
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
-    src/models/treeview/xmpp/gk_xmpp_roster_model.hpp)
+    src/models/treeview/xmpp/gk_xmpp_roster_model.hpp
+	src/models/xmpp/gk_xmpp_msg_handler.hpp
+	src/models/spelling/gk_text_edit_spelling_highlight.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -1012,7 +1015,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication KF5::SonnetCore KF5::SonnetUi sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 #
 # Qt Translations
@@ -1068,6 +1071,29 @@ target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independ
 set_property(TARGET gk_update PROPERTY AUTOMOC ON)
 target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} cares Qt5::Core Qt5::Network SingleApplication::SingleApplication)
 
+#
+# Copy any myspell dictionaries to the build directory as well! This is not O/S-specific, but universal 
+# to all platforms.
+# https://superuser.com/questions/1459045/how-to-install-spell-check-dictionaries-in-gedit-on-windows
+#
+add_custom_command(TARGET smallworld
+				COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/language/myspell/dictionaries
+				${CMAKE_CURRENT_BINARY_DIR}/share/myspell/dicts)
+
+#
+# Copy the data in relation to KDE project's, Marble, library so that the mapping API may work as intended!
+# https://forum.kde.org/viewtopic.php?f=217&t=143315
+#
+add_custom_command(TARGET smallworld
+				COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/marble/data
+				${CMAKE_CURRENT_BINARY_DIR}/marble/data)
+
+#
+# Setup the pathways for installing Small World Deluxe to the proper directories on the end-user's 
+# system, if so desired after compilation!
+#
 if(WIN32 OR MSYS OR MINGW)
 	if (EXISTS "$ENV{SystemDrive}/Program Files")
 		INSTALL(TARGETS smallworld
