@@ -43,7 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <KF5/SonnetUI/Sonnet/highlighter.h>
+#include <KF5/SonnetUI/Sonnet/Highlighter>
 #include <string>
 #include <QString>
 #include <QObject>
