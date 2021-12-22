@@ -104,6 +104,7 @@ public:
     QList<int> extractNumbersFromStr(const QString &str);
     QString zeroPadding(const QVariant &num, const qint32 &places);
     QString trimStrToCharLength(const QString &value, const qint32 &places, const bool &ellipsis = false);
+    qint32 incrementIndexVal(const std::vector<qint32> &orig_idx_vals);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
 

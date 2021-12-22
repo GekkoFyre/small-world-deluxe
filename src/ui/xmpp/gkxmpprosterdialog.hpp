@@ -46,10 +46,11 @@
 #include "src/gk_system.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
+#include "src/models/treeview/gk_generic_treeview_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/gk_logger.hpp"
+#include <map>
 #include <memory>
 #include <QList>
 #include <QImage>
@@ -173,10 +174,10 @@ private:
     //
     // QTableView and related
     //
-    QPointer<GekkoFyre::GkXmppRosterPresenceTableViewModel> gkXmppPresenceTableViewModel;
+    QPointer<GekkoFyre::GkGenericTreeViewModel> gkXmppPresenceTreeViewModel;
     QPointer<GekkoFyre::GkXmppRosterPendingTableViewModel> gkXmppPendingTableViewModel;
     QPointer<GekkoFyre::GkXmppRosterBlockedTableViewModel> gkXmppBlockedTableViewModel;
-    QVector<GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
+    std::multimap<GekkoFyre::GkGenericTreeViewItem *, GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_pendingRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel> m_blockedRosterData;
     QString m_bareJidPresenceSel;   // Currently selected item for already subscribed users

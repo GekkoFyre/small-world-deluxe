@@ -381,6 +381,28 @@ QString StringFuncs::trimStrToCharLength(const QString &value, const qint32 &pla
 }
 
 /**
+ * @brief StringFuncs::incrementIndexVal
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param orig_idx_val
+ * @return
+ */
+qint32 StringFuncs::incrementIndexVal(const std::vector<qint32> &orig_idx_vals)
+{
+    qint32 largest_idx_val = 0;
+    for (const auto &idx: orig_idx_vals) {
+        if (idx > largest_idx_val) {
+            largest_idx_val = idx;
+        }
+    }
+
+    //
+    // Now increment by a single digit and call it a day!
+    ++largest_idx_val;
+
+    return largest_idx_val;
+}
+
+/**
  * @brief StringFuncs::fileSizeHumanReadable will 'prettify' a given file-size, converting it to kilobytes, megabytes,
  * gigabytes, etc. as needed, thusly making it more human readable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

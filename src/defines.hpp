@@ -607,10 +607,11 @@ namespace Network {
         };
 
         struct GkPresenceTableViewModel {
-            QIcon presence;
-            QString bareJid;
-            QString nickName;
-            bool added;
+            qint32 row;                                             // The row location of the child (i.e. `bareJid` in this case).
+            QIcon presence;                                         // A graphical icon representing the connectivity/availability status of the XMPP end-user.
+            QString bareJid;                                        // The value of the given child.
+            QString nickName;                                       // A custom, manually chosen nickname that is separate to the username that the end-user had signed-up with.
+            bool added;                                             // Whether this information has been added to memory yet for later retrieval.
         };
 
         struct GkPendingTableViewModel {

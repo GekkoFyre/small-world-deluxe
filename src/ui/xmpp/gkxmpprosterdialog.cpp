@@ -219,13 +219,13 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
         //
         // Setup and initialize QTableView's...
-        gkXmppPresenceTableViewModel = new GkXmppRosterPresenceTableViewModel(ui->tableView_callsigns_groups, m_xmppClient, this);
+        gkXmppPresenceTreeViewModel = new GkGenericTreeViewModel({ tr("Presence"), tr("ID#"), tr("Nickname") }, this);
         gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, m_xmppClient, this);
         gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, m_xmppClient, this);
 
         //
         // Users and presence
-        ui->tableView_callsigns_groups->setModel(gkXmppPresenceTableViewModel);
+        ui->tableView_callsigns_groups->setModel(gkXmppPresenceTreeViewModel);
         ui->tableView_callsigns_groups->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
         ui->tableView_callsigns_groups->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QHeaderView::ResizeToContents);
         ui->tableView_callsigns_groups->horizontalHeader()->setStretchLastSection(true);
@@ -442,7 +442,7 @@ void GkXmppRosterDialog::changeRosterJid(const QString &bareJid)
  */
 void GkXmppRosterDialog::updateActions()
 {
-    if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.isEmpty()) {
+    if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.empty()) {
         const bool presenceHasSelection = !ui->tableView_callsigns_groups->selectionModel()->selection().isEmpty();
         enablePresenceTableActions(presenceHasSelection);
     }
@@ -476,8 +476,18 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
         presence_model.presence = presence;
         presence_model.bareJid = bareJid;
         presence_model.nickName = nickname;
+
+        std::vector<qint32> idx_vals;
+        for (const auto &presence: m_presenceRosterData) {
+            idx_vals.push_back(presence.second.row);
+        }
+
+        idx_vals.push_back(row); // Also add the newly seen value!
+        const auto incr_idx_val = gkStringFuncs->incrementIndexVal(idx_vals);
+        presence_model.row = incr_idx_val;
+
         presence_model.added = false;
-        m_presenceRosterData.push_back(presence_model);
+        m_presenceRosterData.insert({ new GkGenericTreeViewItem({ tr("Unsorted"), tr(""), tr("") }), presence_model });
         emit updatePresenceTableViewModel();
     }
 
@@ -494,15 +504,14 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         qint32 ret = 0;
-        for (const auto &entry: m_presenceRosterData) {
-            if (entry.bareJid == bareJid) {
-                ret = gkXmppPresenceTableViewModel->removeData(bareJid);
-                break;
+        for (const auto &rosterPresence: m_presenceRosterData) {
+            if (rosterPresence.second.bareJid == bareJid) {
+                gkXmppPresenceTreeViewModel->removeData(rosterPresence.second.row);
             }
         }
 
         for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
-            if (iter->bareJid == bareJid) {
+            if (iter->second.bareJid == bareJid) {
                 iter = m_presenceRosterData.erase(iter);
                 break;
             }
@@ -877,7 +886,7 @@ void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
 void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
 {
     QModelIndex index = ui->tableView_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
-    QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    QModelIndex retrieve = gkXmppPresenceTreeViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
     QVariant data = ui->tableView_callsigns_groups->model()->data(retrieve);
     QString username = data.toString();
 
@@ -1077,10 +1086,10 @@ void GkXmppRosterDialog::updateClientAvatar(const QByteArray &avatar_img, const 
 
 /**
  * @brief GkXmppRosterDialog::updateUserVCard processes roster entries for `ui->tableView_callsigns_groups()` and its
- * model, `gkXmppPresenceTableViewModel()`.
+ * model, `gkXmppPresenceTreeViewModel()`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param vCard
- * @see ui->tableView_callsigns_groups(), GkXmppRosterDialog::gkXmppPresenceTableViewModel()
+ * @see ui->tableView_callsigns_groups(), GkXmppRosterDialog::gkXmppPresenceTreeViewModel()
  */
 void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
 {
@@ -1108,9 +1117,9 @@ void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
 
                 if (!presence_model.nickName.isEmpty()) {
                     for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
-                        if (entry.bareJid == iter->bareJid) {
-                            iter->nickName = presence_model.nickName;
-                            updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        if (entry.bareJid == iter->second.bareJid) {
+                            iter->second.nickName = presence_model.nickName;
+                            updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->second.bareJid).availableStatusType()), iter->second.bareJid, iter->second.nickName);
                         }
                     }
 
@@ -1476,7 +1485,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequest
 void GkXmppRosterDialog::on_tableView_callsigns_groups_pressed(const QModelIndex &index)
 {
     updateActions();
-    QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    QModelIndex retrieve = gkXmppPresenceTreeViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
     QString username = retrieve.data().toString();
     if (!username.isEmpty()) {
         enablePresenceTableActions(true);
@@ -1501,7 +1510,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_pressed(const QModelIndex
 void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index)
 {
     updateActions();
-    QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    QModelIndex retrieve = gkXmppPresenceTreeViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
     QString username = retrieve.data().toString();
     if (!username.isEmpty()) {
         enablePresenceTableActions(true);
@@ -1590,9 +1599,9 @@ void GkXmppRosterDialog::procAvailableStatusType(const QXmppPresence::AvailableS
  */
 void GkXmppRosterDialog::cleanupTables()
 {
-    if (!m_presenceRosterData.isEmpty()) {
+    if (!m_presenceRosterData.empty()) {
         for (const auto &entry: m_presenceRosterData) {
-            removeRosterPresenceTable(entry.bareJid);
+            removeRosterPresenceTable(entry.second.bareJid);
         }
     }
 
@@ -1657,9 +1666,9 @@ bool GkXmppRosterDialog::eventFilter(QObject *obj, QEvent *event)
 void GkXmppRosterDialog::recvUpdatePresenceTableViewModel()
 {
     for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
-        if (!iter->added) {
-            gkXmppPresenceTableViewModel->insertData(*iter);
-            iter->added = true;
+        if (!iter->second.added) {
+            gkXmppPresenceTreeViewModel->insertData(iter->second.bareJid, iter->first);
+            iter->second.added = true;
         }
     }
 
@@ -1705,7 +1714,7 @@ void GkXmppRosterDialog::recvUpdateBlockedTableViewModel()
  */
 void GkXmppRosterDialog::enablePresenceTableActions(const bool &enable)
 {
-    if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.isEmpty()) {
+    if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.empty()) {
         ui->actionEdit_Contact->setEnabled(enable);
         ui->actionDelete_Contact->setEnabled(enable);
         ui->actionBlockPendingUser->setEnabled(enable);

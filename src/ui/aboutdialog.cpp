@@ -103,11 +103,32 @@ void AboutDialog::on_pushButton_icon_clicked()
 }
 
 /**
- * @brief AboutDialog::on_pushButton_software_updates_clicked initiates a check for the latest updates with regard to
- * Small World Deluxe itself, in a safe and secure manner.
+ * @brief AboutDialog::on_pushButton_check_for_updates_clicked initiates an update check for Small World Deluxe in both
+ * a safe and secure manner, via the library, QSimpleUpdater().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void AboutDialog::on_pushButton_software_updates_clicked()
+void AboutDialog::on_pushButton_check_for_updates_clicked()
+{
+    return;
+}
+
+/**
+ * @brief AboutDialog::on_pushButton_abort_update_check_clicked aborts an update check that may or may not be
+ * in-progress, while exiting the QDialog at the same time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void AboutDialog::on_pushButton_abort_update_check_clicked()
+{
+    this->close();
+
+    return;
+}
+
+/**
+ * @brief AboutDialog::on_pushButton_cancel_update_check_clicked cancels any and all operations.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void AboutDialog::on_pushButton_cancel_update_check_clicked()
 {
     return;
 }

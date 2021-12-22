@@ -42,8 +42,8 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include <memory>
+#include <QMap>
 #include <QMutex>
 #include <QObject>
 #include <QString>
@@ -58,43 +58,46 @@
 
 namespace GekkoFyre {
 
-class GkXmppRosterTreeViewItem {
+class GkGenericTreeViewItem {
 
 public:
-    explicit GkXmppRosterTreeViewItem(const QVector<QVariant> &data, GkXmppRosterTreeViewItem *parent = nullptr);
-    ~GkXmppRosterTreeViewItem();
+    explicit GkGenericTreeViewItem(const QVector<QVariant> &data, GkGenericTreeViewItem *parent = nullptr);
+    ~GkGenericTreeViewItem();
 
-    GkXmppRosterTreeViewItem *child(qint32 number);
+    void appendChild(GkGenericTreeViewItem *child);
+    void removeChild(GkGenericTreeViewItem *child);
+    GkGenericTreeViewItem *child(qint32 row);
     qint32 childCount() const;
     qint32 columnCount() const;
     QVariant data(qint32 column) const;
     bool insertChildren(qint32 position, qint32 count, qint32 columns);
     bool insertColumns(qint32 position, qint32 columns);
-    GkXmppRosterTreeViewItem *parent();
+    GkGenericTreeViewItem *parent();
     bool removeChildren(qint32 position, qint32 count);
     bool removeColumns(qint32 position, qint32 columns);
     qint32 childNumber() const;
     bool setData(qint32 column, const QVariant &value);
+    qint32 row() const;
 
 private:
-    QVector<GkXmppRosterTreeViewItem *> childItems;
-    QVector<QVariant> itemData;
-    GkXmppRosterTreeViewItem *parentItem;
+    QVector<GkGenericTreeViewItem *> m_childItems;
+    QVector<QVariant> m_itemData;
+    GkGenericTreeViewItem *m_parentItem;
 };
 
-class GkXmppRosterTreeViewModel : public QAbstractItemModel {
+class GkGenericTreeViewModel : public QAbstractItemModel {
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterTreeViewModel(const QStringList &headers, QObject *parent = nullptr);
-    ~GkXmppRosterTreeViewModel() override;
+    explicit GkGenericTreeViewModel(const QStringList &headers, QObject *parent = nullptr);
+    ~GkGenericTreeViewModel() override;
 
     QVariant data(const QModelIndex &index, qint32 role) const override;
     QVariant headerData(qint32 section, Qt::Orientation orientation, qint32 role = Qt::DisplayRole) const override;
 
     QModelIndex index(qint32 row, qint32 column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &index) const override;
-    QModelIndex indexForTreeItem(GkXmppRosterTreeViewItem *item);
+    QModelIndex indexForTreeItem(GkGenericTreeViewItem *item);
 
     qint32 rowCount(const QModelIndex &parent = QModelIndex()) const override;
     qint32 columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -103,14 +106,15 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, qint32 role = Qt::EditRole) override;
     bool setHeaderData(qint32 section, Qt::Orientation orientation, const QVariant &value, qint32 role = Qt::EditRole) override;
 
-    bool insertColumns(qint32 position, qint32 columns, const QModelIndex &parent = QModelIndex()) override;
-    bool removeColumns(qint32 position, qint32 columns, const QModelIndex &parent = QModelIndex()) override;
-    bool insertRows(qint32 position, qint32 rows, const QModelIndex &parent = QModelIndex()) override;
-    bool removeRows(qint32 position, qint32 rows, const QModelIndex &parent = QModelIndex()) override;
+    void insertData(const QString &value, GkGenericTreeViewItem *rootItem);
+    void removeData(const qint32 &row);
+
+    void buildMap(const QModelIndex &index, const QAbstractItemModel *model, QMap<GkGenericTreeViewItem *, QModelIndex> &itemMap);
 
 private:
-    GkXmppRosterTreeViewItem *getItem(const QModelIndex &index) const;
+    GkGenericTreeViewItem *getItem(const QModelIndex &index) const;
 
-    GkXmppRosterTreeViewItem *m_rootItem;
+    GkGenericTreeViewItem *m_rootItem;
+
 };
 };

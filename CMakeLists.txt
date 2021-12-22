@@ -580,6 +580,25 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
 
 #
+# QSimpleUpdater
+# https://github.com/alex-spataru/QSimpleUpdater
+#
+set(GALAXY_QSIMPLEUPDATE_CPP
+    ${GALAXY_QSIMPLEUPDATE_CPP}
+	src/contrib/QSimpleUpdater/src/Downloader.cpp
+	src/contrib/QSimpleUpdater/src/QSimpleUpdater.cpp
+	src/contrib/QSimpleUpdater/src/Updater.cpp)
+
+set(GALAXY_QSIMPLEUPDATE_HPP
+    ${GALAXY_QSIMPLEUPDATE_HPP}
+	src/contrib/QSimpleUpdater/src/Downloader.h
+	src/contrib/QSimpleUpdater/include/QSimpleUpdater.h
+	src/contrib/QSimpleUpdater/src/Updater.h)
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/QSimpleUpdater/include")
+message(STATUS "The 'QSimpleUpdater' library has been configured!")
+
+#
 # KissFFT by Mark Borgerding
 # https://github.com/mborgerding/kissfft
 #
@@ -719,7 +738,8 @@ qt5_wrap_ui(UI_HEADERS
 	src/ui/gkupdateinfodialog.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
-    src/ui/xmpp/gkxmppregistrationdialog.ui)
+    src/ui/xmpp/gkxmppregistrationdialog.ui
+	src/contrib/QSimpleUpdater/src/Downloader.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -770,6 +790,7 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_display_image.cpp
 	# src/models/splash/gk_splash_disp_model.cpp
     src/models/system/gk_network_ping_model.cpp
+	src/models/treeview/gk_generic_treeview_model.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp
     src/models/tableview/gk_active_msgs_model.cpp
@@ -779,7 +800,6 @@ set(GALAXY_UI_CPP
 	src/models/tableview/gk_qdatetime_filter_proxy_model.cpp
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
-    src/models/treeview/xmpp/gk_xmpp_roster_model.cpp
 	src/models/xmpp/gk_xmpp_msg_handler.cpp
 	src/models/spelling/gk_text_edit_spelling_highlight.cpp)
 
@@ -874,6 +894,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_display_image.hpp
 	# src/models/splash/gk_splash_disp_model.hpp
     src/models/system/gk_network_ping_model.hpp
+	src/models/treeview/gk_generic_treeview_model.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp
     src/models/tableview/gk_active_msgs_model.hpp
@@ -883,7 +904,6 @@ set(GALAXY_OBJ_HEADERS
 	src/models/tableview/gk_qdatetime_filter_proxy_model.hpp
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
-    src/models/treeview/xmpp/gk_xmpp_roster_model.hpp
 	src/models/xmpp/gk_xmpp_msg_handler.hpp
 	src/models/spelling/gk_text_edit_spelling_highlight.hpp)
 
@@ -996,7 +1016,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_QSIMPLEUPDATE_CPP} ${GALAXY_QSIMPLEUPDATE_HPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     if(WIN32 OR MSYS OR MINGW)
         target_link_libraries(galaxy PUBLIC "-static")
     endif()
@@ -1009,7 +1029,7 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_QSIMPLEUPDATE_CPP} ${GALAXY_QSIMPLEUPDATE_HPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)

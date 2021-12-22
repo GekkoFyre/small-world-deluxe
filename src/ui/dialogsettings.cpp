@@ -40,8 +40,6 @@
 #include "src/gk_sinewave.hpp"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <hamlib/rig.h>
-#include <boost/exception/all.hpp>
-#include <boost/filesystem.hpp>
 #include <QByteArray>
 #include <QStringList>
 #include <QMessageBox>
@@ -70,9 +68,6 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 QComboBox *DialogSettings::rig_comboBox = nullptr;
 QComboBox *DialogSettings::mfg_comboBox = nullptr;

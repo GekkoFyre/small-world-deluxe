@@ -55,9 +55,9 @@
 [submodule "src/contrib/language/myspell/dictionaries"]
 	path = src/contrib/language/myspell/dictionaries
 	url = https://github.com/LibreOffice/dictionaries.git
-[submodule "src/contrib/extra-cmake-modules"]
-	path = src/contrib/extra-cmake-modules
-	url = https://invent.kde.org/frameworks/extra-cmake-modules.git
 [submodule "src/contrib/marble"]
 	path = src/contrib/marble
 	url = https://invent.kde.org/education/marble.git
+[submodule "src/contrib/QSimpleUpdater"]
+	path = src/contrib/QSimpleUpdater
+	url = https://github.com/alex-spataru/QSimpleUpdater.git

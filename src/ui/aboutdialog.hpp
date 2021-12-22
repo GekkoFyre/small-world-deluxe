@@ -57,7 +57,9 @@ public:
 private slots:
     void on_buttonBox_close_rejected();
     void on_pushButton_icon_clicked();
-    void on_pushButton_software_updates_clicked();
+    void on_pushButton_check_for_updates_clicked();
+    void on_pushButton_abort_update_check_clicked();
+    void on_pushButton_cancel_update_check_clicked();
 
 private:
     Ui::AboutDialog *ui;
