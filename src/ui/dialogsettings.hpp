@@ -47,6 +47,7 @@
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <marble/MarbleWidget.h>
+#include <marble/GeoDataCoordinates.h>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -66,6 +67,7 @@
 #include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
+#include <QGeoCoordinate>
 #include <QSharedPointer>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
@@ -198,6 +200,11 @@ private slots:
     // Mapping, location, maidenhead, etc.
     void on_toolButton_rig_maidenhead_clicked();
     void on_toolButton_rig_gps_coordinates_clicked();
+    void on_checkBox_rig_gps_dms_stateChanged(int arg1);
+    void on_checkBox_rig_gps_dmm_stateChanged(int arg1);
+    void on_checkBox_rig_gps_dd_stateChanged(int arg1);
+    void on_lineEdit_rig_gps_coordinates_textEdited(const QString &arg1);
+    void getGeoFocusPoint(const Marble::GeoDataCoordinates &pos);
 
     //
     // Text-to-speech Settings
@@ -363,6 +370,9 @@ private:
     //
     QPointer<Marble::MarbleWidget> m_mapWidget;
     QPointer<GkAtlasDialog> gkAtlasDlg;
+    QGeoCoordinate m_coords;
+    qreal m_latitude;
+    qreal m_longitude;
 
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();
@@ -374,7 +384,11 @@ private:
     void prefill_ui_lang();
     void init_station_info();
 
+    //
+    // Mapping, location, maidenhead, etc.
     void launchAtlasDlg();
+    QGeoCoordinate readGpsCoords();
+    void calcGpsCoords(const QGeoCoordinate &geo_coords);
 
     void monitorXmppServerChange();
     void createXmppConnectionFromSettings();

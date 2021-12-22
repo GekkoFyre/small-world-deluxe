@@ -174,7 +174,7 @@ bool GkSystem::isInternetAvailable() {
             return false;
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return false;

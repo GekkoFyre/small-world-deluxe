@@ -40,6 +40,7 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include <marble/MarbleWidget.h>
+#include <marble/GeoDataCoordinates.h>
 #include <QDialog>
 
 namespace Ui {
@@ -59,6 +60,9 @@ private slots:
     void on_pushButton_accept_clicked();
     void on_pushButton_reset_clicked();
     void on_pushButton_close_clicked();
+
+signals:
+    void geoFocusPoint(const Marble::GeoDataCoordinates &coords);
 
 private:
     Ui::GkAtlasDialog *ui;

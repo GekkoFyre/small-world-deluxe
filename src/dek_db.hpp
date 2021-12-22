@@ -89,14 +89,6 @@ public:
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
     void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
 
-    void write_firewall_is_active_settings(const std::string &value);
-    void write_firewall_port_settings(const std::map<qint32, Network::GkNetworkProtocol> &network_ports);
-    void write_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port);
-    void delete_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port);
-    void write_firewall_app_settings(const std::vector<std::string> &applications);
-    void write_firewall_app_settings(const std::string &application);
-    void delete_firewall_app_settings(const std::string &application);
-
     //
     // Hunspell & UI Language
     void write_lang_ui_settings(const QString &value, const Database::Settings::Language::GkUiLang &lang_key);
@@ -104,8 +96,10 @@ public:
     QString read_lang_dict_settings(const Database::Settings::Language::GkDictionary &dict_key);
     QString read_lang_ui_settings(const Database::Settings::Language::GkUiLang &lang_key);
 
-    bool read_firewall_settings(const System::Security::GkFirewallCfg &key, const std::string &comparator_value = std::string());
-    std::vector<std::string> read_firewall_settings_vec(const System::Security::GkFirewallCfg &key);
+    //
+    // Mapping and atlas APIs, etc.
+    void write_user_loc_settings(const Database::Settings::Mapping::GkUserLocSettings &loc_key, const QString &value);
+    QString read_user_loc_settings(const Database::Settings::Mapping::GkUserLocSettings &loc_key);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);

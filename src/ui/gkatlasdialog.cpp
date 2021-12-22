@@ -62,6 +62,7 @@ void GkAtlasDialog::on_pushButton_accept_clicked()
 {
     //
     // Accept current values and output them to the next destination!
+    emit geoFocusPoint(m_mapWidget->focusPoint());
 
     return;
 }

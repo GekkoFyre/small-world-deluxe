@@ -2517,7 +2517,7 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
             throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
         }
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;

@@ -58,6 +58,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Mapping;
 using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
@@ -68,6 +69,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -141,6 +143,16 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // Hunspell & Spelling dictionaries
         //
         prefill_lang_dictionaries();
+
+        //
+        // Mapping and atlas APIs, etc.
+        ui->checkBox_rig_gps_dd->setChecked(true);
+        gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
+        QObject::connect(gkAtlasDlg, SIGNAL(latitude(const Marble::GeoDataCoordinates &)), this, SLOT(getGeoFocusPoint(const Marble::GeoDataCoordinates &)));
+
+        //
+        // Initialize any profile fields related to mapping, geography, etc.
+        readGpsCoords();
 
         //
         // Miscellaneous
@@ -980,14 +992,60 @@ void DialogSettings::init_station_info()
  */
 void DialogSettings::launchAtlasDlg()
 {
-    if (!gkAtlasDlg) {
-        gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
+    gkAtlasDlg->setWindowFlags(Qt::Window);
+    gkAtlasDlg->show();
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::readGpsCoords will read the save geographical co-ordinates from the Google LevelDB database,
+ * if present.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QGeoCoordinate DialogSettings::readGpsCoords()
+{
+    try {
+        if (ui->lineEdit_rig_gps_coordinates->text().isEmpty()) {
+            const auto latitude = gkDekodeDb->read_user_loc_settings(GkUserLocSettings::UserLatitudeCoords);
+            const auto longitude = gkDekodeDb->read_user_loc_settings(GkUserLocSettings::UserLongitudeCoords);
+            if (!latitude.isEmpty() && !longitude.isEmpty()) {
+                QGeoCoordinate coords(latitude.toDouble(), longitude.toDouble());
+                return coords;
+            }
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
-    gkAtlasDlg->setWindowFlags(Qt::Window);
-    gkAtlasDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(gkAtlasDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-    gkAtlasDlg->show();
+    return QGeoCoordinate();
+}
+
+/**
+ * @brief DialogSettings::calcGpsCoords will convert a given set of geographical co-ordinates from the regularly stored
+ * values of Decimal Degrees (DD) towards either, "Degrees, minutes, and seconds (DMS)", or simply the alternative
+ * instead which is, "Degrees and decimal minutes (DMM)".
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param geo_coords The latitudinal and longitudinal values to be used, as a QGeoCoordinate() object.
+ * @note [ Google ] Find or enter latitude & longitude <https://support.google.com/maps/answer/18539>.
+ * @see DialogSettings::readGpsCoords(), DialogSettings::launchAtlasDlg().
+ */
+void DialogSettings::calcGpsCoords(const QGeoCoordinate &geo_coords)
+{
+    if (ui->checkBox_rig_gps_dmm->isChecked()) {
+        //
+        // Using DMM!
+        ui->lineEdit_rig_gps_coordinates->setText(geo_coords.toString(QGeoCoordinate::CoordinateFormat::DegreesMinutes));
+    } else if (ui->checkBox_rig_gps_dd->isChecked()) {
+        //
+        // Using DD!
+        ui->lineEdit_rig_gps_coordinates->setText(geo_coords.toString(QGeoCoordinate::CoordinateFormat::Degrees));
+    } else {
+        //
+        // Using DMS (also the default option)!
+        ui->lineEdit_rig_gps_coordinates->setText(geo_coords.toString(QGeoCoordinate::CoordinateFormat::DegreesMinutesSeconds));
+    }
 
     return;
 }
@@ -2930,6 +2988,123 @@ void DialogSettings::on_toolButton_rig_maidenhead_clicked()
 void DialogSettings::on_toolButton_rig_gps_coordinates_clicked()
 {
     launchAtlasDlg();
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_checkBox_rig_gps_dms_stateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void DialogSettings::on_checkBox_rig_gps_dms_stateChanged(int arg1)
+{
+    //
+    // Using DMS!
+    if (arg1 == Qt::CheckState::Checked) {
+        ui->checkBox_rig_gps_dmm->setChecked(false);
+        ui->checkBox_rig_gps_dd->setChecked(false);
+
+        const auto coords = readGpsCoords();
+        if (coords.isValid()) {
+            ui->lineEdit_rig_gps_coordinates->setText(coords.toString(QGeoCoordinate::CoordinateFormat::DegreesMinutesSeconds));
+            return;
+        }
+
+        QMessageBox::information(this, tr("Missing data!"), tr("You need to first enter and save a value in plain, decimal degrees (i.e. 'DD'), likeso but without the quotes: \"%1\"")
+                .arg(General::Mapping::coordsDecDegPlaceholder), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_checkBox_rig_gps_dmm_stateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void DialogSettings::on_checkBox_rig_gps_dmm_stateChanged(int arg1)
+{
+    //
+    // Using DMM!
+    if (arg1 == Qt::CheckState::Checked) {
+        ui->checkBox_rig_gps_dms->setChecked(false);
+        ui->checkBox_rig_gps_dd->setChecked(false);
+
+        const auto coords = readGpsCoords();
+        if (coords.isValid()) {
+            ui->lineEdit_rig_gps_coordinates->setText(coords.toString(QGeoCoordinate::CoordinateFormat::DegreesMinutes));
+            return;
+        }
+
+        QMessageBox::information(this, tr("Missing data!"), tr("You need to first enter and save a value in plain, decimal degrees (i.e. 'DD'), likeso but without the quotes: \"%1\"")
+                .arg(General::Mapping::coordsDecDegPlaceholder), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_checkBox_rig_gps_dd_stateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void DialogSettings::on_checkBox_rig_gps_dd_stateChanged(int arg1)
+{
+    //
+    // Using DD!
+    if (arg1 == Qt::CheckState::Checked) {
+        ui->checkBox_rig_gps_dms->setChecked(false);
+        ui->checkBox_rig_gps_dmm->setChecked(false);
+
+        const auto coords = readGpsCoords();
+        if (coords.isValid()) {
+            ui->lineEdit_rig_gps_coordinates->setText(coords.toString(QGeoCoordinate::CoordinateFormat::Degrees));
+            return;
+        }
+
+        QMessageBox::information(this, tr("Missing data!"), tr("You need to first enter and save a value in plain, decimal degrees (i.e. 'DD'), likeso but without the quotes: \"%1\"")
+                .arg(General::Mapping::coordsDecDegPlaceholder), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_lineEdit_rig_gps_coordinates_textEdited receives a specific signal whenever the text within
+ * the object, `ui->lineEdit_rig_gps_coordinates()`, is changed. Nothing happens if a change in text is performed
+ * programmatically.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1 The text itself which has been changed by the end-user themselves.
+ * @see DialogSettings::readGpsCoords(), DialogSettings::calcGpsCoords().
+ */
+void DialogSettings::on_lineEdit_rig_gps_coordinates_textEdited(const QString &arg1)
+{
+    ui->checkBox_rig_gps_dmm->setChecked(false);
+    ui->checkBox_rig_gps_dms->setChecked(false);
+    ui->checkBox_rig_gps_dd->setChecked(true);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::getGeoFocusPoint will grab the latitudinal value from the cursor's position within the class,
+ * `GkAtlasDialog`, for use throughout profile settings!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void DialogSettings::getGeoFocusPoint(const Marble::GeoDataCoordinates &pos)
+{
+    if (pos.isValid()) {
+        m_latitude = pos.latitude();
+        m_longitude = pos.longitude();
+        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLatitudeCoords, QString::number(m_latitude));
+        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLongitudeCoords, QString::number(m_longitude));
+
+        m_coords.setLatitude(m_latitude);
+        m_coords.setLongitude(m_longitude);
+        calcGpsCoords(m_coords);
+    }
 
     return;
 }

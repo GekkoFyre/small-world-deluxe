@@ -217,7 +217,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         QObject::connect(m_updateNetworkStateTimer, SIGNAL(timeout()), this, SLOT(updateNetworkState()));
         m_updateNetworkStateTimer->start(GK_XMPP_NETWORK_STATE_UPDATE_SECS * 1000);
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
