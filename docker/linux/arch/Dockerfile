@@ -164,7 +164,13 @@ RUN pacman -S --noconfirm --noprogressbar \
         mingw-w64-qt5-tools \
         mingw-w64-qt5-translations \
         mingw-w64-qt5-websockets \
-        mingw-w64-qt5-winextras
+        mingw-w64-qt5-winextras \
+		extra-cmake-modules \
+		marble \
+		marble-common \
+		marble-maps \
+		marble-qt \
+		sonnet
 
 # Install AUR packages
 USER devel

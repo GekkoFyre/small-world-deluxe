@@ -447,7 +447,7 @@ else()
     message(FATAL_ERROR "The 'OpenSSL' cryptography libraries could not be found!")
 endif(OPENSSL_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network Positioning LinguistTools SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -1015,7 +1015,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication KF5::SonnetCore KF5::SonnetUi sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Positioning Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication KF5::SonnetCore KF5::SonnetUi sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 #
 # Qt Translations

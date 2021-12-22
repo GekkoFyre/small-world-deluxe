@@ -43,12 +43,17 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <KF5/SonnetUI/Sonnet/highlighter.h>
 #include <string>
 #include <QString>
 #include <QObject>
 #include <QTextEdit>
 #include <QContextMenuEvent>
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <KF5/SonnetUI/Sonnet/Highlighter>
+#else
+#include <Sonnet/Highlighter>
+#endif
 
 namespace GekkoFyre {
 

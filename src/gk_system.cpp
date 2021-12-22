@@ -43,9 +43,13 @@
 #include <exception>
 #include <utility>
 #include <QtGlobal>
+#include <QEventLoop>
 #include <QMessageBox>
 #include <QImageReader>
 #include <QMimeDatabase>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QNetworkAccessManager>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <initguid.h>
@@ -150,42 +154,28 @@ QString GkSystem::isImgFormatSupported(const QMimeType &mime_type, const QString
  * local machine but otherwise, a false boolean value will be returned.
  */
 bool GkSystem::isInternetAvailable() {
-    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-    std::unique_ptr<INetworkListManager> inlm;
-    HRESULT hr = CoCreateInstance(CLSID_NetworkListManager, nullptr, CLSCTX_ALL, IID_INetworkListManager, (LPVOID *)&inlm);
-    if (SUCCEEDED(hr)) {
-        NLM_CONNECTIVITY con;
-        hr = inlm->GetConnectivity(&con);
-        if (hr == S_OK) {
-            if (con & NLM_CONNECTIVITY_IPV4_INTERNET || con & NLM_CONNECTIVITY_IPV6_INTERNET) {
-                return true;
-            } else {
-                return false;
-            }
+    try {
+        QUrl url(QStringLiteral("https://www.google.com/"));
+        QNetworkRequest request(url);
+        QPointer<QNetworkAccessManager> mgr = new QNetworkAccessManager(this);
+        QPointer<QNetworkReply> reply = mgr->get(request);
+
+        QEventLoop loop;
+        QObject::connect(reply, SIGNAL(readyRead()), &loop, SLOT(quit()));
+        if (!reply->isFinished()) {
+            loop.exec();
         }
 
-        return true;
+        if (reply->bytesAvailable()) {
+            std::cout << tr("An Internet/WAN connection has been detected!").toStdString() << std::endl;
+            return true;
+        } else {
+            std::cerr << tr("No Internet/WAN connection could be detected!").toStdString() << std::endl;
+            return false;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
-    #elif __linux__
-    //
-    // TODO: Insert a check to see that `/sbin/route` is at all installed on the end-user's computer/machine, instead of blindly
-    // running the command and hoping for the best!
-    //
-    FILE *output;
-    if (!(output = popen("/sbin/route -n | grep -c '^0\\.0\\.0\\.0'", "r"))) {
-        return true;
-    }
-
-    unsigned int i;
-    fscanf(output, "%u", &i);
-    pclose(output);
-
-    if (i == 0) {
-        return false;
-    } else {
-        return true;
-    }
-    #endif
 
     return false;
 }

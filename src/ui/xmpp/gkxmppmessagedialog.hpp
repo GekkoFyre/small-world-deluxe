@@ -101,6 +101,7 @@ private slots:
     void on_toolButton_font_reset_triggered(QAction *arg1);
     void on_toolButton_insert_triggered(QAction *arg1);
     void on_toolButton_attach_file_triggered(QAction *arg1);
+    void on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged(int index);
 
     void updateInterface(const QStringList &bareJids);
     void determineNickname();

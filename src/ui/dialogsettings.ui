@@ -28,6 +28,9 @@
   <property name="windowTitle">
    <string>Settings for Small World Deluxe</string>
   </property>
+  <property name="toolTip">
+   <string>Insert the maidenhead grid location of your ham shack!</string>
+  </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
   </property>
@@ -35,6 +38,18 @@
    <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <widget class="QFrame" name="frame_container_settings">
      <property name="frameShape">
@@ -125,8 +140,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>386</height>
+                      <width>948</width>
+                      <height>433</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -143,14 +158,14 @@
                        </property>
                        <layout class="QFormLayout" name="formLayout_12">
                         <item row="0" column="0">
-                         <widget class="QLabel" name="label_rig_my_callsign_2">
+                         <widget class="QLabel" name="label_rig_my_callsign">
                           <property name="text">
                            <string>My Callsign: </string>
                           </property>
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QLineEdit" name="lineEdit_rig_my_callsign_2">
+                         <widget class="QLineEdit" name="lineEdit_rig_my_callsign">
                           <property name="toolTip">
                            <string>Your personal and licensed as by the government, call-sign.</string>
                           </property>
@@ -160,17 +175,180 @@
                          </widget>
                         </item>
                         <item row="1" column="0">
-                         <widget class="QLabel" name="label_rig_maidenhead_2">
+                         <widget class="QLabel" name="label_rig_maidenhead">
                           <property name="text">
                            <string>My Maidenhead Grid Locator: </string>
                           </property>
                          </widget>
                         </item>
-                        <item row="1" column="1">
-                         <widget class="QLineEdit" name="lineEdit_rig_maidenhead_2">
-                          <property name="clearButtonEnabled">
-                           <bool>true</bool>
+                        <item row="2" column="0">
+                         <widget class="QLabel" name="label_rig_gps_coordinates">
+                          <property name="text">
+                           <string>GPS Coordinates: </string>
                           </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QFrame" name="frame_rig_maidenhead">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_68">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QLineEdit" name="lineEdit_rig_maidenhead">
+                             <property name="toolTip">
+                              <string>Insert the maidenhead grid location of your ham shack!</string>
+                             </property>
+                             <property name="clearButtonEnabled">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QToolButton" name="toolButton_rig_maidenhead">
+                             <property name="toolTip">
+                              <string>Open the World Atlas.</string>
+                             </property>
+                             <property name="text">
+                              <string>...</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item row="2" column="1">
+                         <widget class="QFrame" name="frame_rig_gps_main">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_54">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QFrame" name="frame_rig_gps_readout">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_67">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QLineEdit" name="lineEdit_rig_gps_coordinates">
+                                <property name="toolTip">
+                                 <string>Insert the longitudinal and latitudinal coordinates for the location of your ham shack!</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QToolButton" name="toolButton_rig_gps_coordinates">
+                                <property name="toolTip">
+                                 <string>Open the World Atlas.</string>
+                                </property>
+                                <property name="text">
+                                 <string>...</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_gps_checkboxes">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_69">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item alignment="Qt::AlignHCenter">
+                               <widget class="QCheckBox" name="checkBox_rig_gps_dms">
+                                <property name="toolTip">
+                                 <string>Degrees, minutes, and seconds (DMS)</string>
+                                </property>
+                                <property name="text">
+                                 <string>DMS</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item alignment="Qt::AlignHCenter">
+                               <widget class="QCheckBox" name="checkBox_rig_gps_dmm">
+                                <property name="toolTip">
+                                 <string>Degrees and decimal minutes (DMM)</string>
+                                </property>
+                                <property name="text">
+                                 <string>DMM</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item alignment="Qt::AlignHCenter">
+                               <widget class="QCheckBox" name="checkBox_rig_gps_dd">
+                                <property name="toolTip">
+                                 <string>Decimal degrees (DD)</string>
+                                </property>
+                                <property name="text">
+                                 <string>DD</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
                          </widget>
                         </item>
                        </layout>
@@ -351,8 +529,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>930</width>
-                      <height>424</height>
+                      <width>948</width>
+                      <height>448</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -602,8 +780,8 @@
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>908</width>
-                          <height>1150</height>
+                          <width>926</width>
+                          <height>1217</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2335,7 +2513,7 @@ Thanks.</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>382</width>
+                          <width>379</width>
                           <height>109</height>
                          </rect>
                         </property>
@@ -2379,7 +2557,7 @@ Thanks.</string>
                              </widget>
                             </item>
                             <item>
-                             <widget class="QLabel" name="label_ui_themes_feature_in_development_2">
+                             <widget class="QLabel" name="label_ui_themes_feature_in_development">
                               <property name="styleSheet">
                                <string notr="true">color: rgb(170, 0, 0); font: 75 10pt &quot;MS Shell Dlg 2&quot;;</string>
                               </property>
@@ -2438,8 +2616,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>930</width>
-                      <height>612</height>
+                      <width>948</width>
+                      <height>647</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_60">
@@ -3499,8 +3677,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>386</height>
+                      <width>962</width>
+                      <height>396</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -3672,8 +3850,8 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>944</width>
-                         <height>386</height>
+                         <width>962</width>
+                         <height>396</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -4170,8 +4348,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>432</width>
-                      <height>463</height>
+                      <width>459</width>
+                      <height>484</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4418,11 +4596,11 @@ Thanks.</string>
                                 </property>
                                 <property name="html">
                                  <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;title&gt;The&lt;/title&gt;&lt;style type=&quot;text/css&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;title&gt;The&lt;/title&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.875pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                                 </property>
                                </widget>
                               </item>
@@ -4695,7 +4873,7 @@ p, li { white-space: pre-wrap; }
                      </widget>
                     </item>
                     <item>
-                     <widget class="QFrame" name="frame_api_details_2">
+                     <widget class="QFrame" name="frame_api_details">
                       <property name="frameShape">
                        <enum>QFrame::NoFrame</enum>
                       </property>
@@ -4747,7 +4925,7 @@ p, li { white-space: pre-wrap; }
                         </widget>
                        </item>
                        <item>
-                        <widget class="QFrame" name="frame_api_details_inner_2">
+                        <widget class="QFrame" name="frame_api_details_inner">
                          <property name="frameShape">
                           <enum>QFrame::NoFrame</enum>
                          </property>
@@ -4861,7 +5039,7 @@ p, li { white-space: pre-wrap; }
                      </widget>
                     </item>
                     <item>
-                     <widget class="QFrame" name="frame_api_details_3">
+                     <widget class="QFrame" name="frame_api_details_2">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                         <horstretch>0</horstretch>
@@ -4955,8 +5133,8 @@ p, li { white-space: pre-wrap; }
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>930</width>
-                         <height>644</height>
+                         <width>948</width>
+                         <height>688</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -5448,7 +5626,7 @@ p, li { white-space: pre-wrap; }
                                            </widget>
                                           </item>
                                           <item>
-                                           <widget class="QFrame" name="frame_force_control_lines_2">
+                                           <widget class="QFrame" name="frame_force_control_lines">
                                             <property name="sizePolicy">
                                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                                               <horstretch>0</horstretch>
@@ -6011,8 +6189,8 @@ p, li { white-space: pre-wrap; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>239</width>
-                      <height>202</height>
+                      <width>244</width>
+                      <height>205</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -6271,8 +6449,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>tabWidget_config</tabstop>
   <tabstop>tabWidget_config_general</tabstop>
   <tabstop>scrollArea_general_settings</tabstop>
-  <tabstop>lineEdit_rig_my_callsign_2</tabstop>
-  <tabstop>lineEdit_rig_maidenhead_2</tabstop>
+  <tabstop>lineEdit_rig_my_callsign</tabstop>
   <tabstop>lineEdit_rig_cq_message</tabstop>
   <tabstop>lineEdit_rig_reply_message</tabstop>
   <tabstop>lineEdit_rig_station_info</tabstop>

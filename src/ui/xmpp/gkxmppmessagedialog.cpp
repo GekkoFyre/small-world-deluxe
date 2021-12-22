@@ -308,6 +308,17 @@ void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
 }
 
 /**
+ * @brief GkXmppMessageDialog::on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged processes shortcuts and macros within
+ * the (Q)Xmpp environment, as either configured by default or the end-user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppMessageDialog::on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
  * @brief GkXmppMessageDialog::updateInterface
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid

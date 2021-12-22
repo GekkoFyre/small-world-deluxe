@@ -219,6 +219,8 @@ namespace GekkoFyre {
 //
 // Settings Dialog
 //
+#define GK_GPS_COORDS_LINE_EDIT_TIMER (2000)                    // The amount of time, between or since, edits have been made towards, `ui->lineEdit_rig_gps_coordinates()`, should we save towards the Google LevelDB database!
+
 #define GK_AUDIO_DEVS_STR_LENGTH (40)
 #define GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS (3)                // Play the sine wave test sample for three seconds!
 #define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)
@@ -393,6 +395,10 @@ namespace General {
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development"; // TODO: Make sure to change this upon releasing a proper version of Small World Deluxe!
     constexpr char gk_sentry_project_name[] = "small-world-deluxe"; // The actual name of the project as it is both registered and appears within Sentry itself; it is critical that this is set correctly!
+
+    namespace Mapping {
+        constexpr char coordsDecDegPlaceholder[] = "41.40338, 2.17403"; // The default placeholder, geographical co-ordinates for where both a latitudinal and longitudinal set of dummy values in Decimal Degrees are required.
+    }
 
     namespace Logging {
         constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
@@ -775,6 +781,13 @@ namespace GkAudioFramework {
 
 namespace Database {
     namespace Settings {
+        namespace Mapping {
+            enum GkUserLocSettings {
+                UserLatitudeCoords,
+                UserLongitudeCoords
+            };
+        }
+
         namespace Language {
             enum GkLangSettings {
                 UiLang,
