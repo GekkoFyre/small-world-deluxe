@@ -186,7 +186,7 @@ private:
 
     void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname, const qint32 row = -1);
     qint32 removeRosterPresenceTable(const QString &bareJid);
-    void updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void updateRosterPresenceTable(const QIcon presence, const QString bareJid, const QString nickname);
     void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const qint32 row = -1);
     void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason, const qint32 row = -1);
     qint32 removeRosterPendingTable(const QString &bareJid);

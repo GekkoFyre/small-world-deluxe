@@ -106,7 +106,8 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, qint32 role = Qt::EditRole) override;
     bool setHeaderData(qint32 section, Qt::Orientation orientation, const QVariant &value, qint32 role = Qt::EditRole) override;
 
-    void insertData(const QString &value, GkGenericTreeViewItem *rootItem);
+    void insertData(const QVariant &value, GkGenericTreeViewItem *rootItem);
+    void insertData(const QVector<QVariant> &values, GkGenericTreeViewItem *rootItem);
     void removeData(const qint32 &row);
 
     void buildMap(const QModelIndex &index, const QAbstractItemModel *model, QMap<GkGenericTreeViewItem *, QModelIndex> &itemMap);

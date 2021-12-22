@@ -405,19 +405,54 @@ GkGenericTreeViewModel::setHeaderData(qint32 section, Qt::Orientation orientatio
  * @note Simple Tree Model Example by Qt Project <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>,
  * Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
  */
-void GkGenericTreeViewModel::insertData(const QString &value, GkGenericTreeViewItem *rootItem)
+void GkGenericTreeViewModel::insertData(const QVariant &value, GkGenericTreeViewItem *rootItem)
 {
-    QVector<QVariant> columnData;
-    QList<GkGenericTreeViewItem *> rootItems;
-    rootItems << rootItem;
-    columnData << value;
-    if (rootItems.last()->childCount() > 0) {
-        rootItems << rootItems.last()->child(rootItems.last()->childCount() - 1);
+    if (value.isValid()) {
+        QVector<QVariant> columnData;
+        QList<GkGenericTreeViewItem *> rootItems;
+        rootItems << rootItem;
+        columnData << value;
+
+        //
+        // Append a new item to the current parent's list of children.
+        GkGenericTreeViewItem *parent = rootItems.last();
+        parent->insertChildren(parent->childCount(), 1, rootItem->columnCount());
+        for (qint32 column = 0; column < columnData.size(); ++column) {
+            parent->child(parent->childCount() - 1)->setData(column, columnData[column]);
+        }
     }
 
-    //
-    // Append a new item to the current parent's list of children.
-    rootItems.last()->appendChild(new GkGenericTreeViewItem(columnData, rootItems.last()));
+    return;
+}
+
+/**
+ * @brief GkGenericTreeViewModel::insertData inserts a QVector() of data values into a given QTreeView where the model
+ * is set towards this class.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param values The values themselves to be inserted into the QTreeView.
+ * @param rootItem The possible parent of the value to be modified.
+ * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
+ */
+void GkGenericTreeViewModel::insertData(const QVector<QVariant> &values, GkGenericTreeViewItem *rootItem)
+{
+    if (!values.isEmpty()) {
+        for (const auto &value: values) {
+            if (value.isValid()) { // TODO: Improve the performance of this function!
+                QVector<QVariant> columnData;
+                QList<GkGenericTreeViewItem *> rootItems;
+                rootItems << rootItem;
+                columnData << value;
+
+                //
+                // Append a new item to the current parent's list of children.
+                GkGenericTreeViewItem *parent = rootItems.last();
+                parent->insertChildren(parent->childCount(), 1, rootItem->columnCount());
+                for (qint32 column = 0; column < columnData.size(); ++column) {
+                    parent->child(parent->childCount() - 1)->setData(column, columnData[column]);
+                }
+            }
+        }
+    }
 
     return;
 }

@@ -478,11 +478,20 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
         presence_model.nickName = nickname;
 
         std::vector<qint32> idx_vals;
-        for (const auto &presence: m_presenceRosterData) {
-            idx_vals.push_back(presence.second.row);
+        if (!m_presenceRosterData.empty()) {
+            for (const auto &presence: m_presenceRosterData) {
+                //
+                // We can use pre-existing rows/indexes!
+                idx_vals.push_back(presence.second.row);
+            }
+
+            idx_vals.push_back(row); // Also add the newly seen value!
+        } else {
+            //
+            // We need to create a row/index from scratch!
+            idx_vals.push_back(-1);
         }
 
-        idx_vals.push_back(row); // Also add the newly seen value!
         const auto incr_idx_val = gkStringFuncs->incrementIndexVal(idx_vals);
         presence_model.row = incr_idx_val;
 
@@ -498,7 +507,7 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
  * @brief GkXmppRosterDialog::removeRosterPresenceTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
- * @return The row at which the data was removed from.
+ * @return The child row at which the data was removed from.
  */
 qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 {
@@ -517,7 +526,7 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
             }
         }
 
-        return ret;
+        return ret - 1;
     }
 
     return -1;
@@ -530,7 +539,7 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
  * @param bareJid
  * @param nickname
  */
-void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon presence, const QString bareJid, const QString nickname)
 {
     if (!bareJid.isEmpty()) {
         qint32 ret = removeRosterPresenceTable(bareJid);
@@ -1099,7 +1108,7 @@ void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
 
     if (!m_rosterList->isEmpty()) {
         for (const auto &entry: *m_rosterList) {
-            if (!entry.bareJid.isEmpty()) {
+            if (!entry.bareJid.isEmpty() && !presence_model.bareJid.isEmpty()) {
                 if (entry.bareJid == presence_model.bareJid) {
                     presence_model.presence = m_xmppClient->presenceToIcon(entry.presence->availableStatusType());
                     if (!vCard.nickName().isEmpty()) {
@@ -1115,19 +1124,29 @@ void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
                     }
                 }
 
-                if (!presence_model.nickName.isEmpty()) {
+                if (!m_presenceRosterData.empty()) {
                     for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
-                        if (entry.bareJid == iter->second.bareJid) {
-                            iter->second.nickName = presence_model.nickName;
-                            updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->second.bareJid).availableStatusType()), iter->second.bareJid, iter->second.nickName);
+                        if (!iter->second.bareJid.isEmpty()) {
+                            if (entry.bareJid == iter->second.bareJid) {
+                                iter->second.nickName = presence_model.nickName;
+                                updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->second.bareJid).availableStatusType()), iter->second.bareJid, iter->second.nickName);
+                                break;
+                            }
                         }
+
+                        break;
                     }
 
                     for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end(); ++iter) {
-                        if (entry.bareJid == iter->bareJid) {
-                            iter->nickName = presence_model.nickName;
-                            updateRosterPendingTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        if (!iter->bareJid.isEmpty()) {
+                            if (entry.bareJid == iter->bareJid) {
+                                iter->nickName = presence_model.nickName;
+                                updateRosterPendingTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                                break;
+                            }
                         }
+
+                        break;
                     }
                 }
             }
@@ -1666,9 +1685,11 @@ bool GkXmppRosterDialog::eventFilter(QObject *obj, QEvent *event)
 void GkXmppRosterDialog::recvUpdatePresenceTableViewModel()
 {
     for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
-        if (!iter->second.added) {
-            gkXmppPresenceTreeViewModel->insertData(iter->second.bareJid, iter->first);
-            iter->second.added = true;
+        if (!iter->second.bareJid.isEmpty()) {
+            if (!iter->second.added) {
+                gkXmppPresenceTreeViewModel->insertData(iter->second.bareJid, iter->first);
+                iter->second.added = true;
+            }
         }
     }
 
