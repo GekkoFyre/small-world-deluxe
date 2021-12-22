@@ -205,6 +205,9 @@ private slots:
     void on_checkBox_rig_gps_dd_stateChanged(int arg1);
     void on_lineEdit_rig_gps_coordinates_textEdited(const QString &arg1);
     void getGeoFocusPoint(const Marble::GeoDataCoordinates &pos);
+    void saveGpsCoords(const QGeoCoordinate &geo_coords);
+    void saveGpsCoords(const qreal &latitude, const qreal &longitude);
+    void gpsCoordsTimerProc();
 
     //
     // Text-to-speech Settings
@@ -285,6 +288,11 @@ signals:
     // Audio System and related
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
+
+    //
+    // Mapping, location, maidenhead, etc.
+    void setGpsCoords(const QGeoCoordinate &geo_coords);
+    void setGpsCoords(const qreal &latitude, const qreal &longitude);
 
     //
     // XMPP and related
@@ -373,6 +381,11 @@ private:
     QGeoCoordinate m_coords;
     qreal m_latitude;
     qreal m_longitude;
+
+    //
+    // Date and timing, calendars, etc.
+    //
+    QTimer m_gpsCoordEditTimer;
 
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();

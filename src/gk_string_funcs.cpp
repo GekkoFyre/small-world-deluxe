@@ -300,6 +300,23 @@ QString StringFuncs::htmlSpecialCharEncoding(const QString &string)
 }
 
 /**
+ * @brief StringFuncs::geoCoordsSplit splits up a QString that has been generated from a QGeoCoordinate() object.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param coord
+ * @return
+ * @see QGeoCoordinate(), DialogSettings::getGeoFocusPoint().
+ */
+QStringList StringFuncs::geoCoordsSplit(const QString &coord)
+{
+    QStringList values = coord.split(QRegularExpression(", "), Qt::SkipEmptyParts);
+    if (!values.isEmpty()) {
+        return values;
+    }
+
+    return QStringList();
+}
+
+/**
  * @brief StringFuncs::extractNumbersFromStr will extract any identifiable integers from a given QString.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param str

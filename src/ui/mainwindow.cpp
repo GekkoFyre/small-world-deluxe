@@ -51,6 +51,7 @@
 #include "src/contrib/Gist/src/Gist.h"
 #include <marble/AbstractFloatItem.h>
 #include <marble/MarbleDirs.h>
+#include <marble/GeoDataCoordinates.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -1668,18 +1669,53 @@ void MainWindow::startMappingRoutines()
         // Hide the FloatItems::Compass and FloatItems::StatusBar
         m_mapWidget->setShowOverviewMap(false);
         m_mapWidget->setShowScaleBar(false);
+        m_mapWidget->setShowCompass(false);
 
-        for (const auto &floatItem: m_mapWidget->floatItems()) {
-            if (floatItem && floatItem->nameId() == QStringLiteral("compass")) {
+        for (const auto &float_item: m_mapWidget->floatItems()) {
+            if (float_item && float_item->nameId() == QStringLiteral("compass")) {
                 //
                 // Put the compass onto the LeftHand side
-                floatItem->setPosition(QPoint(10, 10));
+                float_item->setPosition(QPoint(10, 10));
 
                 //
                 // Make the content size of the compass smaller
-                floatItem->setContentSize(QSize(50, 50));
+                float_item->setContentSize(QSize(50, 50));
             }
         }
+
+        //
+        // Adjust the map and rendering quality
+        m_mapWidget->setMapQualityForViewContext(Marble::HighQuality, Marble::Still);
+        m_mapWidget->setMapQualityForViewContext(Marble::NormalQuality, Marble::Animation);
+
+        // Create a horizontal zoom slider and set the default zoom
+        QPointer<QSlider> zoom_slider = new QSlider(Qt::Horizontal);
+        zoom_slider->setMinimum(1000);
+        zoom_slider->setMaximum(2400);
+
+        m_mapWidget->zoomView(zoom_slider->value());
+
+        // Create a label to show the geodetic position
+        QPointer<QLabel> position_label = new QLabel();
+        position_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+        //
+        // Add all the QWidgets to the vertical layout!
+        QPointer<QVBoxLayout> layout = new QVBoxLayout;
+        layout->addWidget(m_mapWidget);
+        layout->addWidget(zoom_slider);
+        layout->addWidget(position_label);
+
+        //
+        // Centre the map onto a given position...
+        Marble::GeoDataCoordinates geo_home(-60.0, -10.0, 0.0, Marble::GeoDataCoordinates::Degree);
+        m_mapWidget->centerOn(geo_home);
+
+        //
+        // Connect the mapping QWidget to the position label!
+        QObject::connect(m_mapWidget, SIGNAL(mouseMoveGeoPosition(QString)), position_label, SLOT(setText(QString)));
+        QObject::connect(zoom_slider, SIGNAL(valueChanged(int)), m_mapWidget, SLOT(zoomView(int)));
+        QObject::connect(m_mapWidget, SIGNAL(zoomChanged(int)), zoom_slider, SLOT(setValue(int)));
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }

@@ -219,6 +219,8 @@ namespace GekkoFyre {
 //
 // Settings Dialog
 //
+#define GK_GPS_COORDS_LINE_EDIT_TIMER (2000)                    // The amount of time, between or since, edits have been made towards, `ui->lineEdit_rig_gps_coordinates()`, should we save towards the Google LevelDB database!
+
 #define GK_AUDIO_DEVS_STR_LENGTH (40)
 #define GK_AUDIO_SINEWAVE_TEST_PLAYBACK_SECS (3)                // Play the sine wave test sample for three seconds!
 #define GK_AUDIO_SINEWAVE_TEST_FREQ_HZ (14706)

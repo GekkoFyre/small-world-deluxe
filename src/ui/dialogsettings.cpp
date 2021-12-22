@@ -148,7 +148,11 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // Mapping and atlas APIs, etc.
         ui->checkBox_rig_gps_dd->setChecked(true);
         gkAtlasDlg = new GkAtlasDialog(gkEventLogger, m_mapWidget, this);
-        QObject::connect(gkAtlasDlg, SIGNAL(latitude(const Marble::GeoDataCoordinates &)), this, SLOT(getGeoFocusPoint(const Marble::GeoDataCoordinates &)));
+
+        QObject::connect(gkAtlasDlg, SIGNAL(geoFocusPoint(const Marble::GeoDataCoordinates &)), this, SLOT(getGeoFocusPoint(const Marble::GeoDataCoordinates &)));
+        QObject::connect(this, SIGNAL(setGpsCoords(const QGeoCoordinate &)), this, SLOT(saveGpsCoords(const QGeoCoordinate &)));
+        QObject::connect(this, SIGNAL(setGpsCoords(const qreal &, const qreal &)), this, SLOT(saveGpsCoords(const qreal &, const qreal &)));
+        QObject::connect(&m_gpsCoordEditTimer, SIGNAL(stop()), this, SLOT(gpsCoordsTimerProc()));
 
         //
         // Initialize any profile fields related to mapping, geography, etc.
@@ -3084,6 +3088,8 @@ void DialogSettings::on_lineEdit_rig_gps_coordinates_textEdited(const QString &a
     ui->checkBox_rig_gps_dms->setChecked(false);
     ui->checkBox_rig_gps_dd->setChecked(true);
 
+    m_gpsCoordEditTimer.start(GK_GPS_COORDS_LINE_EDIT_TIMER);
+
     return;
 }
 
@@ -3098,12 +3104,77 @@ void DialogSettings::getGeoFocusPoint(const Marble::GeoDataCoordinates &pos)
     if (pos.isValid()) {
         m_latitude = pos.latitude();
         m_longitude = pos.longitude();
-        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLatitudeCoords, QString::number(m_latitude));
-        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLongitudeCoords, QString::number(m_longitude));
+        emit setGpsCoords(m_latitude, m_longitude);
 
         m_coords.setLatitude(m_latitude);
         m_coords.setLongitude(m_longitude);
         calcGpsCoords(m_coords);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::saveGpsCoords is a function to save QGeoCoordinate() values to the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param geo_coords The given QGeoCoordinate() to save towards the Google LevelDB database.
+ */
+void DialogSettings::saveGpsCoords(const QGeoCoordinate &geo_coords)
+{
+    try {
+        if (geo_coords.isValid()) {
+            gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLatitudeCoords, QString::number(geo_coords.latitude()));
+            gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLongitudeCoords, QString::number(geo_coords.longitude()));
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::saveGpsCoords is a function to save geographical values to the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param latitude The given latitudinal value.
+ * @param longitude The given longitudinal value.
+ */
+void DialogSettings::saveGpsCoords(const qreal &latitude, const qreal &longitude)
+{
+    try {
+        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLatitudeCoords, QString::number(latitude));
+        gkDekodeDb->write_user_loc_settings(GkUserLocSettings::UserLongitudeCoords, QString::number(longitude));
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::gpsCoordsTimerProc processes the tail-end of m_gpsCoordEditTimer().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see m_gpsCoordEditTimer(), ui->lineEdit_rig_gps_coordinates().
+ */
+void DialogSettings::gpsCoordsTimerProc()
+{
+    const auto dd_coords_str = ui->lineEdit_rig_gps_coordinates->text();
+    if (!dd_coords_str.isEmpty()) {
+        const auto values = gkStringFuncs->geoCoordsSplit(dd_coords_str);
+        if (values.count() == 2) {
+            qreal latitude = 0.0;
+            qreal longitude = 0.0;
+
+            //
+            // Convert to the appropriate variables!
+            latitude = values[0].toDouble();
+            longitude = values[1].toDouble();
+
+            QGeoCoordinate coords(latitude, longitude);
+            if (coords.isValid()) {
+                emit setGpsCoords(coords);
+            }
+        }
     }
 
     return;

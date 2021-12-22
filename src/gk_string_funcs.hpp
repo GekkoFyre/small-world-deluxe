@@ -45,6 +45,7 @@
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <opus/opus_defines.h>
+#include <QGeoCoordinate>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QDateTime>
@@ -95,6 +96,10 @@ public:
     std::string csvOutputString(const std::deque<std::string> &csv_elements);
 
     static QString htmlSpecialCharEncoding(const QString &string);
+
+    //
+    // Mapping, location, maidenhead, etc.
+    QStringList geoCoordsSplit(const QString &coord);
 
     QList<int> extractNumbersFromStr(const QString &str);
     QString zeroPadding(const QVariant &num, const qint32 &places);
