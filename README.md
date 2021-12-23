@@ -47,21 +47,29 @@ Following is a short list of features, both planned and partially already implem
 
 Please note that what is displayed just below may perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* simply means that we're not stable enough yet for public dissertation.
 
-![smallworld_mainwindow_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_192845.png)
+![smallworld_mainwindow_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_LJblSz9VtR.png)
 
-![smallworld_settingsdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_192854.png)
+![smallworld_settingsdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_E3RnwlUs0H.png)
 
-![smallworld_settingsdialog_2](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_192908.png)
+![smallworld_settingsdialog_3](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_4U7xFYqxmX.png)
 
-![smallworld_settingsdialog_3](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_192926.png)
+![smallworld_settingsdialog_4](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_faTDFCrOko.png)
 
-![smallworld_settingsdialog_4](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_192943.png)
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_eprtQ7d796.png)
 
-![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_193004.png)
+![smallworld_settingsdialog_2](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_5WnTX46ci4.png)
 
-![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_193013.png)
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_VSmIqDgdS3.png)
 
-![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-11-14/Screenshot_20201113_193022.png)
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_yPxaEXBHgK.png)
+
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_I21nHP64j2.png)
+
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_MMrzTUbA91.png)
+
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_Ui8uOEjYIG.png)
+
+![smallworld_settingsdialog_2](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/master/assets/images/screenshots/2021-12-22/smallworld_ytTNgt3q4U.png)
 
 ------
 
