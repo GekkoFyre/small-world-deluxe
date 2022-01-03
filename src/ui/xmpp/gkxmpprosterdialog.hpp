@@ -46,7 +46,6 @@
 #include "src/gk_system.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/models/treeview/gk_generic_treeview_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/gk_logger.hpp"
@@ -64,6 +63,7 @@
 #include <QByteArray>
 #include <QStringList>
 #include <QProgressBar>
+#include <QStandardItem>
 #include <QTreeWidgetItem>
 
 namespace Ui {
@@ -174,17 +174,19 @@ private:
     //
     // QTableView and related
     //
-    QPointer<GekkoFyre::GkGenericTreeViewModel> gkXmppPresenceTreeViewModel;
+    QPointer<QStandardItemModel> gkXmppPresenceTreeViewModel;
     QPointer<GekkoFyre::GkXmppRosterPendingTableViewModel> gkXmppPendingTableViewModel;
     QPointer<GekkoFyre::GkXmppRosterBlockedTableViewModel> gkXmppBlockedTableViewModel;
-    std::multimap<GekkoFyre::GkGenericTreeViewItem *, GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
+    std::multimap<QPointer<QStandardItem>, GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_pendingRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel> m_blockedRosterData;
     QString m_bareJidPresenceSel;   // Currently selected item for already subscribed users
     QString m_bareJidPendingSel;    // Currently selected item for users pending subscription
     QString m_bareJidBlockedSel;    // Currently selected item for blocked users
+    QStandardItem *m_presenceTodayContacts;
 
-    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname, const qint32 row = -1);
+    void insertRosterPresenceTable(QStandardItem *parentRow, const QIcon &presence, const QString &bareJid,
+                                   const QString &nickname, const qint32 row = -1);
     qint32 removeRosterPresenceTable(const QString &bareJid);
     void updateRosterPresenceTable(const QIcon presence, const QString bareJid, const QString nickname);
     void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const qint32 row = -1);

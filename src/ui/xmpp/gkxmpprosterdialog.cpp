@@ -56,6 +56,8 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QRegExpValidator>
+#include <QStandardItemModel>
+#include <QItemSelectionModel>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -219,12 +221,13 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
         //
         // Setup and initialize QTableView's...
-        gkXmppPresenceTreeViewModel = new GkGenericTreeViewModel({ tr("Presence"), tr("ID#"), tr("Nickname") }, this);
+        gkXmppPresenceTreeViewModel = new QStandardItemModel(this);
         gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, m_xmppClient, this);
         gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, m_xmppClient, this);
 
         //
         // Users and presence
+        m_presenceTodayContacts = new QStandardItem(tr("Today")); // For users that have made activity applicable to today's history!
         ui->tableView_callsigns_groups->setModel(gkXmppPresenceTreeViewModel);
         ui->tableView_callsigns_groups->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
         ui->tableView_callsigns_groups->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QHeaderView::ResizeToContents);
@@ -391,7 +394,7 @@ void GkXmppRosterDialog::addJidToRoster(const QString &bareJid)
         for (const auto &entry: *m_rosterList) {
             if (entry.bareJid == bareJid) {
                 if (m_xmppClient->isJidOnline(bareJid)) {
-                    insertRosterPresenceTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
+                    insertRosterPresenceTable(m_presenceTodayContacts, m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
                                               bareJid, entry.vCard.nickName());
                 }
 
@@ -468,8 +471,8 @@ void GkXmppRosterDialog::updateActions()
  * @param nickname
  * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname,
-                                                   const qint32 row)
+void GkXmppRosterDialog::insertRosterPresenceTable(QStandardItem *parentRow, const QIcon &presence, const QString &bareJid,
+                                                   const QString &nickname, const qint32 row)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPresenceTableViewModel presence_model;
@@ -494,9 +497,15 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
 
         const auto incr_idx_val = gkStringFuncs->incrementIndexVal(idx_vals);
         presence_model.row = incr_idx_val;
-
         presence_model.added = false;
-        m_presenceRosterData.insert({ new GkGenericTreeViewItem({ tr("Unsorted"), tr(""), tr("") }), presence_model });
+
+        QStandardItem *firstCell = new QStandardItem(presence, bareJid);
+        QStandardItem *secondCell = new QStandardItem(presence, nickname);
+        gkXmppPresenceTreeViewModel->insertRow(gkXmppPresenceTreeViewModel->rowCount(parentRow->index())); // Insert an empty row!
+        gkXmppPresenceTreeViewModel->setItem(gkXmppPresenceTreeViewModel->rowCount() - 1, 0, nullptr);
+        gkXmppPresenceTreeViewModel->setItem(gkXmppPresenceTreeViewModel->rowCount() - 1, 1, firstCell);
+        gkXmppPresenceTreeViewModel->setItem(gkXmppPresenceTreeViewModel->rowCount() - 1, 2, secondCell);
+
         emit updatePresenceTableViewModel();
     }
 
@@ -515,7 +524,7 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
         qint32 ret = 0;
         for (const auto &rosterPresence: m_presenceRosterData) {
             if (rosterPresence.second.bareJid == bareJid) {
-                gkXmppPresenceTreeViewModel->removeData(rosterPresence.second.row);
+                gkXmppPresenceTreeViewModel->removeRow(rosterPresence.second.row);
             }
         }
 
@@ -543,7 +552,7 @@ void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon presence, const Q
 {
     if (!bareJid.isEmpty()) {
         qint32 ret = removeRosterPresenceTable(bareJid);
-        insertRosterPresenceTable(presence, bareJid, nickname, ret);
+        insertRosterPresenceTable(m_presenceTodayContacts, presence, bareJid, nickname, ret);
     }
 
     return;
@@ -1687,7 +1696,6 @@ void GkXmppRosterDialog::recvUpdatePresenceTableViewModel()
     for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
         if (!iter->second.bareJid.isEmpty()) {
             if (!iter->second.added) {
-                gkXmppPresenceTreeViewModel->insertData(iter->second.bareJid, iter->first);
                 iter->second.added = true;
             }
         }

@@ -255,6 +255,7 @@ qint32 GkGenericTreeViewItem::row() const
  * @param headers
  * @param data
  * @param parent
+ * @note QTreeView and QTableView dynamic changes <https://codingadventures1.blogspot.com/2020/04/dynamically-adding-items-to-qtreeview.html>.
  */
 GkGenericTreeViewModel::GkGenericTreeViewModel(const QStringList &headers, QObject *parent) : QAbstractItemModel(parent)
 {
