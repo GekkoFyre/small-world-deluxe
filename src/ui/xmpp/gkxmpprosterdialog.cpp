@@ -1760,3 +1760,23 @@ void GkXmppRosterDialog::enableBlockedTableActions(const bool &enable)
 
     return;
 }
+
+/**
+ * @brief GkXmppRosterDialog::updateDisplayedClientAvatar updates what is displayed for the end-user's own avatar across
+ * such areas as those related towards (Q)Xmpp and other, likewise areas of Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ba_img The QByteArray data for what is to be shown/displayed on the end-user's part.
+ */
+void GkXmppRosterDialog::updateDisplayedClientAvatar(const QByteArray &ba_img)
+{
+    try {
+        QImage image;
+        image.loadFromData(ba_img, General::Xmpp::Avatar::defaultAvatarFormatSuffix);
+        const auto pixmap = QPixmap::fromImage(image);
+        ui->pushButton_self_avatar->setIcon(pixmap);
+    } catch (const std::exception &e) {
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}

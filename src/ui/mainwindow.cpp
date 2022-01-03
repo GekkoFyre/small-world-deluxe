@@ -760,7 +760,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1997,6 +1997,8 @@ void MainWindow::launchXmppRosterDlg()
             }
 
             if (gkXmppRosterDlg) { // Verify that we have successfully created the Roster dialog within memory!
+                QObject::connect(this, SIGNAL(refreshDisplayedClientAvatar(const QByteArray &)),
+                                 gkXmppRosterDlg, SLOT(updateDisplayedClientAvatar(const QByteArray &)));
                 if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
                     gkXmppRosterDlg->setWindowFlags(Qt::Window);
                     gkXmppRosterDlg->show();
@@ -2662,6 +2664,19 @@ void MainWindow::disconnectRigInMemory(Rig *rig_to_disconnect, const std::shared
             }
         }
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateDisplayedClientAvatar updates what is displayed for the end-user's own avatar across
+ * such areas as those related towards (Q)Xmpp and other, likewise areas of Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ba_img The QByteArray data for what is to be shown/displayed on the end-user's part.
+ */
+void MainWindow::updateDisplayedClientAvatar(const QByteArray &ba_img)
+{
+    emit refreshDisplayedClientAvatar(ba_img);
 
     return;
 }

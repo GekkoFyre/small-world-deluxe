@@ -291,6 +291,11 @@ public slots:
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
+    //
+    // VCard management for (Q)Xmpp
+    //
+    void updateDisplayedClientAvatar(const QByteArray &ba_img);
+
 signals:
     void updatePaVol(const int &percentage);
     void gkExitApp();
@@ -319,6 +324,11 @@ signals:
     // Audio System and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+
+    //
+    // VCard management for (Q)Xmpp
+    //
+    void refreshDisplayedClientAvatar(const QByteArray &ba_img);
 
 private:
     Ui::MainWindow *ui;

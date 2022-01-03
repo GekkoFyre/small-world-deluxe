@@ -143,6 +143,12 @@ private slots:
     void enablePendingTableActions(const bool &enable);
     void enableBlockedTableActions(const bool &enable);
 
+public slots:
+    //
+    // VCard management
+    //
+    void updateDisplayedClientAvatar(const QByteArray &ba_img);
+
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,

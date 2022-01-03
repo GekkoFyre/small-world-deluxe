@@ -187,6 +187,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_vCardManager.get(), SIGNAL(vCardReceived(const QXmppVCardIq &)), this, SLOT(vCardReceived(const QXmppVCardIq &)));
         QObject::connect(m_vCardManager.get(), SIGNAL(clientVCardReceived()), this, SLOT(clientVCardReceived()));
         QObject::connect(this, SIGNAL(sendClientVCard(const QXmppVCardIq &)), this, SLOT(updateClientVCard(const QXmppVCardIq &)));
+        QObject::connect(this, SIGNAL(refreshDisplayedClientAvatar(const QByteArray &)),
+                         parent, SLOT(updateDisplayedClientAvatar(const QByteArray &)));
 
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
@@ -1271,6 +1273,10 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
             if (image_save.write(image)) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
                                             GkSeverity::Debug, "", false, true, false, false);
+                if (imgFileName.baseName() == getUsername(m_connDetails.jid)) {
+                    emit refreshDisplayedClientAvatar(photo);
+                }
+
                 return;
             } else {
                 throw std::runtime_error(tr("Error encountered with saving image data for file, \"%1\"!")

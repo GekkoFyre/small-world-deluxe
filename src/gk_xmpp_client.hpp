@@ -258,6 +258,7 @@ signals:
     void sendClientVCard(const QXmppVCardIq &vCard);
     void savedClientVCard(const QByteArray &avatar_pic, const QString &img_type);
     void sendUserVCard(const QXmppVCardIq &vCard);
+    void refreshDisplayedClientAvatar(const QByteArray &ba_img);
 
     //
     // Event & Logging management
@@ -292,7 +293,7 @@ private:
     //
     // Connection details and related variables
     //
-    Network::GkXmpp::GkUserConn m_connDetails;
+    Network::GkXmpp::GkUserConn m_connDetails;              // Details pertaining to the end-user of this application itself!
     QPointer<QDnsLookup> m_dns;
     qint32 m_keepalive;
     std::unique_ptr<QXmppDiscoveryManager> m_discoMgr;
@@ -357,7 +358,6 @@ private:
     QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
-    QString m_id;
 
 };
 };
