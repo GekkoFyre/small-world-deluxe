@@ -44,8 +44,10 @@
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include <qxmpp/QXmppPresence.h>
+#include <string>
 #include <utility>
 #include <iterator>
+#include <QDir>
 #include <QMenu>
 #include <QBuffer>
 #include <QRegExp>
@@ -53,7 +55,9 @@
 #include <QMessageBox>
 #include <QStringList>
 #include <QImageReader>
+#include <QImageWriter>
 #include <QApplication>
+#include <QTemporaryDir>
 #include <QDesktopWidget>
 #include <QRegExpValidator>
 
@@ -936,22 +940,36 @@ void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
                         // https://doc.qt.io/qt-5/qimage.html#save
                         // https://doc.qt.io/qt-5/qtimageformats-index.html
                         //
-                        QImage convert;
-                        QBuffer buffer(&avatarByteArray);
-                        buffer.open(QIODevice::WriteOnly);
-                        if (!convert.save(&buffer, General::Xmpp::Avatar::defaultAvatarFormatSuffix, 85)) {
-                            throw std::runtime_error(tr("There has been an error with converting your avatar from, \"%1\", towards, \"%2\"!")
-                            .arg(mime_type_uppercase, General::Xmpp::Avatar::defaultAvatarFormatSuffix).toStdString());
+                        QTemporaryDir temp_dir;
+                        if (temp_dir.isValid()) {
+                            QDir img_conv_path = QString(temp_dir.path() + "/" + gkStringFuncs->randomNumGen(1000000, 10000000) +
+                                                         General::Xmpp::Avatar::defaultAvatarFormatSuffix);
+                            QImage image(256, 256, QImage::Format_RGB32);
+                            QImageWriter convert(img_conv_path.path());
+
+                            convert.setFormat(General::Xmpp::Avatar::defaultAvatarFormatSuffix);
+                            if (!convert.write(image)) {
+                                throw std::runtime_error(tr("There has been an error with converting your avatar from, \"%1\", towards, \"%2\"!")
+                                                                 .arg(mime_type_uppercase, General::Xmpp::Avatar::defaultAvatarFormatSuffix).toStdString());
+                            }
+
+                            if (img_conv_path.isReadable()) {
+                                QFile read_img(img_conv_path.canonicalPath());
+                                const qint64 def_file_size = std::stoll(General::Xmpp::Avatar::defaultAvatarFileSizeBytes);
+                                if (read_img.size() <= def_file_size) { // If less than or equal to specified file-size, then proceed!
+                                    m_clientAvatarImgBa = read_img.readAll();
+
+                                    emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray,
+                                                           General::Xmpp::Avatar::defaultAvatarFormat);
+                                    emit updateClientAvatarImg(m_clientAvatarImgBa, General::Xmpp::Avatar::defaultAvatarFormatSuffix);
+                                } else {
+                                    throw std::invalid_argument(tr("There has been an error with processing your avatar! The given image is "
+                                                                   "too large in size and must be smaller than or equal to %1 kB, and no more.")
+                                                                   .arg(def_file_size / 1024).toStdString());
+                                }
+                            }
                         }
-
-                        buffer.seek(0);
-                        QByteArray conv_array = buffer.readAll();
-                        m_clientAvatarImgBa = conv_array;
                     }
-
-                    emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray,
-                                           General::Xmpp::Avatar::defaultAvatarFormat);
-                    emit updateClientAvatarImg(m_clientAvatarImgBa, General::Xmpp::Avatar::defaultAvatarFormatSuffix);
 
                     return;
                 }

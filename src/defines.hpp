@@ -424,6 +424,7 @@ namespace General {
         namespace Avatar {
             constexpr char defaultAvatarFormat[] = "image/JPEG";
             constexpr char defaultAvatarFormatSuffix[] = "JPEG";
+            constexpr char defaultAvatarFileSizeBytes[] = "262144";
         }
     }
 }

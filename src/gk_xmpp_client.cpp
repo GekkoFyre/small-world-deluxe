@@ -54,6 +54,7 @@
 #include <QSysInfo>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QImageWriter>
 #include <QImageReader>
 #include <QStandardPaths>
 #include <QXmlStreamWriter>
@@ -1254,12 +1255,7 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for user, \"%1\"").arg(bareJid),
                                     GkSeverity::Debug, "", false, true, false, false);
 
-        const QString img_file_path = imgFileName.filePath();
-        QFile imgFile(img_file_path);
-        if (!imgFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            return;
-        }
-
+        const QString img_file_path = imgFileName.canonicalFilePath();
         QByteArray photo = vCard.photo();
         for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == bareJid) {
@@ -1269,11 +1265,10 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         }
 
         if (!photo.isNull() && !photo.isEmpty()) {
-            QPointer<QBuffer> buffer = new QBuffer(&photo, this);
-            buffer->open(QIODevice::WriteOnly);
-            QImageReader imageReader(buffer, vCard.photoType().toStdString().c_str());
-            QImage image = imageReader.read();
-            if (image.save(img_file_path)) {
+            QImage image;
+            image.loadFromData(photo, vCard.photoType().toStdString().c_str());
+            QImageWriter image_save(img_file_path);
+            if (image_save.write(image)) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
                                             GkSeverity::Debug, "", false, true, false, false);
                 return;
