@@ -80,6 +80,7 @@ using namespace GkXmpp;
 GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
                                                    QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                    QPointer<GekkoFyre::GkLevelDb> gkDb,
+                                                   QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
                                                    m_netState(GkNetworkState::None), QDialog(parent),
                                                    ui(new Ui::GkXmppRegistrationDialog)
@@ -115,6 +116,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         ui->frame_xmpp_login_captcha_bottom->setVisible(false);
 
         gkDekodeDb = std::move(gkDb);
+        gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
         m_xmppClient = std::move(xmppClient);
 
@@ -258,7 +260,7 @@ void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, c
     }
 
     m_reg_jid = jid;
-    m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
+    m_reg_domain = gkStringFuncs->getXmppHostname(jid); // Extract the URI from the given JID!
     m_reg_email = email;
     m_reg_password = password;
 
@@ -287,8 +289,8 @@ void GkXmppRegistrationDialog::prefillFormFields(const QString &jid, const QStri
     //
     // Register as global variables, if not empty!
     if (!jid.isEmpty()) {
-        m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
-        m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
+        m_reg_user = gkStringFuncs->getXmppUsername(jid); // Extract the username from the given JID and its attached URI!
+        m_reg_domain = gkStringFuncs->getXmppHostname(jid); // Extract the URI from the given JID!
     }
 
     if (!password.isEmpty()) {
@@ -382,8 +384,8 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
          */
 
         m_reg_jid = jid;
-        m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
-        m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
+        m_reg_user = gkStringFuncs->getXmppUsername(jid); // Extract the username from the given JID and its attached URI!
+        m_reg_domain = gkStringFuncs->getXmppHostname(jid); // Extract the URI from the given JID!
         m_reg_email = email;
         m_reg_password = new_password;
         m_reg_captcha = captcha;
@@ -484,7 +486,7 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
 
             //
             // Attempt a login to the server!
-            loginToServer(m_xmppClient->getHostname(jid), network_port, jid, old_password);
+            loginToServer(gkStringFuncs->getXmppHostname(jid), network_port, jid, old_password);
 
             return;
         } else {
@@ -867,7 +869,7 @@ void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quin
         if (!jid.isEmpty() && !password.isEmpty()) {
             //
             // A username and password has been provided!
-            QString user_hostname = m_xmppClient->getHostname(jid); // Just in-case the user has entered a differing hostname!
+            QString user_hostname = gkStringFuncs->getXmppHostname(jid); // Just in-case the user has entered a differing hostname!
             if (!user_hostname.isEmpty()) {
                 //
                 // A hostname has been provided as well and thusly derived from the username!
@@ -914,8 +916,8 @@ void GkXmppRegistrationDialog::userSignup(const quint16 &network_port, const QSt
 
         //
         // A username and password has been provided!
-        QString hostname = m_xmppClient->getHostname(jid);
-        QString username = m_xmppClient->getUsername(jid);
+        QString hostname = gkStringFuncs->getXmppHostname(jid);
+        QString username = gkStringFuncs->getXmppUsername(jid);
 
         if (!hostname.isEmpty() && !username.isEmpty()) {
             //
@@ -1026,7 +1028,7 @@ void GkXmppRegistrationDialog::readCredentials()
         //
         // User Registration -- GekkoFyre Networks!
         if (!bareJid.isEmpty()) {
-            ui->lineEdit_username->setText(m_xmppClient->getUsername(bareJid));
+            ui->lineEdit_username->setText(gkStringFuncs->getXmppUsername(bareJid));
         }
     } else if (m_registerServerType == GkXmpp::GkServerType::Custom) {
         //
@@ -1048,7 +1050,7 @@ void GkXmppRegistrationDialog::readCredentials()
         //
         // User Login -- GekkoFyre Networks!
         if (!bareJid.isEmpty()) {
-            ui->lineEdit_login_username->setText(m_xmppClient->getUsername(bareJid));
+            ui->lineEdit_login_username->setText(gkStringFuncs->getXmppUsername(bareJid));
         }
     } else if (m_loginServerType == GkXmpp::GkServerType::Custom) {
         //
@@ -1070,7 +1072,7 @@ void GkXmppRegistrationDialog::readCredentials()
         //
         // User Change Password -- GekkoFyre Networks!
         if (!bareJid.isEmpty()) {
-            ui->lineEdit_change_password_username->setText(m_xmppClient->getUsername(bareJid));
+            ui->lineEdit_change_password_username->setText(gkStringFuncs->getXmppUsername(bareJid));
         }
     } else if (m_passwordServerType == GkXmpp::GkServerType::Custom) {
         //
@@ -1092,7 +1094,7 @@ void GkXmppRegistrationDialog::readCredentials()
         //
         // User Change Email -- GekkoFyre Networks!
         if (!bareJid.isEmpty()) {
-            ui->lineEdit_change_email_username->setText(m_xmppClient->getUsername(bareJid));
+            ui->lineEdit_change_email_username->setText(gkStringFuncs->getXmppUsername(bareJid));
         }
     } else if (m_emailServerType == GkXmpp::GkServerType::Custom) {
         //

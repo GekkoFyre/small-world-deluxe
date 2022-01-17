@@ -85,6 +85,11 @@ public:
 
     void print_exception(const std::exception &e, int level = 0);
 
+    //
+    // (Q)Xmpp related
+    [[nodiscard]] static QString getXmppUsername(const QString &username);
+    [[nodiscard]] static QString getXmppHostname(const QString &username);
+
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);

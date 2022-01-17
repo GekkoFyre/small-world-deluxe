@@ -223,9 +223,9 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
         //
         // Setup and initialize QTableView's...
-        gkXmppPresenceTableViewModel = new GkXmppRosterPresenceTableViewModel(ui->tableView_callsigns_groups, m_xmppClient, this);
-        gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, m_xmppClient, this);
-        gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, m_xmppClient, this);
+        gkXmppPresenceTableViewModel = new GkXmppRosterPresenceTableViewModel(ui->tableView_callsigns_groups, m_xmppClient, gkStringFuncs, this);
+        gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, m_xmppClient, gkStringFuncs, this);
+        gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, m_xmppClient, gkStringFuncs, this);
 
         //
         // Users and presence
@@ -800,7 +800,7 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
  */
 void GkXmppRosterDialog::on_pushButton_user_login_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkDb, gkStringFuncs, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -816,7 +816,7 @@ void GkXmppRosterDialog::on_pushButton_user_login_clicked()
  */
 void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkStringFuncs, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 

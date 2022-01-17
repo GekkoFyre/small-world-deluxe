@@ -106,6 +106,46 @@ void StringFuncs::print_exception(const std::exception &e, int level)
 }
 
 /**
+ * @brief StringFuncs::getXmppUsername
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString StringFuncs::getXmppUsername(const QString &username)
+{
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
+    auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
+    if (!domain.empty()) {
+        return domain.first();
+    }
+
+    return QString();
+}
+
+/**
+ * @brief StringFuncs::getXmppHostname
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString StringFuncs::getXmppHostname(const QString &username)
+{
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
+    auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
+    if (!domain.empty()) {
+        return domain.last();
+    }
+
+    return QString();
+}
+
+/**
  * @brief StringFuncs::getStringFromUnsignedChar
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param str

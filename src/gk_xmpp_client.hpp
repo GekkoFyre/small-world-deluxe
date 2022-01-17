@@ -121,8 +121,6 @@ public:
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     [[nodiscard]] static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
-    [[nodiscard]] static QString getUsername(const QString &username);
-    [[nodiscard]] static QString getHostname(const QString &username);
     [[nodiscard]] QXmppPresence getBareJidPresence(const QString &bareJid, const QString &resource = "");
     [[nodiscard]] QString getJidNickname(const QString &bareJid);
     QString addHostname(const QString &username);

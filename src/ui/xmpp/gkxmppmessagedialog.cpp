@@ -331,12 +331,12 @@ void GkXmppMessageDialog::updateInterface(const QStringList &bareJids)
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
                     ui->tabWidget_chat_window->setTabText(0, gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));
-                    ui->label_callsign_2_name->setText(tr("Welcome, %1 and %2!").arg(m_xmppClient->getUsername(gkConnDetails.jid)).arg(m_xmppClient->getUsername(bareJid)));
+                    ui->label_callsign_2_name->setText(tr("Welcome, %1 and %2!").arg(gkStringFuncs->getXmppUsername(gkConnDetails.jid)).arg(gkStringFuncs->getXmppUsername(bareJid)));
                     setWindowTitle(tr("%1 -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 32, true)));
                     break;
                 } else {
                     ui->tabWidget_chat_window->setTabText(0, QString("%1, ...").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, false)));
-                    ui->label_callsign_2_name->setText(tr("Welcome, %1, %2, etc.!").arg(m_xmppClient->getUsername(gkConnDetails.jid)).arg(m_xmppClient->getUsername(bareJid)));
+                    ui->label_callsign_2_name->setText(tr("Welcome, %1, %2, etc.!").arg(gkStringFuncs->getXmppUsername(gkConnDetails.jid)).arg(gkStringFuncs->getXmppUsername(bareJid)));
                     setWindowTitle(tr("%1, etc. -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 32, true)));
                     break;
                 }

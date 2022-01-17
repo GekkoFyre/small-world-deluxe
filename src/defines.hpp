@@ -441,6 +441,7 @@ namespace Filesystem {
     constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
+    constexpr char xmlExtension[] = ".xml";
 
     //
     // Nuspell & Spelling dictionaries

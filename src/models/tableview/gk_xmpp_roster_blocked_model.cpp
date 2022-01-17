@@ -67,10 +67,12 @@ using namespace Security;
  */
 GkXmppRosterBlockedTableViewModel::GkXmppRosterBlockedTableViewModel(QPointer<QTableView> tableView,
                                                                      QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                                                     QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                                                      QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
+    gkStringFuncs = std::move(stringFuncs);
     proxyModel = new QSortFilterProxyModel(parent);
     tableView->setModel(proxyModel);
     m_xmppClient = std::move(xmppClient);
@@ -197,7 +199,7 @@ QVariant GkXmppRosterBlockedTableViewModel::data(const QModelIndex &index, int r
 
     switch (index.column()) {
         case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX:
-            return m_xmppClient->getUsername(row_bareJid);
+            return gkStringFuncs->getXmppUsername(row_bareJid);
         case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX:
             return row_reason;
         default:

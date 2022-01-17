@@ -67,10 +67,12 @@ using namespace Security;
  */
 GkXmppRosterPendingTableViewModel::GkXmppRosterPendingTableViewModel(QPointer<QTableView> tableView,
                                                                      QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                                                     QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                                                      QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
+    gkStringFuncs = std::move(stringFuncs);
     proxyModel = new QSortFilterProxyModel(parent);
     tableView->setModel(proxyModel);
     m_xmppClient = std::move(xmppClient);
@@ -201,7 +203,7 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
             return QIcon(row_presence);
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
-            return m_xmppClient->getUsername(row_bareJid);
+            return gkStringFuncs->getXmppUsername(row_bareJid);
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:

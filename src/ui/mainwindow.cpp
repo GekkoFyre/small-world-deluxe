@@ -2826,7 +2826,7 @@ void MainWindow::on_actionSign_out_triggered()
 
 void MainWindow::on_action_Register_Account_triggered()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkStringFuncs, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 

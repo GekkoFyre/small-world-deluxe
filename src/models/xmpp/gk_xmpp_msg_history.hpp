@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -42,50 +42,39 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_xmpp_client.hpp"
+#include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include <string>
 #include <memory>
 #include <QList>
-#include <QMutex>
-#include <QObject>
 #include <QString>
-#include <QVariant>
-#include <QTableView>
-#include <QModelIndex>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
+#include <QObject>
+#include <QDomDocument>
 
 namespace GekkoFyre {
 
-class GkXmppRosterPresenceTableViewModel : public QAbstractTableModel {
+class GkXmppMsgHistory : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterPresenceTableViewModel(QPointer<QTableView> tableView, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                                QPointer<GekkoFyre::StringFuncs> stringFuncs, QWidget *parent = nullptr);
-    ~GkXmppRosterPresenceTableViewModel() override;
-
-    void populateData(const QList<GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> &data_list);
-    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-
-    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    bool setData(const QModelIndex &index, const QVariant &value, int role) Q_DECL_OVERRIDE;
-    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
-    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-public slots:
-    void insertData(const GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel &data);
-    qint32 removeData(const QString &bareJid);
+    explicit GkXmppMsgHistory(std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> rosterList,
+                              QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                              QObject *parent = nullptr);
+    virtual ~GkXmppMsgHistory();
 
 private:
+    //
+    // Miscellaneous
+    QPointer<GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QList<GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_data;
 
-    QPointer<QSortFilterProxyModel> proxyModel;
-    QPointer<QTableView> table;
-    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    //
+    // User, roster and presence details
+    //
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
+    QDir currPath;
 
-    QMutex dataBatchMutex;
+    void recordMsgHistory(const QString &bareJid, const QList<Network::GkXmpp::GkXmppMamMsg> &mam_msg);
+
 };
 };

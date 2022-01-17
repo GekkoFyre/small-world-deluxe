@@ -67,7 +67,7 @@ public:
     explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkRegUiRole &gkRegUiRole,
                                       const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                       QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                      QPointer<GekkoFyre::GkLevelDb> gkDb,
+                                      QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 
@@ -131,6 +131,7 @@ private:
     Ui::GkXmppRegistrationDialog *ui;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     //
     // QXmpp and XMPP related

@@ -511,46 +511,6 @@ bool GkXmppClient::isHostnameSame(const QString &hostname, const QString &compar
 }
 
 /**
- * @brief GkXmppClient::getUsername
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param username
- * @return
- */
-QString GkXmppClient::getUsername(const QString &username)
-{
-    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    auto domain = username.split('@', QString::SkipEmptyParts);
-    #else
-    auto domain = username.split('@', Qt::SkipEmptyParts);
-    #endif
-    if (!domain.empty()) {
-        return domain.first();
-    }
-
-    return QString();
-}
-
-/**
- * @brief GkXmppClient::getHostname
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param username
- * @return
- */
-QString GkXmppClient::getHostname(const QString &username)
-{
-    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    auto domain = username.split('@', QString::SkipEmptyParts);
-    #else
-    auto domain = username.split('@', Qt::SkipEmptyParts);
-    #endif
-    if (!domain.empty()) {
-        return domain.last();
-    }
-
-    return QString();
-}
-
-/**
  * @brief GkXmppClient::getBareJidPresence returns the presence of the given resource of the given bareJid.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid The user in question.
@@ -568,7 +528,7 @@ QXmppPresence GkXmppClient::getBareJidPresence(const QString &bareJid, const QSt
             return m_rosterManager->getPresence(bareJid, resource);
         default:
             throw std::invalid_argument(tr("Invalid argument provided with attempted lookup for presence status of user, \"%1\"!")
-                                        .arg(getUsername(bareJid)).toStdString());
+                                        .arg(gkStringFuncs->getXmppUsername(bareJid)).toStdString());
     }
 }
 
@@ -1229,10 +1189,12 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
-        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + getHostname(bareJid) + "/" +
-                getUsername(bareJid) + ".png");
-        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + getHostname(bareJid) + "/" +
-                getUsername(bareJid) + ".xml");
+        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" +
+                                                                 gkStringFuncs->getXmppHostname(bareJid) + "/" +
+                                                         gkStringFuncs->getXmppUsername(bareJid) + ".png");
+        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" +
+                                                                 gkStringFuncs->getXmppHostname(bareJid) + "/" +
+                                                         gkStringFuncs->getXmppUsername(bareJid) + ".xml");
 
         if (!QDir(xmlFileName.absolutePath()).exists()) {
             //
@@ -1273,7 +1235,7 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
             if (image_save.write(image)) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
                                             GkSeverity::Debug, "", false, true, false, false);
-                if (imgFileName.baseName() == getUsername(m_connDetails.jid)) {
+                if (imgFileName.baseName() == gkStringFuncs->getXmppUsername(m_connDetails.jid)) {
                     emit refreshDisplayedClientAvatar(photo);
                 }
 
@@ -2118,7 +2080,8 @@ void GkXmppClient::itemAdded(const QString &bareJid)
 {
     emit retractSubscriptionRequest(bareJid);
     emit addJidToRoster(bareJid);
-    gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(getUsername(bareJid)),
+    gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(
+                                        gkStringFuncs->getXmppUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
     return;
@@ -2132,7 +2095,8 @@ void GkXmppClient::itemAdded(const QString &bareJid)
 void GkXmppClient::itemRemoved(const QString &bareJid)
 {
     emit delJidFromRoster(bareJid);
-    gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(getUsername(bareJid)),
+    gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(
+                                        gkStringFuncs->getXmppUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
     return;
@@ -2146,7 +2110,8 @@ void GkXmppClient::itemRemoved(const QString &bareJid)
 void GkXmppClient::itemChanged(const QString &bareJid)
 {
     emit changeRosterJid(bareJid);
-    gkEventLogger->publishEvent(tr("Details for user, \"%1\", have changed within the roster!").arg(getUsername(bareJid)),
+    gkEventLogger->publishEvent(tr("Details for user, \"%1\", have changed within the roster!").arg(
+                                        gkStringFuncs->getXmppUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
     return;

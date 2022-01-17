@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <memory>
 #include <QList>
 #include <QMutex>
@@ -61,7 +62,7 @@ class GkXmppRosterPendingTableViewModel : public QAbstractTableModel {
 
 public:
     explicit GkXmppRosterPendingTableViewModel(QPointer<QTableView> tableView, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                               QWidget *parent = nullptr);
+                                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QWidget *parent = nullptr);
     ~GkXmppRosterPendingTableViewModel() override;
 
     void populateData(const QList<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> &data_list);
@@ -78,6 +79,7 @@ public slots:
     qint32 removeData(const QString &bareJid);
 
 private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_data;
 
     QPointer<QSortFilterProxyModel> proxyModel;
