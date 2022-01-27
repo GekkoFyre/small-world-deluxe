@@ -16,7 +16,7 @@
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
  **   and tears in whatever you are implementing this into!
  **
- **   Copyright (C) 2020 - 2021. GekkoFyre.
+ **   Copyright (C) 2020 - 2022. GekkoFyre.
  **
  **   Small World Deluxe is free software: you can redistribute it and/or modify
  **   it under the terms of the GNU General Public License as published by
