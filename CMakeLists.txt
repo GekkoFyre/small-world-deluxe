@@ -304,6 +304,21 @@ else()
     message(FATAL_ERROR "The open source 'OpenAL' 3D audio library could not be found!")
 endif(OPENAL_FOUND)
 
+#
+# Marble by KDE Project
+# https://marble.kde.org/
+#
+if(WIN32 OR MSYS OR MINGW)
+	find_package(Marble REQUIRED)
+	if (MARBLE_FOUND)
+		include_directories(${MARBLE_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${MARBLE_LIBRARIES})
+		message(STATUS "The 'Marble' virtual globe and world atlas libraries have been configured!")
+	else()
+		message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
+	endif(MARBLE_FOUND)
+endif()
+
 install_qxmpp() # Install QXmpp as non-static!
 
 if (LINUX)
@@ -416,14 +431,16 @@ endif(SQLite3_FOUND)
 # Marble by KDE Project
 # https://marble.kde.org/
 #
-find_package(Marble REQUIRED)
-if (MARBLE_FOUND)
-	include_directories(${MARBLE_INCLUDE_DIRS})
-	set(LIBS ${LIBS} ${MARBLE_LIBRARIES})
-	message(STATUS "The 'Marble' virtual globe and world atlas libraries have been configured!")
-else()
-	message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
-endif(MARBLE_FOUND)
+if(LINUX OR UNIX)
+	find_package(Marble REQUIRED)
+	if (MARBLE_FOUND)
+		include_directories(${MARBLE_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${MARBLE_LIBRARIES})
+		message(STATUS "The 'Marble' virtual globe and world atlas libraries have been configured!")
+	else()
+		message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
+	endif(MARBLE_FOUND)
+endif()
 
 #
 # Sonnet
