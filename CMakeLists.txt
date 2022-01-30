@@ -727,6 +727,7 @@ set_target_properties(Qt5::Core PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE
 
 qt5_wrap_ui(UI_HEADERS
     src/ui/mainwindow.ui
+	src/ui/gkintrosetupwizard.ui
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
@@ -751,6 +752,7 @@ include_directories(${PROJECT_BINARY_DIR})
 set(GALAXY_UI_CPP
     ${GALAXY_UI_CPP}
     src/ui/mainwindow.cpp
+	src/ui/gkintrosetupwizard.cpp
     src/ui/dialogsettings.cpp
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
@@ -855,6 +857,7 @@ set(GALAXY_OBJ_HEADERS
     ${GALAXY_OBJ_HEADERS}
     src/defines.hpp
     src/ui/mainwindow.hpp
+	src/ui/gkintrosetupwizard.hpp
     src/ui/dialogsettings.hpp
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp

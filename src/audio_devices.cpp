@@ -78,19 +78,10 @@ std::mutex enum_audio_dev_mtx;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-GkAudioDevices::GkAudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
-                               QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<StringFuncs> stringFuncs,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                               QObject *parent) : QObject(parent)
+GkAudioDevices::GkAudioDevices(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
-
-    gkDekodeDb = std::move(gkDb);
-    gkFileIo = std::move(filePtr);
-    gkFreqList = std::move(freqList);
-    gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
-    gkSystem = std::move(systemPtr);
 }
 
 GkAudioDevices::~GkAudioDevices()
@@ -554,7 +545,7 @@ QString GkAudioDevices::rtAudioVersionNumber()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QString GkAudioDevices::rtAudioVersionText()
+QString GkAudioDevices::rtAudioVersionText() //-V524
 {
     // TODO: Update this so that it mentions the audio backend!
     return QCoreApplication::applicationVersion();

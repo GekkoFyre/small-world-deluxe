@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>466</width>
-    <height>635</height>
+    <height>643</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -60,9 +60,9 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>0</y>
+               <y>-390</y>
                <width>394</width>
-               <height>565</height>
+               <height>951</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -486,11 +486,7 @@ QPushButton:disabled {
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QLineEdit" name="lineEdit_playback_title">
-                   <property name="readOnly">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
+                  <widget class="QLineEdit" name="lineEdit_playback_title"/>
                  </item>
                  <item row="3" column="0">
                   <widget class="QLabel" name="label_playback_audio_codec">
@@ -553,6 +549,28 @@ QPushButton:disabled {
                  </item>
                  <item row="2" column="1">
                   <widget class="QLineEdit" name="lineEdit_playback_album"/>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_playback_album_art">
+                <property name="title">
+                 <string>Album Art</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <widget class="QPushButton" name="pushButton_album_art_icon">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>300</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Click to modify!</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>

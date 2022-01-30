@@ -451,3 +451,4 @@ build/
 pvs_studio/src/
 cov-int/
 pvs-studio/
+*__std_test__*

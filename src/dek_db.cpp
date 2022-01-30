@@ -174,9 +174,7 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::s
             auto preexisting_values = readMultipleKeys(base_key_name);
 
             preexisting_values.emplace_back(value);
-            if (!preexisting_values.empty()) {
-                std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
-            }
+            std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
 
             writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
         } else {

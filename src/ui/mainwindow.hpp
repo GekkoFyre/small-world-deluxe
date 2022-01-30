@@ -43,6 +43,7 @@
 #include "src/gk_cli.hpp"
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
+#include "src/ui/gkintrosetupwizard.hpp"
 #include "src/ui/gkatlasdialog.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_fft_audio.hpp"
@@ -147,6 +148,7 @@ private slots:
     void on_action_Documentation_triggered();
     void on_actionSend_Report_triggered();
     void on_action_Battery_Calculator_triggered();
+    void on_actionConnect_triggered();
 
     void on_action_Connect_triggered();
     void on_action_Disconnect_triggered();
@@ -349,6 +351,7 @@ private:
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
+    QPointer<GkIntroSetupWizard> gkIntroSetupWizard;
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;

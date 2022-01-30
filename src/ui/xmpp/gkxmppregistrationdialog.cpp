@@ -644,7 +644,7 @@ void GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked()
  * @brief GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked()
+void GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked() //-V524
 {
     if (m_reg_remember_credentials) {
         rememberCredentials();

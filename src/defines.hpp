@@ -1211,7 +1211,7 @@ namespace Spectrograph {
 namespace GkAudioFramework {
     enum GkClearForms {
         Playback,
-        Recording,
+        RecordingAudio,
         All
     };
 
@@ -1231,7 +1231,7 @@ namespace GkAudioFramework {
         float *wfTable;                                                         // Wave Table (interleaved)
     };
 
-    enum GkAudioState { Playing, Stopped };
+    enum GkAudioState { Playing, Recording, Stopped };
 
     enum CodecSupport {
         PCM,
@@ -1288,7 +1288,7 @@ namespace GkAudioFramework {
         QString type_codec_str;                                                 // The codec of the audio file, if known. As a formatted string.
         Database::Settings::GkAudioChannels num_audio_channels;                 // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
-        qint32 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
+        qint64 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
         std::shared_ptr<GkAudioFileProperties> info;                            // The audio properties of the given multimedia file itself.
     };

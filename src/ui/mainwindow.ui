@@ -843,8 +843,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>16</width>
-                                <height>16</height>
+                                <width>100</width>
+                                <height>30</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1696,11 +1696,18 @@ QPushButton:disabled {
     <addaction name="separator"/>
     <addaction name="actionView_Roster"/>
    </widget>
+   <widget class="QMenu" name="menu_Remote">
+    <property name="title">
+     <string>&amp;Remote</string>
+    </property>
+    <addaction name="actionConnect"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
    <addaction name="menuC_ontrol"/>
    <addaction name="menuChat_XMPP"/>
    <addaction name="menu_Tools"/>
+   <addaction name="menu_Remote"/>
    <addaction name="menuSa_ve"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Help"/>
@@ -2055,6 +2062,14 @@ QPushButton:disabled {
   <action name="actionReset">
    <property name="text">
     <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionConnect">
+   <property name="text">
+    <string>Connect...</string>
+   </property>
+   <property name="toolTip">
+    <string>Connect to a remote instance of Small World Deluxe!</string>
    </property>
   </action>
  </widget>

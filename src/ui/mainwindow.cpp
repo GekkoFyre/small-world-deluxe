@@ -83,6 +83,17 @@
 #include <QFile>
 #include <QUrl>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libavformat/avformat.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
@@ -225,6 +236,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         rig_load_all_backends();
         rig_list_foreach(parseRigCapabilities, nullptr);
+
+        //
+        // Initialize FFmpeg
+        av_register_all();
 
         // Create class pointers
         gkFileIo = new GekkoFyre::FileIo(this);
@@ -462,7 +477,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
         gkFreqList->publishFreqList();
-        gkAudioDevices = new GekkoFyre::GkAudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+        gkAudioDevices = new GekkoFyre::GkAudioDevices(gkEventLogger, this);
 
         const QString output_audio_device_saved = gkDb->read_audio_device_settings(true);
         const QString input_audio_device_saved = gkDb->read_audio_device_settings(false);
@@ -1046,7 +1061,7 @@ void MainWindow::launchAudioPlayerWin()
     // Initialize the Multimedia I/O class!
     //
     QPointer<GkMultimedia> gkMultimedia = new GkMultimedia(gkAudioDevices, active_output_dev, active_input_dev, gkStringFuncs, gkEventLogger, this);
-    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkMultimedia, gkStringFuncs, gkEventLogger, this);
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkMultimedia, gkStringFuncs, gkAudioDevices, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -3140,6 +3155,17 @@ void MainWindow::on_actionSend_Report_triggered()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void MainWindow::on_action_Battery_Calculator_triggered()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_actionConnect_triggered is used for connecting to a remote instance of Small World Deluxe!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionConnect_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 

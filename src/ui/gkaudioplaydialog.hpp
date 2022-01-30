@@ -66,13 +66,9 @@ class GkAudioPlayDialog : public QDialog
 
 public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
-                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                               QWidget *parent = nullptr);
+                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkAudioDevices> audioDevs,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
-
-    //
-    // Audio System initialization and buffers
-    [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
     //
@@ -84,9 +80,13 @@ private slots:
     void on_pushButton_playback_record_clicked();
     void on_pushButton_playback_skip_back_clicked();
     void on_pushButton_playback_skip_forward_clicked();
+    void on_pushButton_album_art_icon_clicked();
 
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
+
+    void inspectAudioFile(const QFileInfo &file_path);
+    void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
 
@@ -98,12 +98,16 @@ signals:
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
     void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
+    void analyzeAudioFile(const QFileInfo &file_path);
+    void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
+
 private:
     Ui::GkAudioPlayDialog *ui;
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
+    QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -120,6 +124,7 @@ private:
     //
     // Audio encoding related objects
     GekkoFyre::GkAudioFramework::CodecSupport m_rec_codec_chosen;
+    GekkoFyre::GkAudioFramework::GkAudioState gkAudioState;
     qint32 m_encode_bitrate_chosen;
 
     //
@@ -138,6 +143,7 @@ private:
     void audioPlaybackHelper(const GekkoFyre::GkAudioFramework::CodecSupport &codec_used, const QString &file_path);
     void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void prefillAudioSourceComboBoxes();
+    void initProgressBar(const qint32 min = 0, const qint32 max = 100);
 
     void recordLockSettings(const bool &unlock = false);
     void print_exception(const std::exception &e, int level = 0);

@@ -982,10 +982,8 @@ void GkXmppClient::getArchivedMessagesFine(qint32 recursion, const QString &from
         while (!m_msgRetrievalTimestamps.empty()) { // While more than '0' in GkXmppMessageHandler::addToQueue()!
             //
             // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
-            if (!m_msgRetrievalTimestamps.empty()) {
-                m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, m_msgRetrievalTimestamps.front(), QDateTime::currentDateTimeUtc(), queryLimit);
-                std::this_thread::sleep_for(std::chrono::milliseconds(GK_XMPP_MAM_THREAD_SLEEP_MILLISECS));
-            }
+            m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, m_msgRetrievalTimestamps.front(), QDateTime::currentDateTimeUtc(), queryLimit);
+            std::this_thread::sleep_for(std::chrono::milliseconds(GK_XMPP_MAM_THREAD_SLEEP_MILLISECS));
         }
 
         return;

@@ -184,7 +184,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
             case System::UserInterface::GkSettingsDlgTab::GkGeneralUiThemes:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
                 ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_app_ui);
-                ui->tabWidget_app_ui->setCurrentWidget(ui->tabWidget_app_ui); // TODO: Is this correct?
+                ui->tabWidget_app_ui->setCurrentWidget(ui->tabWidget_app_ui); //-V678
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
@@ -208,7 +208,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkAudioApiInfo:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
-                ui->tabWidget_audio->setCurrentWidget(ui->tabWidget_audio); // TODO: Is this correct?
+                ui->tabWidget_audio->setCurrentWidget(ui->tabWidget_audio); //-V678
                 break;
             case System::UserInterface::GkSettingsDlgTab::GkRadio:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);

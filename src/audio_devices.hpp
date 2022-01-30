@@ -83,10 +83,7 @@ class GkAudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                            QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                            QObject *parent = nullptr);
+    explicit GkAudioDevices(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkAudioDevices() override;
 
     static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line);
@@ -154,12 +151,7 @@ public:
     }
 
 private:
-    QPointer<GkLevelDb> gkDekodeDb;
-    QPointer<GekkoFyre::FileIo> gkFileIo;
-    QPointer<GekkoFyre::GkFrequencies> gkFreqList;
-    QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkSystem> gkSystem;
 
 };
 };

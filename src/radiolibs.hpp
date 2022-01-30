@@ -77,7 +77,7 @@ extern "C"
 namespace GekkoFyre {
 
 class RadioLibs : public QObject {
-    Q_OBJECT
+    Q_OBJECT //-V1071
 
 public:
     explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringPtr,

@@ -44,6 +44,19 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
@@ -60,86 +73,64 @@ using namespace GkXmpp;
 using namespace Security;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
-                                     QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                     QWidget *parent) : QDialog(parent), ui(new Ui::GkAudioPlayDialog)
+                                     QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     QPointer<GekkoFyre::GkAudioDevices> audioDevs,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) : QDialog(parent),
+                                     ui(new Ui::GkAudioPlayDialog)
 {
-    ui->setupUi(this);
+    try {
+        ui->setupUi(this);
 
-    gkDb = std::move(database);
-    gkMultimedia = std::move(multimedia);
-    gkStringFuncs = std::move(stringFuncs);
-    gkEventLogger = std::move(eventLogger);
+        gkDb = std::move(database);
+        gkMultimedia = std::move(multimedia);
+        gkStringFuncs = std::move(stringFuncs);
+        gkAudioDevices = std::move(audioDevs);
+        gkEventLogger = std::move(eventLogger);
 
-    //
-    // Create SIGNALS and SLOTS
+        //
+        // Signals and Slots
+        QObject::connect(this, SIGNAL(updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &)),
+                         this, SLOT(setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &)));
+        QObject::connect(this, SIGNAL(analyzeAudioFile(const QFileInfo &)),
+                         this, SLOT(inspectAudioFile(const QFileInfo &)));
 
-    //
-    // Initialize variables
-    //
-    gkAudioFileInfo = {};
-    m_rec_codec_chosen = CodecSupport::Codec2;
-    m_encode_bitrate_chosen = 8;
+        //
+        // Initialize variables
+        gkAudioFileInfo = {};
+        m_rec_codec_chosen = CodecSupport::Codec2;
+        m_encode_bitrate_chosen = 8;
 
-    //
-    // QPushButtons, etc.
-    //
-    m_audioRecReady = false;
-    audio_out_skip_fwd = false;
-    audio_out_skip_bck = false;
+        //
+        // QPushButtons, etc.
+        m_audioRecReady = false;
+        audio_out_skip_fwd = false;
+        audio_out_skip_bck = false;
 
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Codec2);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
-    prefillAudioSourceComboBoxes();
+        //
+        // Miscellaneous
+        ui->pushButton_playback_stop->setEnabled(false);
+        initProgressBar(); // Initialize the QProgressBar with default values!
+        emit updateAudioState(GkAudioState::Stopped);
+
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Codec2);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
+        prefillAudioSourceComboBoxes();
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered upon initiation of audio libraries. Error: %1")
+        .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+    }
+
+    return;
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
     delete ui;
-}
-
-/**
- * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the Audio System
- * data buffer for audio playback and possibly recording as well.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_file_info The information we have on the audio playback file.
- * @return The number or type of audio channel(s) we should be initializing the Audio System buffer with.
- */
-GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
-{
-    /*
-    if (!gkAudioFileInfo.audio_file_path.exists()) {
-        // We currently have a file selected!
-        if (gkAudioFile->isMono()) {
-            //
-            // Mono
-            //
-            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Mono;
-            return Database::Settings::GkAudioChannels::Mono;
-        } else if (gkAudioFile->isStereo()) {
-            //
-            // Stereo
-            //
-            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Stereo;
-            return GkAudioChannels::Stereo;
-        } else {
-            if (gkAudioFile->getNumChannels() > 2) {
-                gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Surround;
-                return GkAudioChannels::Surround;
-            } else {
-                gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Unknown;
-                throw std::invalid_argument(tr("Unable to accurately determine the number of audio channels within multimedia file, \"%1\", for unknown reasons.")
-                .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
-            }
-        }
-    }
-     */
-
-    return GkAudioChannels::Unknown;
 }
 
 /**
@@ -169,6 +160,20 @@ void GkAudioPlayDialog::on_pushButton_close_clicked()
 
 void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
+    try {
+        if (ui->pushButton_playback_play->isEnabled()) {
+            ui->pushButton_playback_play->setEnabled(true);
+        }
+
+        if (ui->pushButton_playback_record->isEnabled()) {
+            ui->pushButton_playback_record->setEnabled(true);
+        }
+
+        emit updateAudioState(GkAudioState::Stopped);
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     return;
 }
 
@@ -195,41 +200,19 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 return;
             }
 
-            gkDb->write_audio_playback_dlg_settings(gkAudioFileInfo.audio_file_path.canonicalFilePath(), AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
+            gkDb->write_audio_playback_dlg_settings(filePath, AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
 
             //
             // Write out information about the file in question!
             emit cleanupForms(GkClearForms::All); // Cleanup everything!
 
-            //
-            // Determine whether the audio file is Mono, Stereo, or something else in nature, and add it to the global
-            // variables for this class...
-            m_audioChannels = determineAudioChannels();
-
-            /*
-            if (!gkAudioFileInfo.info) {
-                throw std::runtime_error(tr("An error was encountered in garnering the properties of the multimedia file, \"%1\"!")
-                                                 .arg(gkAudioFileInfo.audio_file_path.canonicalFilePath()).toStdString());
-            }
-
-            QString lengthMinutesHr = tr("0 seconds");
-            if (gkAudioFileInfo.info->lengthInSeconds > 0) {
-                lengthMinutesHr = gkStringFuncs->convSecondsToMinutes(gkAudioFileInfo.info->lengthInSeconds);
-            }
-
-            //
-            // Write out aforementioned file information to the UI now!
-            ui->lineEdit_playback_file_location->setText(gkAudioFileInfo.audio_file_path.canonicalFilePath());
-            ui->lineEdit_playback_file_size->setText(gkAudioFileInfo.file_size_hr);
-            ui->lineEdit_playback_title->setText(gkAudioFileInfo.metadata.title);
-            ui->lineEdit_playback_artist->setText(gkAudioFileInfo.metadata.artist);
-            ui->lineEdit_playback_album->setText(gkAudioFileInfo.metadata.album);
-            ui->lineEdit_playback_audio_codec->setText(gkAudioFileInfo.type_codec_str);
-            ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.info->sampleRate));
-            ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
-             */
-
             gkMultimedia->playAudioFile(filePath);
+            ui->pushButton_playback_stop->setEnabled(true);
+            ui->pushButton_playback_play->setEnabled(false);
+            ui->pushButton_playback_record->setEnabled(false);
+
+            emit updateAudioState(GkAudioState::Playing);
+            emit analyzeAudioFile(filePath);
         } else {
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
@@ -250,6 +233,18 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
+    try {
+        ui->pushButton_playback_skip_back->setEnabled(false);
+        ui->pushButton_playback_skip_forward->setEnabled(false);
+        ui->pushButton_playback_play->setEnabled(false);
+        ui->pushButton_playback_record->setEnabled(false);
+        ui->pushButton_playback_stop->setEnabled(true);
+
+        emit updateAudioState(GkAudioState::Recording);
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     return;
 }
 
@@ -276,6 +271,16 @@ void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
         audio_out_skip_fwd = false;
     }
 
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::on_pushButton_album_art_icon_clicked modifies and/or displays the album art for the given,
+ * opened audio file.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::on_pushButton_album_art_icon_clicked()
+{
     return;
 }
 
@@ -325,6 +330,106 @@ void GkAudioPlayDialog::on_horizontalSlider_playback_rec_bitrate_valueChanged(in
     if (bitrate_val % 8 == 0) {
         m_encode_bitrate_chosen = bitrate_val;
     }
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::inspectAudioFile will analyze a given audio file at a certain file path for the codec it
+ * uses among other tidbits of information, such as the album name, artist(s) involved, sample rate, bitrate, file size,
+ * and more, while outputting all this information to a designated form.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The file path of the given audio file in question, to be analyzed.
+ * @note Cornstalks <https://www.gamedev.net/forums/topic/624876-how-to-read-an-audio-file-with-ffmpeg-in-c/>.
+ */
+void GkAudioPlayDialog::inspectAudioFile(const QFileInfo &file_path)
+{
+    try {
+        if (!gkAudioFileInfo.info) {
+            throw std::runtime_error(tr("An error was encountered in garnering the properties of the multimedia file, \"%1\"!")
+                                             .arg(file_path.canonicalFilePath()).toStdString());
+        }
+
+        gkAudioFileInfo.audio_file_path = file_path;
+        gkAudioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(file_path.size());
+
+        //
+        // Setup FFmpeg variables!
+        AVFrame *frame = av_frame_alloc();
+
+        if (!frame) {
+            throw std::runtime_error(tr("Error allocating FFmpeg frame!").toStdString());
+        }
+
+        AVFormatContext *formatCtx = nullptr;
+        if (avformat_open_input(&formatCtx, file_path.canonicalFilePath().toStdString().c_str(), nullptr, nullptr) != 0) {
+            av_free(frame);
+            throw std::runtime_error(tr("Error encountered with opening file, \"%1\"!")
+            .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
+        }
+
+        if (avformat_find_stream_info(formatCtx, nullptr) < 0) {
+            av_free(frame);
+            avformat_close_input(&formatCtx);
+            throw std::runtime_error(tr("Error finding the FFmpeg stream info for file, \"%1\"!")
+            .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
+        }
+
+        //
+        // Find the audio stream via FFmpeg!
+        AVCodec *codec = nullptr;
+        qint32 streamIdx = av_find_best_stream(formatCtx, AVMEDIA_TYPE_AUDIO, -1, -1, &codec, 0);
+        if (streamIdx < 0) {
+            av_free(frame);
+            avformat_close_input(&formatCtx);
+            throw std::runtime_error(tr("Could not find any audio stream within file, \"%1\"!")
+            .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
+        }
+
+        AVStream *audioStream = formatCtx->streams[streamIdx];
+        AVCodecContext *codecCtx = audioStream->codec;
+        codecCtx->codec = codec;
+
+        if (avcodec_open2(codecCtx, codecCtx->codec, nullptr) != 0) {
+            av_free(frame);
+            avformat_close_input(&formatCtx);
+            throw std::runtime_error(tr("Couldn't open the FFmpeg context with the decoder!").toStdString());
+        }
+
+        gkAudioFileInfo.num_audio_channels = gkAudioDevices->convAudioChannelsToEnum(codecCtx->channels);
+        gkAudioFileInfo.info->sampleRate = codecCtx->sample_rate; // Measured in plain Hz!
+        gkAudioFileInfo.bit_depth = codecCtx->bit_rate;
+        gkAudioFileInfo.type_codec_str = av_get_sample_fmt_name(codecCtx->sample_fmt);
+
+        QString lengthMinutesHr = tr("0 seconds");
+        if (gkAudioFileInfo.info->lengthInSeconds > 0) {
+            lengthMinutesHr = gkStringFuncs->convSecondsToMinutes(gkAudioFileInfo.info->lengthInSeconds);
+        }
+
+        ui->lineEdit_playback_file_location->setText(gkAudioFileInfo.audio_file_path.canonicalFilePath());
+        ui->lineEdit_playback_file_size->setText(gkAudioFileInfo.file_size_hr);
+        ui->lineEdit_playback_audio_codec->setText(gkAudioFileInfo.type_codec_str);
+        ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.info->sampleRate));
+        ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
+
+        ui->lineEdit_playback_title->setText(gkAudioFileInfo.metadata.title);
+        ui->lineEdit_playback_artist->setText(gkAudioFileInfo.metadata.artist);
+        ui->lineEdit_playback_album->setText(gkAudioFileInfo.metadata.album);
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::setAudioState will update the currently available audio state so that this class knows
+ * whether we are in playback mode, recording, or have stopped all processes.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::setAudioState(const GkAudioState &audioState)
+{
+    gkAudioState = audioState;
 
     return;
 }
@@ -388,7 +493,7 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
             ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
 
             break;
-        case GkClearForms::Recording:
+        case GkClearForms::RecordingAudio:
             ui->lineEdit_playback_file_location->clear();
             ui->lineEdit_playback_file_size->clear();
             ui->lineEdit_playback_audio_codec->clear();
@@ -489,6 +594,21 @@ void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
 {
     ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(gkMultimedia->getInputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
     ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(gkMultimedia->getOutputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::initProgressBar initializes a given QProgressBar with default values.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param min The most minimum value of the QProgressBar in question.
+ * @param max The most maximum value of the QProgressBar in question.
+ */
+void GkAudioPlayDialog::initProgressBar(const qint32 min, const qint32 max)
+{
+    ui->progressBar_playback->setMinimum(0);
+    ui->progressBar_playback->setMaximum(100);
+    ui->progressBar_playback->setValue(0);
 
     return;
 }
