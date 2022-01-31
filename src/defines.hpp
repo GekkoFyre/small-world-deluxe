@@ -108,6 +108,7 @@ extern "C"
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 #include <libavutil/samplefmt.h>
+#include <libavcodec/avcodec.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -270,7 +271,7 @@ namespace GekkoFyre {
 // Audio encoding/decoding
 //
 #define GK_AUDIO_OUTPUT_DECODE_TIMEOUT (15)             // The (default) timeout value, in seconds, until we ask the user if they wish to proceed or not.
-#define GK_AUDIO_STREAM_NUM_BUFS (4)                    // The number of buffers to employ, by default.
+#define GK_AUDIO_STREAM_NUM_BUFS (1)                    // The number of buffers to employ, by default.
 #define GK_AUDIO_STREAM_BUF_SIZE (65536)                // 32 kB of data in each buffer, by default.
 
 //
@@ -1291,6 +1292,7 @@ namespace GkAudioFramework {
         qint64 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
         GkAudioFileProperties info;                                             // The audio properties of the given multimedia file itself.
+        AVCodecContext *codecCtx;
     };
 
     struct GkAudioFileDecoded {

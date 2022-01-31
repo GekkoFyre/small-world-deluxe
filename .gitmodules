@@ -58,3 +58,6 @@
 [submodule "src/contrib/marble"]
 	path = src/contrib/marble
 	url = https://invent.kde.org/education/marble.git
+[submodule "src/contrib/libsndfile"]
+	path = src/contrib/libsndfile
+	url = https://github.com/libsndfile/libsndfile.git

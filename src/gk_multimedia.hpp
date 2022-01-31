@@ -64,8 +64,9 @@ extern "C"
 {
 #endif
 
-#include <libavutil/frame.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -86,8 +87,6 @@ public:
 
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
-
-    [[nodiscard]] bool decodeAudioFile(const QFileInfo &file_path);
 
 public slots:
     void playAudioFile(const QFileInfo &file_path);
@@ -115,12 +114,9 @@ private:
     QString convFileCanonicalPath;
     FILE *convFile;
 
-    qint32 findAudioStream(const AVFormatContext *formatCtx);
-    qint32 receiveAndHandle(AVCodecContext *codecCtx, AVFrame *frame);
-    void handleFrame(const AVCodecContext *codecCtx, const AVFrame *frame);
-    void drainDecoder(AVCodecContext *codecCtx, AVFrame *frame);
+    [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
     float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
-    bool ffmpegDecodeAudioFile(const QFileInfo &file_path);
+    bool ffmpegDecodeAudioPacket(AVCodecContext *codecCtx);
 
     std::vector<char> loadRawFileData(const QString &file_path, ALsizei size, const size_t &cursor = 0);
     void updateStream(const ALuint source, const ALenum &format, const std::int32_t &sample_rate, const std::vector<char> &buf, std::size_t &cursor);

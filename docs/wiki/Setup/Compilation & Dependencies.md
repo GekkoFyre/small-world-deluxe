@@ -25,11 +25,11 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 * `mingw-w64-x86_64-libopusenc`
 * `mingw-w64-x86_64-qxmpp`
 * `mingw-w64-x86_64-enchant`
-* `mingw-w64-x86_64-nuspell`
 * `mingw-w64-x86_64-aria2`
 * `mingw-w64-x86_64-ffmpeg`
 * `mingw-w64-x86_64-taglib`
 * `mingw-w64-x86_64-qwt-qt5`
+* `mingw-w64-x86_64-sonnet-qt5`
 
 Lastly, you will need to install all the required libraries for [Qt Project](https://www.qt.io/), and they too are listed below this paragraph. It is upon the `Qt` libraries that the foundation of `Small World Deluxe` is built upon; the GUI, all the glue code, etc. so we are in debt to its contributors for their hard, selfless work. Some libraries are likely not needed from the list below, but we have included them anyhow to be extra sure that the end-user is not left out on any missing dependencies. Onto the list!
 
@@ -52,6 +52,7 @@ Lastly, you will need to install all the required libraries for [Qt Project](htt
 - `mingw-w64-x86_64-qt5-scxml`
 - `mingw-w64-x86_64-qt5-serialbus`
 - `mingw-w64-x86_64-qt5-serialport`
+- `mingw-w64-x86_64-qt5-location`
 - `mingw-w64-x86_64-qt5-speech`
 - `mingw-w64-x86_64-qt5-svg`
 - `mingw-w64-x86_64-qt5-tools`
@@ -93,7 +94,7 @@ Once you have compiled [Boost C++](#compilation-of-boost-c-under-mingw-via-msys2
 ```bash
 sh bootstrap.sh
 mkdir build && cd build
-cmake -G "Unix Makefiles" ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 mingw32-make -j$(nproc)
 mingw32-make install
 ```
@@ -131,6 +132,20 @@ mingw32-make install
 
 The process should be rather straightforward but if you have any issues and/or questions, then please do not hesitate to ask about them within our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues).
 
+##### KDE Marble (Geographical Mapping & Coordinates)
+
+To begin with the compilation of this library, you will need to firstly copy the source directory for `KDE Marble` itself from within the `Small World Deluxe` project's `contrib` folder, found at the path, `./src/contrib/marble`, if navigating from the parent. Once you have copied this to the personal home directory of your [MSYS2 installation](https://www.msys2.org/), you may begin with compilation by opening a shell (via launching `mingw64.exe` from the `MSYS2` root directory ideally) and then executing the commands, in sequence, found below.
+
+```bash
+cd marble
+mkdir build && cd build
+cmake -G "Unix Makefiles" -DQTONLY=TRUE -DQT5BUILD=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="/mingw64" ..
+mingw32-make -j$(nproc)
+mingw32-make install
+```
+
+That's all which is required for this library! If everything proceeded without error then you are done. Otherwise, feel free to ask for help [within our Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues). 
+
 ##### Compilation of `Codec2` under MinGW via MSYS2
 
 Unlike the aforementioned `Hamlib`, there are no ready-to-use binary sources for `Codec2` and you will need to perform a compilation of the most up-to-date sources instead. This is because of how frequently `Codec2` is updated on a continual basis. Thankfully, it's not too difficult to compile and with some determination, you will be going in no time! To start with, you will need to [grab the latest sources for Codec2 from the official GitHub repository](https://github.com/drowe67/codec2).
@@ -139,7 +154,7 @@ Once the sources have been extracted into the applicable home directory of your 
 
 ```bash
 mkdir build && cd build
-cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO -DCMAKE_INSTALL_PREFIX="/mingw64" ..
+cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="/mingw64" ..
 mingw32-make -j$(nproc)
 mingw32-make install
 ```
@@ -168,7 +183,23 @@ phobo@GekkoPC MINGW64 ~/codec2/build
 
 Then you need to download the [following file](https://github.com/Kitware/CMake/blob/master/Modules/GetPrerequisites.cmake) towards the `./cmake` folder within the root of `Codec2`'s source directory, before attempting to execute the `mingw32-make install` command once more.
 
-By now the operation should be complete! If you encountered any problems and/or have questions, then please open them within our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues), thank you. Otherwise, you may now progress towards the compilation of `Small World Deluxe` itself!
+By now the operation should be complete! If you encountered any problems and/or have questions, then please open them within our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues), thank you.
+
+##### Compilation of libsndfile
+
+The last dependency you will need to compile for a MSYS2-based system is [libsndfile](https://github.com/libsndfile/libsndfile) and then you are ready to proceed with the `Small World Deluxe` project itself!
+
+Start by copying the provided and already tested `libsndfile` source from within the `Small World Deluxe` project's `contrib` folder, found at the path, `./src/contrib/libsndfile`, if navigating from the parent. Once you have copied this to the personal home directory of your [MSYS2 installation](https://www.msys2.org/), you may begin with compilation by opening a shell (via launching `mingw64.exe` from the `MSYS2` root directory ideally) and then executing the commands, in sequence, found below.
+
+```bash
+pacman -R mingw-w64-x86_64-libsndfile mingw-w64-x86_64-python-soundfile
+mkdir build && cd build
+cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="/mingw64" ..
+mingw32-make -j$(nproc)
+mingw32-make install
+```
+
+If you are experiencing trouble or just have a general question, then please direct those towards our [official Issue Tracker](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues) where someone knowledgeable will reply as soon as possible. Otherwise, you may now progress with the compilation of `Small World Deluxe` itself!
 
 ------
 
@@ -234,7 +265,7 @@ Once the aforementioned three libraries are compiled by hand, you may begin with
 ```bash
 sh bootstrap.sh
 mkdir build && cd build
-cmake -G "Unix Makefiles" ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 make -j$(nproc)
 sudo make install
 ```
@@ -277,19 +308,6 @@ sudo make install
 
 And that's it! Please feel free to [open an issue with us](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues) if you have encountered any problems and require further assistance.
 
-##### Compilation of `Nuspell` for Linux-based systems
-
-If you are to have spelling and grammar checking with `Small World Deluxe` for the outgoing chat functions, then compilation of this library is a must. Otherwise, you may feel free to skip it. But regardless of your choice concerning this library, compilation is straightforward and easy so you may as well do it anyway. You can start by navigating to the source directory with `cd src/contrib/nuspell`, whereupon you will execute the following commands to begin compilation and then, installation:
-
-```bash
-mkdir build && cd build
-cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON ..
-make -j$(nproc)
-sudo make install
-```
-
-Nothing more is required for this particular library! You may move onto the next one, [which is `QXmpp`](#compilation-of-qxmpp-for-linux-based-systems) if you are following these instructions sequentially.
-
 ##### Compilation of `QXmpp` for Linux-based systems
 
 This too is a required dependency and while it is typically provided with most package managers under Linux, unlike `libopusenc`, the versions that are easily available are too old for what `Small World Deluxe` requires and will work with. To start with, you just need to `cd src/contrib/qxmpp` from the root of the `Small World Deluxe` project itself, whereupon you will execute the following commands to begin compilation and then, installation:
@@ -297,7 +315,7 @@ This too is a required dependency and while it is typically provided with most p
 ```bash
 sudo apt-get remove --purge libqxmpp-dev libqxmpp1 -y
 mkdir build && cd build
-cmake -G "Unix Makefiles" ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 make -j$(nproc)
 sudo make install
 ```

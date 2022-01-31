@@ -51,6 +51,7 @@ extern "C"
 {
 #endif
 
+#include <sndfile.h>
 #include <libswresample/swresample.h>
 #include <libavutil/samplefmt.h>
 #include <libavcodec/avcodec.h>
@@ -101,116 +102,85 @@ GkMultimedia::~GkMultimedia()
 }
 
 /**
- * @brief GkMultimedia::findAudioStream
+ * @brief GkMultimedia::loadAudioFile loads an audio file along with its properties into memory and creates an OpenAL
+ * audio buffer along the way, ready for audio playback.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param formatCtx
- * @return
- * @note targodan <https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg>
+ * @param file_path The canonical path to the given audio file to be analyzed and then loaded into memory.
+ * @return The thusly created OpenAL audio buffer.
+ * @note OpenAL Source Play Example <https://github.com/kcat/openal-soft/blob/master/examples/alplay.c>.
  */
-qint32 GkMultimedia::findAudioStream(const AVFormatContext *formatCtx)
+ALuint GkMultimedia::loadAudioFile(const QFileInfo &file_path)
 {
-    qint32 audioStreamIndex = -1;
-    for (size_t i = 0; i < formatCtx->nb_streams; ++i) {
+    try {
+        ALenum format;
+        ALuint buffer;
+        SNDFILE *sndfile;
+        SF_INFO sfinfo;
+        short *membuf;
+        sf_count_t num_frames;
+        ALsizei num_bytes;
+
         //
-        // Use the first audio stream we can find.
-        // NOTE: There may be more than one, depending on the file.
-        if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audioStreamIndex = i;
-            break;
+        // Initialize libsndfile!
+        sndfile = sf_open(file_path.canonicalFilePath().toStdString().c_str(), SFM_READ, &sfinfo);
+        if (!sndfile) {
+            throw std::runtime_error(tr("Unable to open audio file and thusly initialize libsndfile, \"%1\"!")
+                                             .arg(file_path.canonicalFilePath()).toStdString());
         }
-    }
 
-    return audioStreamIndex;
-}
+        if (sfinfo.frames < 1 || sfinfo.frames > (sf_count_t)(INT_MAX / sizeof(short)) / sfinfo.channels) {
+            throw std::runtime_error(tr("Bad sample count in, \"%1\" (%2 frames)!")
+                                             .arg(file_path.canonicalFilePath(), sfinfo.frames).toStdString());
+        }
 
-/**
- * @brief GkMultimedia::receiveAndHandle is designed to receive as many frames as possible and handle them correctly.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codecCtx
- * @param frame
- * @return
- * @note targodan <https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg>
- */
-qint32 GkMultimedia::receiveAndHandle(AVCodecContext *codecCtx, AVFrame *frame)
-{
-    qint32 err = 0;
-
-    //
-    // Read the packets from the decoder.
-    // NOTE: Each packet may generate more than one frame, depending on the codec!
-    while ((err = avcodec_receive_frame(codecCtx, frame)) == 0) {
-        handleFrame(codecCtx, frame);
-        av_frame_unref(frame);
-    }
-
-    return err;
-}
-
-/**
- * @brief GkMultimedia::handleFrame
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codecCtx
- * @param frame
- * @note targodan <https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg>
- */
-void GkMultimedia::handleFrame(const AVCodecContext *codecCtx, const AVFrame *frame)
-{
-    if (av_sample_fmt_is_planar(codecCtx->sample_fmt) == 1) {
         //
-        // This means that the data of each channel is in its own buffer.
-        // => frame->extended_data[i] contains data for the i-th channel.
-        for (qint32 s = 0; s < frame->nb_samples; ++s) {
-            for (qint32 c = 0; c < codecCtx->channels; ++c) {
-                float sample = getSample(codecCtx, frame->extended_data[c], s);
-                fwrite(&sample, sizeof(float), 1, convFile);
+        // Obtain the sound format, and then determine the OpenAL format!
+        format = AL_NONE;
+        if (sfinfo.channels == 1) {
+            format = AL_FORMAT_MONO16;
+        } else if (sfinfo.channels == 2) {
+            format = AL_FORMAT_STEREO16;
+        } else if (sfinfo.channels == 3) {
+            if (sf_command(sndfile, SFC_WAVEX_GET_AMBISONIC, nullptr, 0) == SF_AMBISONIC_B_FORMAT) {
+                format = AL_FORMAT_BFORMAT2D_16;
             }
-        }
-    } else {
-        // This means that the data of each channel is in the same buffer.
-        // => frame->extended_data[0] contains data of all channels.
-        if (RAW_OUT_ON_PLANAR) {
-            fwrite(frame->extended_data[0], 1, frame->linesize[0], convFile);
+        } else if (sfinfo.channels == 4) {
+            if (sf_command(sndfile, SFC_WAVEX_GET_AMBISONIC, nullptr, 0) == SF_AMBISONIC_B_FORMAT) {
+                format = AL_FORMAT_BFORMAT3D_16;
+            }
         } else {
-            for (int s = 0; s < frame->nb_samples; ++s) {
-                for (int c = 0; c < codecCtx->channels; ++c) {
-                    float sample = getSample(codecCtx, frame->extended_data[0], s * codecCtx->channels + c);
-                    fwrite(&sample, sizeof(float), 1, convFile);
-                }
-            }
+            sf_close(sndfile);
+            throw std::invalid_argument(tr("Unsupported number of audio channels given: \"%1 channels\"!")
+                                                .arg(QString::number(sfinfo.channels)).toStdString());
         }
-    }
 
-    return;
-}
-
-/**
- * @brief GkMultimedia::drainDecoder
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codecCtx
- * @param frame
- */
-void GkMultimedia::drainDecoder(AVCodecContext *codecCtx, AVFrame *frame)
-{
-    qint32 err = 0;
-
-    //
-    // Some codecs may buffer frames. Sending NULL activates drain-mode!
-    if ((err = avcodec_send_packet(codecCtx, NULL)) == 0) {
         //
-        // Read the remaining packets from the decoder!
-        err = receiveAndHandle(codecCtx, frame);
-        if (err != AVERROR(EAGAIN) && err != AVERROR_EOF) {
-            //
-            // Neither EAGAIN nor EOF => Something went wrong!
-            gkEventLogger->publishEvent(tr("Receive error #%1 encountered whilst decoding an audio file.")
-            .arg(QString::number(err)), GkSeverity::Fatal, "", true, true, false, false, false);
+        // Decode the entire audio file to a given buffer!
+        membuf = static_cast<short *>(malloc((size_t) (sfinfo.frames * sfinfo.channels) * sizeof(short)));
+        num_frames = sf_readf_short(sndfile, membuf, sfinfo.frames);
+        if (num_frames < 1) {
+            free(membuf);
+            sf_close(sndfile);
+            throw std::runtime_error(tr("Failed to read samples in %1 (%2 frames)!")
+                                             .arg(file_path.canonicalFilePath(), QString::number(num_frames)).toStdString());
         }
-    } else {
-        gkEventLogger->publishEvent(tr("Send error #%1 encountered whilst decoding an audio file.")
-        .arg(QString::number(err)), GkSeverity::Fatal, "", true, true, false, false, false);
+
+        num_bytes = (ALsizei)(num_frames * sfinfo.channels) * (ALsizei)sizeof(short);
+
+        //
+        // Buffer the audio data into a new buffer object, then free the data and close the given file!
+        alCall(alGenBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffer);
+        alBufferData(buffer, format, membuf, num_bytes, sfinfo.samplerate);
+
+        free(membuf);
+        sf_close(sndfile);
+
+        return buffer;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
-    return;
+    return ALuint();
 }
 
 /**
@@ -255,191 +225,28 @@ float GkMultimedia::getSample(const AVCodecContext *codecCtx, uint8_t *buffer, i
 }
 
 /**
- * @brief GkMultimedia::ffmpegDecodeAudioFile attempts to universally decode any given audio file into PCM data, provided it
+ * @brief GkMultimedia::ffmpegDecodeAudioPacket attempts to universally decode any given audio file into PCM data, provided it
  * is a supported codec as provided by FFmpeg.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical path to the given audio file to be decoded.
+ * @param codecCtx Contexual information for the audio file's codec and other errata.
  * @return Whether the decoding process was a success or not.
- * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>,
- * targodan <https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg>,
- * FFmpeg Documentation <https://libav.org/documentation/doxygen/master/group__lavu__sampfmts.html>
+ * @note TheSHEEEP <https://stackoverflow.com/a/21404721>.
  */
-bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
+bool GkMultimedia::ffmpegDecodeAudioPacket(AVCodecContext *codecCtx)
 {
-    //
-    // Obtain the formatCtx from the given audio file!
-    AVFormatContext *formatCtx = avformat_alloc_context();
-    if (avformat_open_input(&formatCtx, file_path.canonicalFilePath().toStdString().c_str(), nullptr, 0) != 0) {
-        gkEventLogger->publishEvent(tr("Unable to open file, \"%1\"!")
-        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        return false;
-    }
+    SwrContext *swrCtx = swr_alloc_set_opts(nullptr, codecCtx->channel_layout, AV_SAMPLE_FMT_FLT,
+                                            codecCtx->sample_rate, codecCtx->channel_layout, codecCtx->sample_fmt,
+                                            codecCtx->sample_rate, 0, nullptr);
+    qint32 result = swr_init(swrCtx);
 
     //
-    // In case the file had no header, read some frames and find out which formatCtx and codecs are used.
-    // This does not consume any data. Any read packets are buffered for later use.
-    if (avformat_find_stream_info(formatCtx, nullptr) < 0) {
-        gkEventLogger->publishEvent(tr("Could not retrieve stream info from file, \"%1\"!")
-        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        return false;
-    }
+    // Create the destination buffer!
+    uint8_t **destBuf = nullptr;
+    qint32 destBufLineSize;
+    av_samples_alloc_array_and_samples(&destBuf, &destBufLineSize, codecCtx->channels,
+                                       2048, AV_SAMPLE_FMT_FLT, 0);
 
-    //
-    // Try to find an audio stream!
-    qint32 audioStreamIndex = findAudioStream(formatCtx);
-    if (audioStreamIndex == -1) {
-        //
-        // No audio stream was found!
-        gkEventLogger->publishEvent(tr("No available audio streams within file, \"%1\"!")
-        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        avformat_close_input(&formatCtx);
-        return false;
-    }
-
-    //
-    // Find the index of the first audio stream!
-    qint32 stream_index =- 1;
-    for (qint32 i = 0; i < formatCtx->nb_streams; ++i) {
-        if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            stream_index = i;
-            break;
-        }
-    }
-
-    if (stream_index == -1) {
-        gkEventLogger->publishEvent(tr("Could not retrieve audio stream from file, \"%1\"!")
-        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        return false;
-    }
-
-    AVStream *stream = formatCtx->streams[stream_index];
-
-    //
-    // Find the correct decoder for the codecCtx!
-    AVCodec *codec = avcodec_find_decoder(formatCtx->streams[audioStreamIndex]->codecpar->codec_id);
-    if (codec == nullptr) {
-        //
-        // A decoder could not be found!
-        gkEventLogger->publishEvent(tr("A suitable decoder could not be found for file, \"%1\"!")
-        .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        avformat_close_input(&formatCtx);
-        return false;
-    }
-
-    //
-    // Initialize codec context for the decoder!
-    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
-    if (codecCtx == nullptr) {
-        avformat_close_input(&formatCtx);
-        gkEventLogger->publishEvent(tr("Failed to allocate a decoding context for stream #%1 with file, \"%2\"!")
-        .arg(QString::number(stream_index), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        return false;
-    }
-
-    //
-    // Fill the codecCtx with the parameters of the codec used in the read file.
-    qint32 err = 0;
-    if ((err = avcodec_parameters_to_context(codecCtx, formatCtx->streams[audioStreamIndex]->codecpar)) != 0) {
-        avcodec_close(codecCtx);
-        avcodec_free_context(&codecCtx);
-        avformat_close_input(&formatCtx);
-        gkEventLogger->publishEvent(tr("Error #%1 with setting context parameters for file, \"%2\"!")
-        .arg(QString::number(err), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-        return false;
-    }
-
-    //
-    // Explicitly request non-planar data!
-    codecCtx->request_sample_fmt = av_get_alt_sample_fmt(codecCtx->sample_fmt, 0);
-
-    //
-    // Initialize the decoder.
-    if ((err = avcodec_open2(codecCtx, codec, nullptr)) != 0) {
-        avcodec_close(codecCtx);
-        avcodec_free_context(&codecCtx);
-        avformat_close_input(&formatCtx);
-        return false;
-    }
-
-    AVFrame *frame = nullptr;
-    if ((frame = av_frame_alloc()) == nullptr) {
-        avcodec_close(codecCtx);
-        avcodec_free_context(&codecCtx);
-        avformat_close_input(&formatCtx);
-        return false;
-    }
-
-    // Prepare the packet.
-    AVPacket *packet;
-    packet = av_packet_alloc();
-
-    while ((err = av_read_frame(formatCtx, packet)) != AVERROR_EOF) {
-        if(err != 0) {
-            gkEventLogger->publishEvent(tr("Read error #%1 whilst processing file, \"%2\"!")
-            .arg(QString::number(err), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-            break;
-        }
-
-        //
-        // Does the packet belong to the correct stream?
-        if (packet->stream_index != audioStreamIndex) {
-            //
-            // Free the buffers used by the frame and reset all fields!
-            av_packet_unref(packet);
-            continue;
-        }
-
-        //
-        // We have a valid packet => send it to the decoder!
-        if ((err = avcodec_send_packet(codecCtx, packet)) == 0) {
-            //
-            // The packet was sent successfully. We don't need it anymore.
-            // => Free the buffers used by the frame and reset all fields.
-            av_packet_unref(packet);
-        } else {
-            //
-            // Something went wrong...
-            // EAGAIN is technically no error here but if it occurs we would need to buffer
-            // the packet and send it again after receiving more frames. Thusly we handle it as an error here!
-            gkEventLogger->publishEvent(tr("Read error #%1 whilst processing file, \"%2\"!")
-            .arg(QString::number(err), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-            break;
-        }
-
-        //
-        // Receive and handle frames.
-        // EAGAIN means we need to send before receiving again. So that's not an error!
-        if ((err = receiveAndHandle(codecCtx, frame)) != AVERROR(EAGAIN)) {
-            //
-            // Not EAGAIN => Something went wrong.
-            gkEventLogger->publishEvent(tr("Read error #%1 whilst processing file, \"%2\"!")
-            .arg(QString::number(err), file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-            break; // Don't return, so we can clean up nicely.
-        }
-    }
-
-    //
-    // Drain the decoder!
-    drainDecoder(codecCtx, frame);
-
-    // Free all data used by the frame!
-    av_frame_free(&frame);
-
-    // Close the context and free all data associated to it, but not the context itself!
-    avcodec_close(codecCtx);
-
-    // Free the context itself!
-    avcodec_free_context(&codecCtx);
-
-    // We are done here. Close the input!
-    avformat_close_input(&formatCtx);
-
-    // Close the outfile!
-    fclose(convFile);
-
-    //
-    // Success at last!
-    return true;
+    return false;
 }
 
 /**
@@ -548,61 +355,11 @@ GkDevice GkMultimedia::getInputAudioDevice()
 }
 
 /**
- * @brief GkMultimedia::decodeAudioFile attempts to decode a given audio file according to a number of detected parameters,
- * some of which are provided by FFmpeg and others which too are provided by TagLib. It is intended as a universal approach
- * to decoding audio files of all types, provided they are both supported by FFmpeg and TagLib, but primarily the former
- * which does the heavy lifting in terms of the decoding work itself. TagLib only detects the metadata and doesn't do
- * any decoding work on its own.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical path to the given audio file to be decoded.
- * @return Whether the operation was a success or not.
- * @note Mathieu Rodic <https://rodic.fr/blog/libavcodec-tutorial-decode-audio-file/>
- */
-bool GkMultimedia::decodeAudioFile(const QFileInfo &file_path)
-{
-    if (file_path.isReadable() && file_path.exists()) {
-        if (file_path.isFile()) {
-            GkAudioFramework::GkAudioFileDecoded decoded;
-            const std::string concat_str = file_path.completeBaseName().toStdString() + General::GkAudio::audioFileExtensionRaw;
-            convFileCanonicalPath = QString::fromStdString(concat_str);
-            convFile = fopen(concat_str.c_str(), "w+");
-
-            if (convFile == nullptr) {
-                gkEventLogger->publishEvent(tr("Unable to open output file, \"%1\"!")
-                .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", false, true, false, true, false);
-            }
-
-            //
-            // https://baptiste-wicht.com/posts/2017/09/cpp11-concurrency-tutorial-futures.html
-            std::chrono::milliseconds span (GK_AUDIO_OUTPUT_DECODE_TIMEOUT * 1000);
-            std::future<bool> f = std::async(std::launch::deferred, &GkMultimedia::ffmpegDecodeAudioFile, this, file_path);
-            while (f.wait_for(span) == std::future_status::timeout) {
-                //
-                // TODO: Program a QProgressBar here!
-                continue;
-            }
-
-            const bool ret = f.get();
-            if (!ret) {
-                gkEventLogger->publishEvent(tr("Error encountered while attempting to decode file, \"%1\"!")
-                .arg(file_path.canonicalFilePath()), GkSeverity::Fatal, "", true, true, false, false, false);
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
  * @brief GkMultimedia::playAudioFile will attempt to play an audio file of any, given, supported audio format provided
  * it's either supported by FFmpeg or it's simply a WAV file.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param file_path The canonical path to the given audio file to be played.
- * @note IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>,
- * IndieGameDev.net <https://indiegamedev.net/2020/02/25/the-complete-guide-to-openal-with-c-part-2-streaming-audio/>
+ * @note OpenAL Source Play Example <https://github.com/kcat/openal-soft/blob/master/examples/alplay.c>.
  */
 void GkMultimedia::playAudioFile(const QFileInfo &file_path)
 {
@@ -611,66 +368,55 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
             throw std::runtime_error(tr("The OpenAL extension, \"AL_EXT_FLOAT32\", is not present! Please install it before continuing.").toStdString());
         }
 
-        if (file_path.exists() && file_path.isReadable()) {
-            if (file_path.isFile()) {
-                if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx && !gkSysOutputAudioDev.isStreaming) {
-                    GkAudioFramework::GkAudioFileDecoded decoded;
-                    std::future<bool> f1 = std::async(std::launch::deferred, &GkMultimedia::decodeAudioFile, this, file_path);
-                    if (f1.get()) {
-                        std::future<std::vector<char>> audio_samples_fut1 = std::async(std::launch::deferred, &GkMultimedia::loadRawFileData, this,
-                        convFileCanonicalPath, GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS, 0);
-                        decoded.samples = audio_samples_fut1.get();
-                        if (!decoded.samples.empty()) {
-                            //
-                            // We have data we can possibly work with!
-                            ALuint buffers[GK_AUDIO_STREAM_NUM_BUFS];
-                            alCall(alGenBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
+        if (file_path.exists() && file_path.isFile()) {
+            if (file_path.isReadable()) {
+                if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx &&
+                    !gkSysOutputAudioDev.isStreaming) {
+                    ALuint source;
+                    ALfloat offset;
+                    ALenum state;
 
-                            const size_t buf_size = decoded.samples.size() - decoded.samples.size() % 4;
-                            for (size_t i = 0; i < GK_AUDIO_STREAM_NUM_BUFS; ++i) {
-                                alCall(alBufferData, buffers[i], AL_FORMAT_STEREO_FLOAT32, &decoded.samples[i * GK_AUDIO_STREAM_BUF_SIZE], GK_AUDIO_STREAM_BUF_SIZE, 44100);
-                            }
-
-                            ALuint source;
-                            alCall(alGenSources, 1, &source);
-                            alCall(alSourcef, source, AL_PITCH, 1);
-                            alCall(alSourcef, source, AL_GAIN, 1.0f);
-                            alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
-                            alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
-                            alCall(alSourcei, source, AL_LOOPING, AL_FALSE);
-                            alCall(alSourceQueueBuffers, source, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
-
-                            //
-                            // NOTE: If the audio is played faster, then the sampling rate might be incorrect. Check if
-                            // the input sample rate for the re-sampler is the same as in the decoder. AND the output
-                            // sample rate is the same you use in the encoder.
-                            //
-                            alCall(alSourcePlay, source);
-
-                            ALint state = AL_PLAYING;
-                            size_t cursor = GK_AUDIO_STREAM_BUF_SIZE * GK_AUDIO_STREAM_NUM_BUFS;
-                            while (state == AL_PLAYING) {
-                                updateStream(source, AL_FORMAT_STEREO_FLOAT32, 44100, decoded.samples, cursor);
-                                alCall(alGetSourcei, source, AL_SOURCE_STATE, &state);
-                            }
-
-                            alCall(alDeleteSources, 1, &source);
-                            alCall(alDeleteBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffers[0]);
-
-                            if (inputFile.is_open()) {
-                                inputFile.close();
-                            }
-
-                            return;
-                        }
+                    auto buffer = loadAudioFile(file_path);
+                    if (!buffer) {
+                        throw std::invalid_argument(tr("Error encountered with creating OpenAL buffer!").toStdString());
                     }
+
+                    //
+                    // Create the source to play the sound with!
+                    source = 0;
+                    alCall(alGenSources, 1, &source);
+                    alCall(alSourcef, source, AL_PITCH, 1);
+                    alCall(alSourcef, source, AL_GAIN, 1.0f);
+                    alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
+                    alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
+                    alCall(alSourcei, source, AL_BUFFER, (ALint)buffer);
+
+                    //
+                    // NOTE: If the audio is played faster, then the sampling rate might be incorrect. Check if
+                    // the input sample rate for the re-sampler is the same as in the decoder. AND the output
+                    // sample rate is the same you use in the encoder.
+                    //
+                    alCall(alSourcePlay, source);
+                    do {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        alGetSourcei(source, AL_SOURCE_STATE, &state);
+
+                        alGetSourcef(source, AL_SEC_OFFSET, &offset);
+                        printf("\rOffset: %f  ", offset);
+                        fflush(stdout);
+                    } while (alGetError() == AL_NO_ERROR && state == AL_PLAYING);
+
+                    //
+                    // Cleanup now as we're done!
+                    alCall(alDeleteSources, GK_AUDIO_STREAM_NUM_BUFS, &source);
+                    alCall(alDeleteBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffer);
+
+                    return;
                 } else {
                     throw std::invalid_argument(tr("An issue was detected with your choice of output audio device. Please check your configuration and try again.").toStdString());
                 }
             }
         }
-
-        // throw std::runtime_error(tr("An error was encountered while attempting to play file, \"%1\"!").arg(file_path.canonicalFilePath()).toStdString());
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));;
     }

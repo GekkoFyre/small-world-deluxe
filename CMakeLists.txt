@@ -305,6 +305,18 @@ else()
 endif(OPENAL_FOUND)
 
 #
+# libsndfile
+# https://github.com/libsndfile/libsndfile
+#
+find_package(SndFile REQUIRED)
+if (SNDFILE_FOUND)
+    include_directories(${SNDFILE_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries could not be found!")
+endif(SNDFILE_FOUND)
+
+#
 # Marble by KDE Project
 # https://marble.kde.org/
 #

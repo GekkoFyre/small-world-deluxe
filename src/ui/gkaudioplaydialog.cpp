@@ -208,13 +208,18 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             // Write out information about the file in question!
             emit cleanupForms(GkClearForms::All); // Cleanup everything!
 
-            // gkMultimedia->playAudioFile(filePath);
             ui->pushButton_playback_stop->setEnabled(true);
             ui->pushButton_playback_play->setEnabled(false);
             ui->pushButton_playback_record->setEnabled(false);
 
             emit updateAudioState(GkAudioState::Playing);
             emit analyzeAudioFile(filePath, true);
+            if (!gkAudioFileInfo.codecCtx) {
+                throw std::invalid_argument(tr("Audio codec context deemed invalid; unable to play audio file, \"%1\"!")
+                .arg(QFileInfo(filePath).fileName()).toStdString());
+            }
+
+            gkMultimedia->playAudioFile(filePath);
         } else {
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
@@ -411,6 +416,7 @@ void GkAudioPlayDialog::inspectAudioFile(const QFileInfo &file_path, const bool 
                 }
 
                 gkAudioFileInfo.num_audio_channels = gkAudioDevices->convAudioChannelsToEnum(codecCtx->channels);
+                gkAudioFileInfo.codecCtx = codecCtx;
                 gkAudioFileInfo.info.sampleRate = codecCtx->sample_rate; // Measured in plain Hz!
                 gkAudioFileInfo.bit_depth = codecCtx->bit_rate;
                 gkAudioFileInfo.type_codec_str = avcodec_get_name(codecCtx->codec_id);
