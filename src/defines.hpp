@@ -1272,7 +1272,7 @@ namespace GkAudioFramework {
         qint32 sampleRate;
         qint32 channels;
         qint32 lengthInMilliseconds;
-        qint32 lengthInSeconds;
+        int64_t lengthInSeconds;
         qint32 sample_size;
         qint32 stream_idx;
         QString sample_format_str;
@@ -1290,7 +1290,7 @@ namespace GkAudioFramework {
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
         qint64 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
-        std::shared_ptr<GkAudioFileProperties> info;                            // The audio properties of the given multimedia file itself.
+        GkAudioFileProperties info;                                             // The audio properties of the given multimedia file itself.
     };
 
     struct GkAudioFileDecoded {

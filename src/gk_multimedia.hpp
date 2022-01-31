@@ -84,10 +84,6 @@ public:
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
-    GkAudioFramework::GkAudioFileInfo analyzeAudioFileMetadata(const QFileInfo &file_path, const AVCodec *codec,
-                                                               const AVCodecContext *codecCtx, qint32 audioStreamIndex,
-                                                               const bool &printToConsole = false) const;
-
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 

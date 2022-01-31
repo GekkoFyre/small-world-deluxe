@@ -40,8 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/gk_multimedia.hpp"
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
 #include <cstdio>
 #include <future>
 #include <cstring>
@@ -363,10 +361,6 @@ bool GkMultimedia::ffmpegDecodeAudioFile(const QFileInfo &file_path)
         return false;
     }
 
-    //
-    // Print some intersting file information!
-    analyzeAudioFileMetadata(file_path, codec, codecCtx, audioStreamIndex, true);
-
     AVFrame *frame = nullptr;
     if ((frame = av_frame_alloc()) == nullptr) {
         avcodec_close(codecCtx);
@@ -529,89 +523,6 @@ void GkMultimedia::updateStream(const ALuint source, const ALenum &format, const
     }
 
     return;
-}
-
-/**
- * @brief GkMultimedia::analyzeAudioFileMetadata will analyze a given multimedia audio file and output the metadata
- * contained within, provided there is any.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical location of the multimedia audio file to be analyzed in question.
- * @return The meta data of the analyzed multimedia audio file.
- * @note Both the TagLib and FFmpeg libraries are used within this function together for synergistic effects.
- * targodan <https://steemit.com/programming/@targodan/decoding-audio-files-with-ffmpeg>
- */
-GkAudioFramework::GkAudioFileInfo GkMultimedia::analyzeAudioFileMetadata(const QFileInfo &file_path, const AVCodec *codec,
-                                                                         const AVCodecContext *codecCtx, qint32 audioStreamIndex,
-                                                                         const bool &printToConsole) const
-{
-    try {
-        if (file_path.exists() && file_path.isReadable()) { // Check that the QFileInfo parameter given is valid and the file in question exists!
-            if (file_path.isFile()) { // Are we dealing with a file or directory?
-                qint32 ret = 0;
-                GkAudioFramework::GkAudioFileInfo audioFileInfo;
-                TagLib::FileRef fileRef(file_path.canonicalFilePath().toStdString().c_str());
-                if (!fileRef.isNull() && fileRef.file() && codec->sample_fmts != nullptr) {
-                    audioFileInfo.file_size = file_path.size();
-                    audioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(audioFileInfo.file_size);
-
-                    std::shared_ptr<GkAudioFramework::GkAudioFileProperties> info = std::make_shared<GkAudioFramework::GkAudioFileProperties>();
-                    info->bitrate = fileRef.audioProperties()->bitrate();
-                    info->sampleRate = codecCtx->sample_rate;
-                    info->channels = codecCtx->channels;
-                    info->stream_idx =audioStreamIndex;
-                    info->sample_format = codecCtx->sample_fmt;
-                    info->sample_format_str = av_get_sample_fmt_name(info->sample_format);
-                    info->sample_size = av_get_bytes_per_sample(info->sample_format);
-                    info->float_output = av_sample_fmt_is_planar(codecCtx->sample_fmt) != 0 ? "yes" : "no";
-                    info->lengthInMilliseconds = fileRef.audioProperties()->lengthInMilliseconds();
-                    info->lengthInSeconds = fileRef.audioProperties()->lengthInSeconds();
-
-                    GkAudioFramework::GkAudioFileMetadata meta;
-                    TagLib::Tag *tag = fileRef.tag();
-                    meta.title = QString::fromWCharArray(tag->title().toCWString());
-                    meta.artist = QString::fromWCharArray(tag->artist().toCWString());
-                    meta.album = QString::fromWCharArray(tag->album().toCWString());
-                    meta.year_raw = tag->year();
-                    meta.comment = QString::fromWCharArray(tag->comment().toCWString());
-                    meta.track_no = tag->track();
-                    meta.genre = QString::fromWCharArray(tag->genre().toCWString());
-
-                    audioFileInfo.type_codec_str = codec->long_name;
-
-                    audioFileInfo.metadata = meta;
-                    audioFileInfo.info = info;
-
-                    if (printToConsole) {
-                        //
-                        // Print a separator...
-                        std::cout << "--------------------------------------------------" << std::endl;
-
-                        //
-                        // Print out some useful information!
-                        std::cout << tr("Stream Index: #").toStdString() << info->stream_idx << std::endl;
-                        std::cout << tr("Bitrate: ").toStdString() << info->bitrate << std::endl;
-                        std::cout << tr("Sample rate: ").toStdString() << info->sampleRate << std::endl;
-                        std::cout << tr("Channels: ").toStdString() << info->channels << std::endl;
-                        std::cout << tr("Sample format: ").toStdString() << info->sample_format_str.toStdString() << std::endl;
-                        std::cout << tr("Sample size: ").toStdString() << info->sample_size << std::endl;
-                        std::cout << tr("Float output: ").toStdString() << info->float_output << std::endl;
-
-                        //
-                        // Print a separator...
-                        std::cout << "--------------------------------------------------" << std::endl;
-                    }
-
-                    return audioFileInfo;
-                } else {
-                    throw std::runtime_error(tr("Unable to initialize FFmpeg object. Out of memory?").toStdString());
-                }
-            }
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));;
-    }
-
-    return GkAudioFramework::GkAudioFileInfo();
 }
 
 /**

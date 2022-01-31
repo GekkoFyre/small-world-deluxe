@@ -85,7 +85,7 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
-    void inspectAudioFile(const QFileInfo &file_path);
+    void inspectAudioFile(const QFileInfo &file_path, const bool &printToConsole = false);
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
@@ -98,7 +98,7 @@ signals:
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
     void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
-    void analyzeAudioFile(const QFileInfo &file_path);
+    void analyzeAudioFile(const QFileInfo &file_path, const bool &printToConsole = false);
     void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
 private:
