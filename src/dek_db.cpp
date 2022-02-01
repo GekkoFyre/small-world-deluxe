@@ -505,23 +505,36 @@ void GkLevelDb::write_ui_settings(const QString &value, const Settings::GkUiCfg 
 }
 
 /**
- * @brief DekodeDb::write_audio_device_settings
+ * @brief DekodeDb::write_audio_device_settings writes out the primary settings for a configured, OpenAL audio device to
+ * the specified Google LevelDB database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
- * @param is_output_device
+ * @param value The setting in question that is to be saved towards the Google LevelDB database.
+ * @param key A value corresponding to where a saved setting is located within the Google LevelDB database.
  */
-void GkLevelDb::write_audio_device_settings(const QString &value, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const QString &value, const GkAudioDevice &key)
 {
     try {
         leveldb::WriteBatch batch;
         leveldb::Status status;
 
-        if (is_output_device) {
-            // Output audio device
-            batch.Put("AudioOutputDeviceName", value.toStdString());
-        } else {
-            // Input audio device
-            batch.Put("AudioInputDeviceName", value.toStdString());
+        switch (key) {
+            case GkAudioDevice::AudioInputDeviceName:
+                batch.Put("AudioInputDeviceName", value.toStdString());
+                break;
+            case GkAudioDevice::AudioInputDeviceVol:
+                batch.Put("AudioInputDeviceVol", value.toStdString());
+                break;
+            case GkAudioDevice::AudioOutputDeviceName:
+                batch.Put("AudioOutputDeviceName", value.toStdString());
+                break;
+            case GkAudioDevice::AudioOutputDeviceVol:
+                batch.Put("AudioOutputDeviceVol", value.toStdString());
+                break;
+            case GkAudioDevice::AudioVolWidgetCheckboxState:
+                batch.Put("AudioVolWidgetCheckboxState", value.toStdString());
+                break;
+            default:
+                throw std::invalid_argument(tr("Error encountered whilst writing basic audio settings towards Google LevelDB database! Invalid key given.").toStdString());
         }
 
         std::time_t curr_time = std::time(nullptr);
@@ -538,7 +551,7 @@ void GkLevelDb::write_audio_device_settings(const QString &value, const bool &is
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -595,7 +608,7 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -2439,14 +2452,13 @@ QString GkLevelDb::read_ui_settings(const Settings::GkUiCfg &key)
 }
 
 /**
- * @brief DekodeDb::read_audio_device_settings Reads out captured settings about the user's preferred audial device
- * preferences.
+ * @brief DekodeDb::read_audio_device_settings reads out any saved settings for an OpenAL audio device so that it maybe
+ * configured accordingly.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_output_device Are we dealing with an input or output audio device (i.e. microphone, loudspeaker, etc.)?
- * @return Outputs an int that is internally referred to as the `dev_number`, regarding the
- * `GekkoFyre::Database::Settings::Audio::Device` structure in `define.hpp`.
+ * @param key A value corresponding to where a saved setting is located within the Google LevelDB database.
+ * @return The saved setting in question, according to the given key.
  */
-QString GkLevelDb::read_audio_device_settings(const bool &is_output_device)
+QString GkLevelDb::read_audio_device_settings(const GkAudioDevice &key)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -2455,10 +2467,24 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device)
     std::lock_guard<std::mutex> lck_guard(read_audio_dev_mtx);
     read_options.verify_checksums = true;
 
-    if (is_output_device) {
-        status = db->Get(read_options, "AudioOutputDeviceName", &value);
-    } else {
-        status = db->Get(read_options, "AudioInputDeviceName", &value);
+    switch (key) {
+        case GkAudioDevice::AudioInputDeviceName:
+            status = db->Get(read_options, "AudioInputDeviceName", &value);
+            break;
+        case GkAudioDevice::AudioInputDeviceVol:
+            status = db->Get(read_options, "AudioInputDeviceVol", &value);
+            break;
+        case GkAudioDevice::AudioOutputDeviceName:
+            status = db->Get(read_options, "AudioOutputDeviceName", &value);
+            break;
+        case GkAudioDevice::AudioOutputDeviceVol:
+            status = db->Get(read_options, "AudioOutputDeviceVol", &value);
+            break;
+        case GkAudioDevice::AudioVolWidgetCheckboxState:
+            status = db->Get(read_options, "AudioVolWidgetCheckboxState", &value);
+            break;
+        default:
+            throw std::invalid_argument(tr("Error encountered whilst fetching basic audio settings from Google LevelDB database! Invalid key given.").toStdString());
     }
 
     return QString::fromStdString(value);

@@ -202,9 +202,8 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
-#define GK_AUDIO_VOL_INIT_PERCENTAGE (25.0)
-#define GK_AUDIO_VOL_MAX_PERCENTAGE (75.0)
-#define GK_AUDIO_VOL_FACTOR (1.3334)
+#define GK_AUDIO_VOL_INIT_PERCENTAGE (100.0)
+#define GK_AUDIO_VOL_REFRESH_INTERV_DURATION (250)              // How often should OpenAL and the volume widget check for new changes when the QSlider is actioned. A higher value, measured in milliseconds, means less impact on system resources.
 
 #define AUDIO_PLAYBACK_CODEC_PCM_IDX (4)
 #define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (5)
@@ -845,6 +844,14 @@ namespace Database {
             RXAudioInitStart
         };
 
+        enum GkAudioDevice {
+            AudioInputDeviceName,
+            AudioInputDeviceVol,
+            AudioOutputDeviceName,
+            AudioOutputDeviceVol,
+            AudioVolWidgetCheckboxState
+        };
+
         enum GkAudioCfg {
             settingsDbLoc,
             LogsDirLoc,
@@ -1016,8 +1023,9 @@ namespace Database {
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 ALuint pref_sample_rate;                                            // The desired sample rate to use with this device (namely if it is an input device!), as chosen by the end-user.
                 ALenum pref_audio_format;                                           // The desired audio format to use with this device (namely if it is an input device!), as chosen by the end-user.
-                ALenum al_error;                                                    // The last error message received in regards to openAL.
-                ALCenum alc_error;                                                  // The last error message received in regards to openALC.
+                ALenum al_error;                                                    // The last error message received with regard to openAL.
+                ALCenum alc_error;                                                  // The last error message received with regard to openAL.
+                qint32 volume;                                                      // The current volume level for the given audio device.
                 GkFormat user_settings;                                             // The user defined settings for this particular audio device.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };

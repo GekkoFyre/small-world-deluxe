@@ -83,21 +83,11 @@
 #include <QFile>
 #include <QUrl>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavformat/avformat.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Mapping;
 using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
@@ -236,10 +226,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         rig_load_all_backends();
         rig_list_foreach(parseRigCapabilities, nullptr);
-
-        //
-        // Initialize FFmpeg
-        av_register_all();
 
         // Create class pointers
         gkFileIo = new GekkoFyre::FileIo(this);
@@ -479,11 +465,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFreqList->publishFreqList();
         gkAudioDevices = new GekkoFyre::GkAudioDevices(gkEventLogger, this);
 
-        const QString output_audio_device_saved = gkDb->read_audio_device_settings(true);
-        const QString input_audio_device_saved = gkDb->read_audio_device_settings(false);
+        //
+        // Read any previously chosen OpenAL-enumerated audio devices from the Google LevelDB database, if there are any applicable!
+        const QString output_audio_device_saved = gkDb->read_audio_device_settings(GkAudioDevice::AudioOutputDeviceName);
+        const QString input_audio_device_saved = gkDb->read_audio_device_settings(GkAudioDevice::AudioInputDeviceName);
 
         //
         // Output audio device
+        GkDevice active_output_dev;
         std::future<void> output_audio_init = std::async(std::launch::async, [&] {
             try {
                 //
@@ -517,6 +506,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(it->alDevice);
                             it->isEnabled = true;
                             it->isStreaming = false;
+                            active_output_dev = *it;
                         }
                     } else {
                         it->alDevice = alcOpenDevice(nullptr); // Initialize with the default audio device!
@@ -551,6 +541,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Input audio device
+        GkDevice active_input_dev;
         std::future<void> input_audio_init = std::async(std::launch::async, [&] {
             try {
                 //
@@ -591,6 +582,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                                     it->isEnabled = true;
                                     it->isStreaming = false;
+                                    active_input_dev = *it;
                                 } else {
                                     it->isEnabled = false;
                                     it->isStreaming = false;
@@ -684,18 +676,56 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Sound & Audio Devices
         //
+        gkMultimedia = new GkMultimedia(gkAudioDevices, active_output_dev, active_input_dev,
+                                        gkStringFuncs, gkEventLogger, this);
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                          this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
         //
-        // QMainWindow widgets
+        // Setup the volume adjustment dialog / overlay!
+        QObject::connect(this, SIGNAL(changeVolume(const qint32 &)), this, SLOT(updateVolume(const qint32 &)));
+        QObject::connect(this, SIGNAL(changeGlobalVolume(const qint32 &)),gkMultimedia, SLOT(changeVolume(const qint32 &)));
+
         //
+        // Set a default value for the Volume Slider and its QLabel
+        changeVolTimer = new QTimer(this);
+        ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
+        emit changeVolume(ui->verticalSlider_vol_control->value());
+        ui->label_vol_control_disp->setText(QString("%1%").arg(QString::number(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE))));
+
+        const qint32 audio_vol_widget_checkbox_val = gkDb->intBool(gkDb->read_audio_device_settings(GkAudioDevice::AudioVolWidgetCheckboxState).toInt());
+
+        //
+        // Update the volume adjustment widget from saved settings, if there are any applicable!
+        switch (audio_vol_widget_checkbox_val == 1) {
+            case 0:
+            {
+                ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Unchecked);
+                const qint32 audio_dev_output_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioOutputDeviceVol).toInt();
+                emit changeVolume(audio_dev_output_vol);
+            }
+
+                break;
+            case 1:
+            {
+                ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Checked);
+                const qint32 audio_dev_input_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioInputDeviceVol).toInt();
+                emit changeVolume(audio_dev_input_vol);
+            }
+
+                break;
+            default:
+                break;
+        }
+
+        //
+        // QMainWindow widgets
         prefillAmateurBands();
 
         info_timer = new QTimer(this);
-        connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
+        QObject::connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         info_timer->start(1000);
 
         //
@@ -710,26 +740,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
         // printer->setOutputFormat(QPrinter::NativeFormat);
         // printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
-
-        //
-        // Set a default value for the Volume Slider and its QLabel
-        //
-        ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
-        qint32 audio_vol_tick_pos = ui->verticalSlider_vol_control->value();
-        const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
-        // if (!gkAudioInput.isNull()) {
-        //     gkAudioInput->setVolume(audio_vol);
-        // }
-
-        // if (!gkAudioOutput.isNull()) {
-        //     gkAudioOutput->setVolume(audio_vol);
-        // }
-
-        ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
-
-        //
-        // Setup the volume adjustment dialog / overlay!
-        // gkVuAdjustDlg = new GkVuAdjust(gkAudioInput, gkAudioOutput, this);
 
         //
         // Setup the SSTV sections in QMainWindow!
@@ -797,6 +807,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
+    if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+        //
+        // Input audio device
+        gkDb->write_audio_device_settings(QString::number(ui->verticalSlider_vol_control->value()), GkAudioDevice::AudioInputDeviceVol);
+    } else {
+        //
+        // Output audio device
+        gkDb->write_audio_device_settings(QString::number(ui->verticalSlider_vol_control->value()), GkAudioDevice::AudioOutputDeviceVol);
+    }
+
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
     if (gkAudioInputThread.isRunning()) {
         gkAudioInputThread.quit();
@@ -1060,7 +1080,6 @@ void MainWindow::launchAudioPlayerWin()
     //
     // Initialize the Multimedia I/O class!
     //
-    QPointer<GkMultimedia> gkMultimedia = new GkMultimedia(gkAudioDevices, active_output_dev, active_input_dev, gkStringFuncs, gkEventLogger, this);
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkMultimedia, gkStringFuncs, gkAudioDevices, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1539,32 +1558,6 @@ void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
         }
     }
 
-    return;
-}
-
-/**
- * @brief MainWindow::calcVolumeFactor since we don't want the maximum volume level given to `gkAudioInput` or
- * `gkAudioOutput` to be a full 100%, we set it to something like 75% instead. But we still need to show the user a
- * corrected value in order to minimize confusion, so this is where this function comes into play.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param vol_level The actual, real volume level.
- * @param factor The correction factor to use to bring the real volume level to '100%' when at maximum.
- * @return The corrected volume level to display to the user.
- */
-qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
-{
-    qreal corrected_vol = std::round(vol_level * factor);
-    return corrected_vol;
-}
-
-/**
- * @brief MainWindow::updateVolumeDisplayWidgets will update the volume widget within the QMainWindow of Small
- * World Deluxe and keep it updated as long as there is an incoming audio signal.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note <https://doc.qt.io/qt-5.9/qtmultimedia-multimedia-spectrum-app-engine-cpp.html>
- */
-void MainWindow::updateVolumeDisplayWidgets()
-{
     return;
 }
 
@@ -2401,12 +2394,38 @@ void MainWindow::msgOutgoingProcess(const QString &curr_text)
 }
 
 /**
- * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved
+ * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved adjusts the volume (or rather 'gain') of a OpenAL audio
+ * source/device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param position
+ * @param position The given volume level as determined by the QSlider itself, from a range of 0 - 100.
+ * @note How to Position Audio in OpenAL <https://indiegamedev.net/2020/04/12/the-complete-guide-to-openal-with-c-part-3-positioning-sounds/>.
  */
 void MainWindow::on_verticalSlider_vol_control_sliderMoved(int position)
 {
+    if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+        for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
+            //
+            // Input audio signal
+            if (it->isEnabled) {
+                //
+                // The currently setup audio device
+                it->volume = position;
+                emit changeVolume(it->volume);
+            }
+        }
+    } else {
+        for (auto it = gkSysOutputAudioDevs.begin(), end = gkSysOutputAudioDevs.end(); it != end; ++it) {
+            //
+            // Output audio signal
+            if (it->isEnabled) {
+                //
+                // The currently setup audio device
+                it->volume = position;
+                emit changeVolume(it->volume);
+            }
+        }
+    }
+
     return;
 }
 
@@ -2755,6 +2774,35 @@ void MainWindow::on_action_Print_triggered()
  */
 void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
+    return;
+}
+
+/**
+ * @brief MainWindow::updateVolume manages and updates any specifics regarding a change in audio volume, whether it be
+ * for an input or output audio device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The new volume value to be put into effect.
+ */
+void MainWindow::updateVolume(const qint32 &value)
+{
+    QObject::connect(changeVolTimer, &QTimer::timeout, [value, this]{ procVolumeChanges(value); });
+    if (!changeVolTimer->isActive()) {
+        changeVolTimer->start(GK_AUDIO_VOL_REFRESH_INTERV_DURATION);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::procVolumeChanges
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void MainWindow::procVolumeChanges(const qint32 &value)
+{
+    ui->label_vol_control_disp->setText(QString("%1%").arg(QString::number(value)));
+    emit changeGlobalVolume(value);
+
     return;
 }
 

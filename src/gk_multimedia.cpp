@@ -95,6 +95,10 @@ GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, GkDev
     gkSysOutputAudioDev = std::move(sysOutputAudioDev);
     gkSysInputAudioDev = std::move(sysInputAudioDev);
 
+    //
+    // Initialize variables
+    audioPlaybackSource = 0;
+
     return;
 }
 
@@ -249,14 +253,17 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
 {
     try {
         if (!alIsExtensionPresent("AL_EXT_FLOAT32")) {
-            throw std::runtime_error(tr("The OpenAL extension, \"AL_EXT_FLOAT32\", is not present! Please install it before continuing.").toStdString());
+            throw std::runtime_error(tr("The OpenAL extension, \"AL_EXT_FLOAT32\", is not present! Please ensure you have the correct configuration before continuing.").toStdString());
+        }
+
+        if (!alIsExtensionPresent("AL_EXT_BFORMAT")) {
+            throw std::runtime_error(tr("The OpenAL extension, \"AL_EXT_BFORMAT\", is not present! Please ensure you have the correct configuration before continuing.").toStdString());
         }
 
         if (file_path.exists() && file_path.isFile()) {
             if (file_path.isReadable()) {
                 if (gkSysOutputAudioDev.isEnabled && gkSysOutputAudioDev.alDevice && gkSysOutputAudioDev.alDeviceCtx &&
                     !gkSysOutputAudioDev.isStreaming) {
-                    ALuint source;
                     ALfloat offset;
                     ALenum state;
 
@@ -267,32 +274,31 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
 
                     //
                     // Create the source to play the sound with!
-                    source = 0;
-                    alCall(alGenSources, 1, &source);
-                    alCall(alSourcef, source, AL_PITCH, 1);
-                    alCall(alSourcef, source, AL_GAIN, 1.0f);
-                    alCall(alSource3f, source, AL_POSITION, 0, 0, 0);
-                    alCall(alSource3f, source, AL_VELOCITY, 0, 0, 0);
-                    alCall(alSourcei, source, AL_BUFFER, (ALint)buffer);
+                    alCall(alGenSources, 1, &audioPlaybackSource);
+                    alCall(alSourcef, audioPlaybackSource, AL_PITCH, 1);
+                    alCall(alSourcef, audioPlaybackSource, AL_GAIN, 1.0f);
+                    alCall(alSource3f, audioPlaybackSource, AL_POSITION, 0, 0, 0);
+                    alCall(alSource3f, audioPlaybackSource, AL_VELOCITY, 0, 0, 0);
+                    alCall(alSourcei, audioPlaybackSource, AL_BUFFER, (ALint)buffer);
 
                     //
                     // NOTE: If the audio is played faster, then the sampling rate might be incorrect. Check if
                     // the input sample rate for the re-sampler is the same as in the decoder. AND the output
                     // sample rate is the same you use in the encoder.
                     //
-                    alCall(alSourcePlay, source);
+                    alCall(alSourcePlay, audioPlaybackSource);
                     do {
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                        alGetSourcei(source, AL_SOURCE_STATE, &state);
+                        alGetSourcei(audioPlaybackSource, AL_SOURCE_STATE, &state);
 
-                        alGetSourcef(source, AL_SEC_OFFSET, &offset);
+                        alGetSourcef(audioPlaybackSource, AL_SEC_OFFSET, &offset);
                         printf("\rOffset: %f  ", offset);
                         fflush(stdout);
                     } while (alGetError() == AL_NO_ERROR && state == AL_PLAYING && gkAudioState == GkAudioState::Playing);
 
                     //
                     // Cleanup now as we're done!
-                    alCall(alDeleteSources, GK_AUDIO_STREAM_NUM_BUFS, &source);
+                    alCall(alDeleteSources, GK_AUDIO_STREAM_NUM_BUFS, &audioPlaybackSource);
                     alCall(alDeleteBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffer);
                     emit playingFinished();
 
@@ -366,6 +372,22 @@ void GkMultimedia::mediaAction(const GkAudioState &media_state, const QFileInfo 
 void GkMultimedia::setAudioState(const GkAudioState &audioState)
 {
     gkAudioState = audioState;
+
+    return;
+}
+
+/**
+ * @brief GkMultimedia::changeVolume updates and sets the volume level to a new, given value, for a given OpenAL audio
+ * source.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The new value to set the volume towards for a given OpenAL audio source.
+ */
+void GkMultimedia::changeVolume(const qint32 &value)
+{
+    if (gkAudioState == GkAudioState::Playing) {
+        const qreal calc_val = static_cast<qreal>(value / 100);
+        alCall(alSourcef, audioPlaybackSource, AL_GAIN, calc_val);
+    }
 
     return;
 }

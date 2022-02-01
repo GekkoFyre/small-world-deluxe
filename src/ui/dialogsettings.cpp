@@ -488,11 +488,11 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         const QString output_audio_dev = ui->comboBox_soundcard_output->itemData(ui->comboBox_soundcard_output->currentIndex()).toString();
 
         if (!input_audio_dev.isEmpty()) { // Save input audio device name to Google LevelDB database!
-            gkDekodeDb->write_audio_device_settings(input_audio_dev, false); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
+            gkDekodeDb->write_audio_device_settings(input_audio_dev, GkAudioDevice::AudioInputDeviceName); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
         }
 
         if (!output_audio_dev.isEmpty()) { // Save output audio device name to Google LevelDB database!
-            gkDekodeDb->write_audio_device_settings(output_audio_dev, true); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
+            gkDekodeDb->write_audio_device_settings(output_audio_dev, GkAudioDevice::AudioOutputDeviceName); // Make sure to get the user data of the QComboBox, as the viewable text could be truncated!
         }
 
         //
@@ -1695,8 +1695,8 @@ bool DialogSettings::read_settings()
         //
         // Audio --> Configuration
         //
-        const QString input_audio_dev = gkDekodeDb->read_audio_device_settings(false);
-        const QString output_audio_dev = gkDekodeDb->read_audio_device_settings(true);
+        const QString input_audio_dev = gkDekodeDb->read_audio_device_settings(GkAudioDevice::AudioInputDeviceName);
+        const QString output_audio_dev = gkDekodeDb->read_audio_device_settings(GkAudioDevice::AudioOutputDeviceName);
 
         if (!input_audio_dev.isEmpty()) {
             const qint32 saved_input_idx = ui->comboBox_soundcard_input->findData(input_audio_dev);

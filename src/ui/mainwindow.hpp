@@ -200,6 +200,8 @@ private slots:
     void on_verticalSlider_vol_control_sliderMoved(int position);
     void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
+    void updateVolume(const qint32 &value);
+    void procVolumeChanges(const qint32 &value);
 
     //
     // QComboBox'es
@@ -320,7 +322,8 @@ signals:
     //
     void updateAudioOut();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
-    void changeVolume(const float &value);
+    void changeVolume(const qint32 &value);
+    void changeGlobalVolume(const qint32 &value);
 
     //
     // Audio System and related
@@ -389,7 +392,6 @@ private:
     // Audio sub-system
     //
     void captureAlcSamples(ALCdevice *device, ALCsizei samples);
-    qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
     quint32 m_maxAmplitude;
@@ -436,6 +438,7 @@ private:
     // Timing and date related
     //
     QPointer<QTimer> info_timer;
+    QPointer<QTimer> changeVolTimer;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -460,8 +463,6 @@ private:
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
     static int parseRigCapabilities(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
-
-    void updateVolumeDisplayWidgets();
 
     //
     // QFileDialog related

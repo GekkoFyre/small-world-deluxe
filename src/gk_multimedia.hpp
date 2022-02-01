@@ -91,6 +91,7 @@ public:
 public slots:
     void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path);
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
+    void changeVolume(const qint32 &value);
 
 signals:
     void playingFinished();
@@ -103,19 +104,17 @@ private:
 
     //
     // Mulithreading and mutexes
-    //
     std::thread playAudioFileThread;
 
     //
     // Audio System miscellaneous variables
-    //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
     GekkoFyre::GkAudioFramework::GkAudioState gkAudioState;
+    ALuint audioPlaybackSource;
 
     //
     // Filesystem information and paths
-    //
     std::ifstream inputFile;
     QString convFileCanonicalPath;
     FILE *convFile;
