@@ -89,8 +89,12 @@ public:
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
 public slots:
-    void playAudioFile(const QFileInfo &file_path);
-    void recordAudioFile(const QFileInfo &file_path);
+    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path);
+    void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
+
+signals:
+    void playingFinished();
+    void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
@@ -100,12 +104,14 @@ private:
     //
     // Mulithreading and mutexes
     //
+    std::thread playAudioFileThread;
 
     //
     // Audio System miscellaneous variables
     //
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
+    GekkoFyre::GkAudioFramework::GkAudioState gkAudioState;
 
     //
     // Filesystem information and paths
@@ -115,18 +121,13 @@ private:
     FILE *convFile;
 
     [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
-    float getSample(const AVCodecContext *codecCtx, uint8_t *buffer, int sampleIndex);
     bool ffmpegDecodeAudioPacket(AVCodecContext *codecCtx);
 
-    std::vector<char> loadRawFileData(const QString &file_path, ALsizei size, const size_t &cursor = 0);
-    void updateStream(const ALuint source, const ALenum &format, const std::int32_t &sample_rate, const std::vector<char> &buf, std::size_t &cursor);
+    void playAudioFile(const QFileInfo &file_path);
+    void recordAudioFile(const QFileInfo &file_path);
 
     bool is_big_endian();
     std::int32_t convert_to_int(char *buffer, std::size_t len);
-    bool loadWavFileHeader(std::ifstream &file, std::uint8_t &channels, std::int32_t &sampleRate,
-                           std::uint8_t &bitsPerSample, ALsizei &size);
-    char *loadWavFileData(const QFileInfo &file_path, std::uint8_t &channels, std::int32_t &sampleRate,
-                          std::uint8_t &bitsPerSample, ALsizei &size);
 
 };
 };

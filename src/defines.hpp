@@ -1233,6 +1233,7 @@ namespace GkAudioFramework {
     };
 
     enum GkAudioState { Playing, Recording, Stopped };
+    enum GkAudioPlaylistPriority { Normal, High };
 
     enum CodecSupport {
         PCM,
@@ -1278,7 +1279,6 @@ namespace GkAudioFramework {
         qint32 stream_idx;
         QString sample_format_str;
         AVSampleFormat sample_format;
-        const char *float_output;
     };
 
     struct GkAudioFileInfo {
@@ -1292,7 +1292,7 @@ namespace GkAudioFramework {
         qint64 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
         GkAudioFileProperties info;                                             // The audio properties of the given multimedia file itself.
-        AVCodecContext *codecCtx;
+        AVCodecContext *codecCtx;                                               // The codec context this audio object is associated with.
     };
 
     struct GkAudioFileDecoded {

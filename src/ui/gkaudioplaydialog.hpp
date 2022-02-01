@@ -85,7 +85,9 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
-    void inspectAudioFile(const QFileInfo &file_path, const bool &printToConsole = false);
+    void playlistInsert(const QFileInfo &file_path, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &priority, const bool &printToConsole = false);
+    void playlistRemove(const QFileInfo &file_path);
+    void startPlaying();
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
@@ -94,12 +96,15 @@ private slots:
     void clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 signals:
-    void beginRecording(const bool &recording_is_started);
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
     void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
-    void analyzeAudioFile(const QFileInfo &file_path, const bool &printToConsole = false);
+    void addToPlaylist(const QFileInfo &file_path, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &priority, const bool &printToConsole = false);
+    void removeFromPlaylist(const QFileInfo &file_path);
+    void beginPlaying();
     void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
+
+    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path);
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -117,7 +122,6 @@ private:
     //
     // QPushButtons, etc.
     bool m_audioRecReady;
-    bool audio_out_play;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
@@ -129,8 +133,8 @@ private:
 
     //
     // AudioFile objects and related
-    GekkoFyre::GkAudioFramework::GkAudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
-    GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
+    std::vector<GekkoFyre::GkAudioFramework::GkAudioFileInfo> gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;                    // Audio channel information for both playback and recording!
     qint64 encode_compressed_bytes;
     qint64 encode_uncompressed_bytes;
 
