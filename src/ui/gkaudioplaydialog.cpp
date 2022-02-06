@@ -100,9 +100,11 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
                          this, SIGNAL(updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &)));
         QObject::connect(this, SIGNAL(addToPlaylist(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)),
                          this, SLOT(playlistInsert(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)));
-        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &)),
-                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &)));
+        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
+                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
         QObject::connect(this, SIGNAL(beginPlaying()), this, SLOT(startPlaying()));
+        QObject::connect(this, SIGNAL(beginRecording(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
+                         this, SLOT(startRecording(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
 
         //
         // Initialize variables
@@ -171,14 +173,22 @@ void GkAudioPlayDialog::on_pushButton_close_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     try {
-        if (ui->pushButton_playback_play->isEnabled()) {
-            ui->pushButton_playback_play->setEnabled(true);
+        switch (gkAudioState) {
+            case GkAudioState::Playing:
+                ui->pushButton_playback_play->setEnabled(true);
+                break;
+            case GkAudioState::Recording:
+                ui->pushButton_playback_record->setEnabled(true);
+                break;
+            case GkAudioState::Stopped:
+                break;
+            default:
+                break;
         }
 
-        if (ui->pushButton_playback_record->isEnabled()) {
-            ui->pushButton_playback_record->setEnabled(true);
-        }
-
+        //
+        // Finally, update the state to that of being Stopped, now that we don't need to know the original, previous
+        // state!
         emit updateAudioState(GkAudioState::Stopped);
     } catch (const std::exception &e) {
         print_exception(e);
@@ -196,20 +206,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
     try {
-        auto def_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
-        if (def_path.isEmpty()) {
-            def_path = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
-        }
-
-        //
-        // Open a QFileDialog so a user may choose a multimedia file to open and then thusly play!
-        QString filePath = QFileDialog::getOpenFileName(this, tr("Audio File Playback"), def_path, tr("Audio Files %1;;All Files (*.*)").arg(General::GkAudio::commonAudioFileFormats));
-        if (filePath.isEmpty()) { // No file has supposedly been chosen!
-            emit cleanupForms(GkClearForms::Playback); // Cleanup just the playback section only!
-            return;
-        }
-
-        gkDb->write_audio_playback_dlg_settings(filePath, AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
+        const auto filePath = openFileBrowser(false);
 
         //
         // Write out information about the file in question!
@@ -231,19 +228,40 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  * @brief GkAudioPlayDialog::on_pushButton_playback_record_clicked disable any playback in progress
  * upon being clicked.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note High Quality Recording with FFmpeg <https://trac.ffmpeg.org/wiki/Encode/HighQualityAudio>.
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
-        ui->pushButton_playback_skip_back->setEnabled(false);
-        ui->pushButton_playback_skip_forward->setEnabled(false);
-        ui->pushButton_playback_play->setEnabled(false);
-        ui->pushButton_playback_record->setEnabled(false);
-        ui->pushButton_playback_stop->setEnabled(true);
+        const AVCodecID codec_id = gkMultimedia->convFFmpegCodecIdToEnum(ui->comboBox_playback_rec_codec->currentIndex());
+        const QString chosen_openal_audio_dev = ui->comboBox_playback_rec_source->currentText();
+        if (chosen_openal_audio_dev.isEmpty()) {
+            throw std::invalid_argument(tr("An invalid audio device has been specified; please check your settings and try again.").toStdString());
+        }
 
-        emit updateAudioState(GkAudioState::Recording);
+        if (codec_id != AV_CODEC_ID_NONE) {
+            const auto filePath = openFileBrowser(true);
+            if (!filePath.isEmpty()) {
+                ui->pushButton_playback_skip_back->setEnabled(false);
+                ui->pushButton_playback_skip_forward->setEnabled(false);
+                ui->pushButton_playback_play->setEnabled(false);
+                ui->pushButton_playback_record->setEnabled(false);
+                ui->pushButton_playback_stop->setEnabled(true);
+
+                //
+                // Initiate the recording process!
+                emit updateAudioState(GkAudioState::Recording);
+                emit beginRecording(filePath, ui->comboBox_playback_rec_source->currentText().toStdString().c_str(),
+                                    codec_id, ui->horizontalSlider_playback_rec_bitrate->value());
+            }
+
+            return;
+        } else {
+            throw std::invalid_argument(tr("An invalid or currently unsupported codec for encoding with has been selected!").toStdString());
+        }
     } catch (const std::exception &e) {
-        print_exception(e);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
+                                    false, true, false, true, false);
     }
 
     return;
@@ -548,6 +566,31 @@ void GkAudioPlayDialog::setAudioState(const GkAudioState &audioState)
 }
 
 /**
+ * @brief GkAudioPlayDialog::startRecording initiates the process of recording and encoding audio to a given file, with
+ * audio samples gathered from the OpenAL library.
+ * @param file_path The file path of where we are to send and save our buffered audio data towards.
+ * @param recording_device The audio device we are to record an audio stream from.
+ * @param codec_id The codec used in encoding a given audio stream.
+ * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::startRecording(const QFileInfo &file_path, const ALCchar *recording_device,
+                                       const AVCodecID &codec_id, const int64_t &avg_bitrate)
+{
+    try {
+        emit mediaAction(GkAudioState::Recording, file_path);
+        QEventLoop loop;
+        QObject::connect(gkMultimedia, SIGNAL(recordingFinished()), &loop, SLOT(quit()));
+        loop.exec(); // By using QEventLoop, we avoid freezing up the GUI and having to use std::thread!
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue was encountered whilst initiating the audio recording/encoding process. Error: %1")
+        .arg(QString::fromStdString(e.what())), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
  * @brief GkAudioPlayDialog::setBytesRead adjusts the GUI widget(s) in question to display the amount of bytes read so
  * far, whether it be for uncompressed or compressed data.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -724,6 +767,43 @@ void GkAudioPlayDialog::initProgressBar(const qint32 min, const qint32 max)
     ui->progressBar_playback->setValue(0);
 
     return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::openFileBrowser will open a file dialog for either the selection of files for playback or
+ * the choosing of a destination to record a given file towards.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param isRecord Are we opening a file dialog for the purposes of recording to a file, or for the purposes of playing
+ * back an existing files content?
+ */
+QString GkAudioPlayDialog::openFileBrowser(const bool &isRecord)
+{
+    QString filePath;
+    QString defPath = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
+    if (defPath.isEmpty()) {
+        defPath = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
+    }
+
+    if (isRecord) {
+        //
+        // We are recording to a newly created file!
+        filePath = QFileDialog::getSaveFileName(this, tr("Audio File Recording"), defPath, tr("Audio Files %1;;All Files (*.*)").arg(General::GkAudio::commonAudioFileFormats));
+    } else {
+        //
+        // We are playing back the data of an existing file!
+        filePath = QFileDialog::getOpenFileName(this, tr("Audio File Playback"), defPath, tr("Audio Files %1;;All Files (*.*)").arg(General::GkAudio::commonAudioFileFormats));
+    }
+
+    if (filePath.isEmpty()) { // No file has supposedly been chosen!
+        emit cleanupForms(GkClearForms::Playback); // Cleanup just the playback section only!
+        return QString();
+    }
+
+    //
+    // Write out the path to the Google LevelDB database, so we can recall it in the future as history!
+    gkDb->write_audio_playback_dlg_settings(filePath, AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
+
+    return filePath;
 }
 
 /**

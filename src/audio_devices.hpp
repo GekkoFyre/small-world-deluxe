@@ -90,6 +90,7 @@ public:
     static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
     ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
+    ALuint convAudioDevFormat(const ALenum &bit_depth_enum);
     ALCuint getAudioDevSampleRate(ALCdevice *device);
     bool isStereoChannelSource(ALCdevice *device);
     bool isMonoChannelSource(ALCdevice *device);

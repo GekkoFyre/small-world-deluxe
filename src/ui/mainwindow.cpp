@@ -472,7 +472,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Output audio device
-        GkDevice active_output_dev;
         std::future<void> output_audio_init = std::async(std::launch::async, [&] {
             try {
                 //
@@ -506,7 +505,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(it->alDevice);
                             it->isEnabled = true;
                             it->isStreaming = false;
-                            active_output_dev = *it;
                         }
                     } else {
                         it->alDevice = alcOpenDevice(nullptr); // Initialize with the default audio device!
@@ -541,7 +539,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Input audio device
-        GkDevice active_input_dev;
         std::future<void> input_audio_init = std::async(std::launch::async, [&] {
             try {
                 //
@@ -582,7 +579,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                                     it->isEnabled = true;
                                     it->isStreaming = false;
-                                    active_input_dev = *it;
                                 } else {
                                     it->isEnabled = false;
                                     it->isStreaming = false;
@@ -676,8 +672,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Sound & Audio Devices
         //
-        gkMultimedia = new GkMultimedia(gkAudioDevices, active_output_dev, active_input_dev,
-                                        gkStringFuncs, gkEventLogger, this);
+        gkMultimedia = new GkMultimedia(gkAudioDevices, gkSysOutputAudioDevs, gkSysInputAudioDevs, gkDb, gkStringFuncs,
+                                        gkEventLogger, this);
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),

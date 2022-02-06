@@ -56,6 +56,17 @@
 #include <QPointer>
 #include <QFileInfo>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libavcodec/codec_id.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 namespace Ui {
 class GkAudioPlayDialog;
 }
@@ -90,6 +101,9 @@ private slots:
     void startPlaying();
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
+    void startRecording(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                        const int64_t &avg_bitrate = 64000);
+
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
 
     void resetStopButtonColor();
@@ -104,7 +118,12 @@ signals:
     void beginPlaying();
     void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
-    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path);
+    void beginRecording(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                        const int64_t &avg_bitrate = 64000);
+
+    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
+                     const ALCchar *recording_device = nullptr, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                     const int64_t &avg_bitrate = 64000);
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -148,6 +167,8 @@ private:
     void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void prefillAudioSourceComboBoxes();
     void initProgressBar(const qint32 min = 0, const qint32 max = 100);
+
+    [[nodiscard]] QString openFileBrowser(const bool &isRecord = false);
 
     void recordLockSettings(const bool &unlock = false);
     void print_exception(const std::exception &e, int level = 0);

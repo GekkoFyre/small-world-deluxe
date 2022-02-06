@@ -298,6 +298,35 @@ ALenum GkAudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio
 }
 
 /**
+ * @brief GkAudioDevices::convAudioDevFormat converts a given, enumerated bit-depth (associated with OpenAL) to its
+ * raw, integer value. So for example, either AL_FORMAT_MONO16 or AL_FORMAT_STEREO16, will become the integer value,
+ * '16'.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bit_depth_enum
+ * @return
+ */
+ALuint GkAudioDevices::convAudioDevFormat(const ALenum &bit_depth_enum)
+{
+    if (bit_depth_enum == GK_AUDIO_BITRATE_8_IDX) {
+        return 8;
+    } else if (bit_depth_enum == GK_AUDIO_BITRATE_16_IDX) {
+        return 16;
+    } else if (bit_depth_enum == GK_AUDIO_BITRATE_24_IDX) {
+        return 32;
+    } else if (bit_depth_enum == GK_AUDIO_BITRATE_8_IDX) {
+        return 8;
+    } else if (bit_depth_enum == GK_AUDIO_BITRATE_16_IDX) {
+        return 16;
+    } else if (bit_depth_enum == GK_AUDIO_BITRATE_24_IDX) {
+        return 32;
+    } else {
+        std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+    }
+
+    return 0;
+}
+
+/**
  * @brief GkAudioDevices::getAudioDevSampleRate obtains the sampling rate for the (usually output) audio device, with the
  * latter being either chosen by the end-user or appropriated from the system as the default device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

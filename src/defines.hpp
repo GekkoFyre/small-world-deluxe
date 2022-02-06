@@ -191,6 +191,7 @@ namespace GekkoFyre {
 
 #define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback.
 #define GK_AUDIO_OPENAL_RECORD_BUFFER_SIZE (32768)              // The recording buffer size for when initializing a new device via `alcCaptureOpenDevice()`.
+#define GK_AUDIO_FFMPEG_DEFAULT_SAMPLE_RATE (44100)             // The default sample rate to use in encoding audio files if no other possible solutions can be found.
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
@@ -203,6 +204,7 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
 #define GK_AUDIO_VOL_INIT_PERCENTAGE (100.0)
+#define GK_AUDIO_VOL_PLAYBACK_REFRESH_INTERVAL (10)             // The time, measured in milliseconds, for how often to refresh for any new and updated status changes whilst playing back or recording audio.
 #define GK_AUDIO_VOL_REFRESH_INTERV_DURATION (250)              // How often should OpenAL and the volume widget check for new changes when the QSlider is actioned. A higher value, measured in milliseconds, means less impact on system resources.
 
 #define AUDIO_PLAYBACK_CODEC_PCM_IDX (4)

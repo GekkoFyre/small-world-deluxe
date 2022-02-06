@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -65,6 +66,7 @@ extern "C"
 #endif
 
 #include <libavcodec/avcodec.h>
+#include <libavcodec/codec_id.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 
@@ -79,39 +81,49 @@ class GkMultimedia : public QObject {
 
 public:
     explicit GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs,
-                          GekkoFyre::Database::Settings::Audio::GkDevice sysOutputAudioDev,
-                          GekkoFyre::Database::Settings::Audio::GkDevice sysInputAudioDev,
-                          QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                          std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysOutputAudioDevs,
+                          std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> sysInputAudioDevs,
+                          QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkMultimedia() override;
 
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
+    [[nodiscard]] AVCodecID convFFmpegCodecIdToEnum(const qint32 &codec_id_str);
+
 public slots:
-    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path);
+    void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
+                     const ALCchar *recording_device = nullptr, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                     const int64_t &avg_bitrate = 64000);
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
     void changeVolume(const qint32 &value);
 
 signals:
     void playingFinished();
+    void recordingFinished();
     void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
 private:
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
     // Mulithreading and mutexes
     std::thread playAudioFileThread;
+    std::thread recordAudioFileThread;
 
     //
     // Audio System miscellaneous variables
-    GekkoFyre::Database::Settings::Audio::GkDevice gkSysOutputAudioDev;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkSysInputAudioDev;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysInputAudioDevs;
     GekkoFyre::GkAudioFramework::GkAudioState gkAudioState;
+
     ALuint audioPlaybackSource;
+    ALuint m_frameSize;
+    ALbyte *m_recordBuffer;
 
     //
     // Filesystem information and paths
@@ -120,13 +132,18 @@ private:
     FILE *convFile;
 
     [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
-    bool ffmpegDecodeAudioPacket(AVCodecContext *codecCtx);
+    [[nodiscard]] qint32 ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt);
+    [[nodiscard]] qint32 ffmpegSelectSampleRate(const AVCodec *codec);
+    [[nodiscard]] qint32 ffmpegSelectChannelLayout(const AVCodec *codec);
+    void ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, FILE *output);
 
+    void checkOpenAlExtensions();
     void playAudioFile(const QFileInfo &file_path);
-    void recordAudioFile(const QFileInfo &file_path);
+    void recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id,
+                         const int64_t &avg_bitrate);
 
-    bool is_big_endian();
-    std::int32_t convert_to_int(char *buffer, std::size_t len);
+    [[nodiscard]] bool is_big_endian();
+    [[nodiscard]] std::int32_t convert_to_int(char *buffer, std::size_t len);
 
 };
 };
