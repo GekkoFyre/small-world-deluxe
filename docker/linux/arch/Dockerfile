@@ -260,6 +260,7 @@ RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
 RUN pacman -S openal --noconfirm
 RUN pacman -S ffmpeg --noconfirm
+RUN pacman -S libsndfile --noconfirm
 RUN pacman -S taglib --noconfirm
 
 USER devel

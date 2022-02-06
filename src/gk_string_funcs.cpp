@@ -189,6 +189,30 @@ QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg
 }
 
 /**
+ * @brief StringFuncs::convTo8BitStr converts a QString to the proper, prerequisite 8-bit std::string required for such
+ * things as equality comparisons and so forth, between other std::string's.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param str_to_conv The desired QString to convert.
+ * @return The outputted 8-bit std::string, that can now be used for equality purposes amongst other std::string's.
+ * @note Artyom <https://stackoverflow.com/a/4644922>.
+ */
+std::string StringFuncs::convTo8BitStr(const QString &str_to_conv)
+{
+    if (!str_to_conv.isEmpty() && !str_to_conv.isNull()) {
+        std::string conv_txt; // For equality comparison purposes!
+        #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+        conv_txt = str_to_conv.toUtf8().constData();
+        #else
+        conv_txt = str_to_conv.toLocal8Bit().constData();
+        #endif
+
+        return conv_txt;
+    }
+
+    return std::string();
+}
+
+/**
  * @brief StringFuncs::handleOpusError will handle any Opus-related error condition and output a message related to that.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param err The error condition itself to handle.

@@ -103,8 +103,8 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
         QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
                          gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
         QObject::connect(this, SIGNAL(beginPlaying()), this, SLOT(startPlaying()));
-        QObject::connect(this, SIGNAL(beginRecording(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
-                         this, SLOT(startRecording(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
+        QObject::connect(this, SIGNAL(beginRecording(const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
+                         this, SLOT(startRecording(const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
 
         //
         // Initialize variables
@@ -234,7 +234,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
         const AVCodecID codec_id = gkMultimedia->convFFmpegCodecIdToEnum(ui->comboBox_playback_rec_codec->currentIndex());
-        const QString chosen_openal_audio_dev = ui->comboBox_playback_rec_source->currentText();
+        const QString chosen_openal_audio_dev = ui->comboBox_playback_rec_source->currentData().toString();
         if (chosen_openal_audio_dev.isEmpty()) {
             throw std::invalid_argument(tr("An invalid audio device has been specified; please check your settings and try again.").toStdString());
         }
@@ -251,7 +251,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 //
                 // Initiate the recording process!
                 emit updateAudioState(GkAudioState::Recording);
-                emit beginRecording(filePath, ui->comboBox_playback_rec_source->currentText().toStdString().c_str(),
+                emit beginRecording(filePath, chosen_openal_audio_dev.toStdString().c_str(),
                                     codec_id, ui->horizontalSlider_playback_rec_bitrate->value());
             }
 
@@ -578,7 +578,7 @@ void GkAudioPlayDialog::startRecording(const QFileInfo &file_path, const ALCchar
                                        const AVCodecID &codec_id, const int64_t &avg_bitrate)
 {
     try {
-        emit mediaAction(GkAudioState::Recording, file_path);
+        emit mediaAction(GkAudioState::Recording, file_path, recording_device, codec_id, avg_bitrate);
         QEventLoop loop;
         QObject::connect(gkMultimedia, SIGNAL(recordingFinished()), &loop, SLOT(quit()));
         loop.exec(); // By using QEventLoop, we avoid freezing up the GUI and having to use std::thread!
@@ -748,8 +748,14 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
  */
 void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
 {
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(gkMultimedia->getInputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
-    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(gkMultimedia->getOutputAudioDevice().audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+    const QString audio_dev_input_desc = gkMultimedia->getInputAudioDevice().audio_dev_str;
+    const QString audio_dev_output_desc = gkMultimedia->getOutputAudioDevice().audio_dev_str;
+
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(audio_dev_input_desc), AUDIO_RECORDING_SOURCE_INPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(audio_dev_output_desc), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+
+    ui->comboBox_playback_rec_source->setItemData(AUDIO_RECORDING_SOURCE_INPUT_IDX, audio_dev_input_desc);
+    ui->comboBox_playback_rec_source->setItemData(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, audio_dev_output_desc);
 
     return;
 }

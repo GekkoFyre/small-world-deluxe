@@ -139,6 +139,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioState>("GekkoFyre::GkAudioFramework::GkAudioState");
+    qRegisterMetaType<AVCodecID>("AVCodecID");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -691,29 +693,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         emit changeVolume(ui->verticalSlider_vol_control->value());
         ui->label_vol_control_disp->setText(QString("%1%").arg(QString::number(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE))));
 
-        const qint32 audio_vol_widget_checkbox_val = gkDb->intBool(gkDb->read_audio_device_settings(GkAudioDevice::AudioVolWidgetCheckboxState).toInt());
-
         //
         // Update the volume adjustment widget from saved settings, if there are any applicable!
-        switch (audio_vol_widget_checkbox_val == 1) {
-            case 0:
-            {
-                ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Unchecked);
-                const qint32 audio_dev_output_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioOutputDeviceVol).toInt();
-                emit changeVolume(audio_dev_output_vol);
-            }
-
-                break;
-            case 1:
-            {
-                ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Checked);
-                const qint32 audio_dev_input_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioInputDeviceVol).toInt();
-                emit changeVolume(audio_dev_input_vol);
-            }
-
-                break;
-            default:
-                break;
+        const bool audio_vol_widget_checkbox_val = gkDb->intBool(gkDb->read_audio_device_settings(GkAudioDevice::AudioVolWidgetCheckboxState).toInt());
+        if (audio_vol_widget_checkbox_val) {
+            ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Checked);
+            const qint32 audio_dev_input_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioInputDeviceVol).toInt();
+            emit changeVolume(audio_dev_input_vol);
+        } else {
+            ui->checkBox_rx_tx_vol_toggle->setCheckState(Qt::CheckState::Unchecked);
+            const qint32 audio_dev_output_vol = gkDb->read_audio_device_settings(GkAudioDevice::AudioOutputDeviceVol).toInt();
+            emit changeVolume(audio_dev_output_vol);
         }
 
         //

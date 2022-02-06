@@ -93,6 +93,7 @@ public:
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
+    std::string convTo8BitStr(const QString &str_to_conv);
 
     [[nodiscard]] QString handleOpusError(const qint32 &err) const;
 

@@ -313,12 +313,6 @@ ALuint GkAudioDevices::convAudioDevFormat(const ALenum &bit_depth_enum)
         return 16;
     } else if (bit_depth_enum == GK_AUDIO_BITRATE_24_IDX) {
         return 32;
-    } else if (bit_depth_enum == GK_AUDIO_BITRATE_8_IDX) {
-        return 8;
-    } else if (bit_depth_enum == GK_AUDIO_BITRATE_16_IDX) {
-        return 16;
-    } else if (bit_depth_enum == GK_AUDIO_BITRATE_24_IDX) {
-        return 32;
     } else {
         std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
     }

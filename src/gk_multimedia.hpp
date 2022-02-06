@@ -55,6 +55,7 @@
 #include <string>
 #include <thread>
 #include <fstream>
+#include <QFile>
 #include <QObject>
 #include <QString>
 #include <QPointer>
@@ -125,17 +126,13 @@ private:
     ALuint m_frameSize;
     ALbyte *m_recordBuffer;
 
-    //
-    // Filesystem information and paths
-    std::ifstream inputFile;
-    QString convFileCanonicalPath;
-    FILE *convFile;
-
     [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
     [[nodiscard]] qint32 ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt);
     [[nodiscard]] qint32 ffmpegSelectSampleRate(const AVCodec *codec);
     [[nodiscard]] qint32 ffmpegSelectChannelLayout(const AVCodec *codec);
-    void ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, FILE *output);
+    void ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, QFile *output);
+
+    [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
 
     void checkOpenAlExtensions();
     void playAudioFile(const QFileInfo &file_path);

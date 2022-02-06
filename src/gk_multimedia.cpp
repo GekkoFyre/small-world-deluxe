@@ -88,7 +88,8 @@ using namespace Security;
 GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, std::vector<GkDevice> sysOutputAudioDevs,
                            std::vector<GkDevice> sysInputAudioDevs, QPointer<GekkoFyre::GkLevelDb> database,
                            QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           QObject *parent) : QObject(parent)
+                           QObject *parent) : gkAudioState(GkAudioState::Stopped), m_frameSize(0), m_recordBuffer(0),
+                           QObject(parent)
 {
     gkAudioDevices = std::move(audio_devs);
     gkDb = std::move(database);
@@ -111,9 +112,7 @@ GkMultimedia::~GkMultimedia()
         emit updateAudioState(GkAudioState::Stopped); // Stop the playing and/or recording of all audio files!
     }
 
-    if (inputFile.is_open()) {
-        inputFile.close();
-    }
+    return;
 }
 
 /**
@@ -318,7 +317,7 @@ qint32 GkMultimedia::ffmpegSelectChannelLayout(const AVCodec *codec)
  * @param output
  * @note Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
  */
-void GkMultimedia::ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, FILE *output)
+void GkMultimedia::ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, QFile *output)
 {
     try {
         qint32 ret = 0;
@@ -340,7 +339,9 @@ void GkMultimedia::ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *fr
                 throw std::runtime_error(tr("Error encountered with encoding audio frame!").toStdString());
             }
 
-            fwrite(pkt->data, 1, pkt->size, output);
+            char *buf;
+            std::memcpy(buf, pkt->data, pkt->size);
+            output->write(buf);
             av_packet_unref(pkt);
         }
 
@@ -350,6 +351,32 @@ void GkMultimedia::ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *fr
     }
 
     return;
+}
+
+/**
+ * @brief GkMultimedia::openAlSelectBitDepth is for querying against the OpenAL libraries alongside the end-user's
+ * desired configuration, so that the highest bit-depth that we are able to make use of can be chosen. This is
+ * particularly pertinent towards encoding audio with FFmpeg.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bit_depth The highest bit-depth (16-bits, 24-bits, etc.) that we are able to make use of.
+ * @return The highest, available bit-depth that we are able to make use of.
+ */
+qint32 GkMultimedia::openAlSelectBitDepth(const ALenum &bit_depth)
+{
+    switch (bit_depth) {
+        case AL_FORMAT_MONO8:
+            return 8;
+        case AL_FORMAT_MONO16:
+            return 16;
+        case AL_FORMAT_STEREO8:
+            return 8;
+        case AL_FORMAT_STEREO16:
+            return 16;
+        default:
+            return AL_FORMAT_STEREO16; // Default value to return!
+    }
+
+    return 0;
 }
 
 /**
@@ -498,7 +525,8 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
  * @param codec_id The codec used in encoding a given audio stream.
  * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
  * @note OpenAL Recording Example <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>,
- * Nikolaus Gradwohl <https://stackoverflow.com/a/3164561>.
+ * Nikolaus Gradwohl <https://stackoverflow.com/a/3164561>,
+ * Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
  */
 void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id,
                                    const int64_t &avg_bitrate)
@@ -546,9 +574,15 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
         GkDevice chosenInputDevice;
         for (const auto &input_audio_dev: gkSysInputAudioDevs) {
-            if (input_audio_dev.audio_dev_str == QString::fromStdString(recording_device)) {
-                chosenInputDevice = input_audio_dev;
-                break;
+            const QString audio_dev_name = input_audio_dev.audio_dev_str;
+            if (!audio_dev_name.isEmpty() && !audio_dev_name.isNull()) {
+                const std::string conv_txt = gkStringFuncs->convTo8BitStr(audio_dev_name);
+                if (conv_txt == recording_device) {
+                    chosenInputDevice = input_audio_dev;
+                    break;
+                }
+            } else {
+                throw std::invalid_argument(tr("An invalid audio device name has been provided! Please check the configuration of your audio devices and try again.").toStdString());
             }
         }
 
@@ -559,7 +593,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
         //
         // Calculate required variables and constants!
-        ALuint bit_depth = gkAudioDevices->convAudioDevFormat(chosenInputDevice.pref_audio_format);
+        ALuint bit_depth = openAlSelectBitDepth(chosenInputDevice.pref_audio_format);
         m_frameSize = input_audio_dev_chosen_number_channels * bit_depth / 8;
         const qint32 bytesPerSample = 2;
         const qint32 safetyFactor = 2; // In order to prevent buffer overruns! Must be larger than inputBuffer to avoid the circular buffer from overwriting itself between captures...
@@ -581,7 +615,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         AVCodecContext *c = nullptr;
         AVFrame *frame;
         AVPacket *pkt;
-        FILE *f;
+        QFile *file;
 
         //
         // Find the desired encoder!
@@ -611,12 +645,13 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
                 c->sample_fmt = AV_SAMPLE_FMT_S16;
                 break;
             default:
+                c->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
                 break;
         }
 
         //
         // Configure sample parameters!
-        c->bit_rate = avg_bitrate;
+        c->bit_rate = avg_bitrate * 1000;
 
         if (!ffmpegCheckSampleFormat(codec, c->sample_fmt)) {
             throw std::invalid_argument(tr("Chosen audio encoder does not support given sample format, \"%1\"!")
@@ -624,7 +659,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         }
 
         //
-        // Configure other audio parameters supported by the chosen encoder!
+        // Configure other audio paramete   rs supported by the chosen encoder!
         c->sample_rate = ffmpegSelectSampleRate(codec);
         c->channel_layout = ffmpegSelectChannelLayout(codec);
         c->channels = av_get_channel_layout_nb_channels(c->channel_layout);
@@ -635,8 +670,8 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             throw std::runtime_error(tr("Unable to open audio codec to begin encoding with.").toStdString());
         }
 
-        f = std::fopen(file_path.canonicalFilePath().toStdString().c_str(), "wb");
-        if (!f) {
+        file = new QFile(file_path.absoluteFilePath()); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
+        if (!file->open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
             throw std::runtime_error(tr("Unable to open file, \"%1\"!").arg(file_path.fileName()).toStdString());
         }
 
@@ -686,16 +721,16 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
             //
             // Record and encode the buffer!
-            ffmpegEncodeAudioPacket(c, frame, pkt, f);
+            ffmpegEncodeAudioPacket(c, frame, pkt, file);
         } while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording);
 
         //
         // Flush the encoder
-        ffmpegEncodeAudioPacket(c, nullptr, pkt, f);
+        ffmpegEncodeAudioPacket(c, nullptr, pkt, file);
 
         //
         // Close the file pointer
-        fclose(f);
+        file->close();
 
         //
         // Free up FFmpeg resources
@@ -711,10 +746,13 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         //
         // Send the signal that recording has finished!
         emit recordingFinished();
+        emit updateAudioState(GkAudioState::Stopped);
 
         return;
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+        emit recordingFinished();
+        emit updateAudioState(GkAudioState::Stopped); // Immediately halt any recording!
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
