@@ -233,7 +233,7 @@ ALuint GkMultimedia::loadAudioFile(const QFileInfo &file_path)
  * @param codec The desired codec to be used and its associated information.
  * @param sample_fmt The desired sample format the check is to be made against.
  * @return Whether a positive result has been garnered or not.
- * @note Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
+ * @note Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>.
  */
 qint32 GkMultimedia::ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt)
 {
@@ -281,7 +281,7 @@ qint32 GkMultimedia::ffmpegSelectSampleRate(const AVCodec *codec)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param codec The desired codec to be used and its associated information.
  * @return
- * @note Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
+ * @note Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>.
  */
 qint32 GkMultimedia::ffmpegSelectChannelLayout(const AVCodec *codec)
 {
@@ -305,6 +305,49 @@ qint32 GkMultimedia::ffmpegSelectChannelLayout(const AVCodec *codec)
     }
 
     return bestChLayout;
+}
+
+/**
+ * @brief GkMultimedia::ffmpegEncodeAudio performs the encoding process on the given audio samples to any, supported
+ * format within the FFmpeg libraries, such as FLAC, MP3, Ogg Vorbis, etc.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ctx
+ * @param frame
+ * @param pkt
+ * @param output
+ */
+void GkMultimedia::ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPacket *pkt, FILE *output)
+{
+    try {
+        qint32 ret;
+
+        //
+        // Send the frame for encoding
+        ret = avcodec_send_frame(ctx, frame);
+        if (ret < 0) {
+            throw std::runtime_error(tr("Error encountered with sending audio frame to FFmpeg encoder.").toStdString());
+        }
+
+        //
+        // Read all the available output packets (in general there may be any number of them)!
+        while (ret >= 0) {
+            ret = avcodec_receive_packet(ctx, pkt);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                return;
+            } else if (ret < 0) {
+                throw std::runtime_error(tr("Error encountered while encoding audio frame.").toStdString());
+            }
+
+            fwrite(pkt->data, 1, pkt->size, output);
+            av_packet_unref(pkt);
+        }
+
+        return;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return;
 }
 
 /**
@@ -480,7 +523,7 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
  * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
  * @note OpenAL Recording Example <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>,
  * Nikolaus Gradwohl <https://stackoverflow.com/a/3164561>,
- * Fabrice Bellard <http://ffmpeg.org/doxygen/trunk/doc_2examples_2decoding_encoding_8c-example.html>,
+ * Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>,
  * Andreas Unterweger <https://ffmpeg.org/doxygen/trunk/transcode_aac_8c-example.html>,
  * Jonathan Baldwin <https://ffmpeg.org/doxygen/trunk/openal-dec_8c_source.html
  *
@@ -569,9 +612,8 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         }
 
         qint32 error;
-        qint32 recv_output;
         qint32 i;
-        AVPacket pkt;
+        AVPacket *pkt;
         const AVCodec *codec;
         AVCodecContext *ctx = nullptr;
         AVFrame *frame;
@@ -636,6 +678,13 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         }
 
         //
+        // Packet for holding encoded output
+        pkt = av_packet_alloc();
+        if (!pkt) {
+            throw std::runtime_error(tr("Could not allocate output audio packet buffer.").toStdString());
+        }
+
+        //
         // Frame containing raw audio input
         frame = av_frame_alloc();
         if (!frame) {
@@ -659,10 +708,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
         alcCaptureStart(rec_dev);
         do {
-            pkt.data = nullptr; // Packet data will be allocated by the encoder itself!
-            pkt.size = 0;
-
-            ALCint count = 0;
+            ALCsizei count = 0;
             alcGetIntegerv(rec_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &count);
             if (count < 1) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(GK_AUDIO_VOL_PLAYBACK_REFRESH_INTERVAL));
@@ -679,29 +725,24 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             alcCaptureSamples(rec_dev, (ALCvoid *)m_recordBuffer, count);
 
             //
-            // Encode the audio samples!
-            error = avcodec_encode_audio2(ctx, &pkt, frame, &recv_output);
+            // Make sure the audio frame is writeable -- it also makes a copy if the encoder kept a reference internally!
+            error = av_frame_make_writable(frame);
             if (error < 0) {
-                throw std::runtime_error(tr("Error encountered while attempting to encode an audio frame.").toStdString());
+                return;
             }
 
-            if (recv_output) {
-                fwrite(pkt.data, 1, pkt.size, f);
-            }
+            //
+            // Setup the audio buffers
+            m_recordBuffer = reinterpret_cast<ALbyte *>(frame->data[0]);
+
+            //
+            // Encode the audio samples!
+            ffmpegEncodeAudio(ctx, frame, pkt, f);
         } while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording);
 
         //
-        // Obtain the delayed frames
-        for (recv_output = 1; recv_output; ++i) {
-            error = avcodec_encode_audio2(ctx, &pkt, NULL, &recv_output);
-            if (error < 0) {
-                throw std::runtime_error(tr("Error encountered while attempting to encode an audio frame.").toStdString());
-            }
-
-            if (recv_output) {
-                fwrite(pkt.data, 1, pkt.size, f);
-            }
-        }
+        // Flush the encoder
+        ffmpegEncodeAudio(ctx, frame, pkt, f);
 
         //
         // Close the file pointer
@@ -710,6 +751,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         //
         // Free up FFmpeg resources
         av_frame_free(&frame);
+        av_packet_free(&pkt);
         avcodec_free_context(&ctx);
 
         //
