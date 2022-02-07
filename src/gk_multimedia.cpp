@@ -103,6 +103,14 @@ GkMultimedia::GkMultimedia(QPointer<GekkoFyre::GkAudioDevices> audio_devs, std::
     // Initialize variables
     audioPlaybackSource = 0;
 
+    //
+    // Initialize variables within audio devices
+    for (const auto &input_audio_dev: gkSysInputAudioDevs) {
+        if (getInputAudioDevice().audio_dev_str == input_audio_dev.audio_dev_str) {
+            m_recordBuffer = input_audio_dev.alDeviceRecBuf;
+        }
+    }
+
     return;
 }
 
@@ -126,18 +134,20 @@ GkMultimedia::~GkMultimedia()
 AVCodecID GkMultimedia::convFFmpegCodecIdToEnum(const qint32 &codec_id_str)
 {
     switch (codec_id_str) {
-        case AUDIO_PLAYBACK_CODEC_PCM_IDX:
-            return AV_CODEC_ID_PCM_S16LE;
-        case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
-            return AV_CODEC_ID_NONE;
-        case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
-            return AV_CODEC_ID_VORBIS;
         case AUDIO_PLAYBACK_CODEC_CODEC2_IDX:
             return AV_CODEC_ID_CODEC2;
+        case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
+            return AV_CODEC_ID_VORBIS;
+        case AUDIO_PLAYBACK_CODEC_AAC_IDX:
+            return AV_CODEC_ID_AAC;
         case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
             return AV_CODEC_ID_OPUS;
         case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
             return AV_CODEC_ID_FLAC;
+        case AUDIO_PLAYBACK_CODEC_PCM_IDX:
+            return AV_CODEC_ID_PCM_S16LE;
+        case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
+            return AV_CODEC_ID_NONE;
         default:
             return AV_CODEC_ID_NONE;
     }
@@ -351,6 +361,39 @@ void GkMultimedia::ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPack
 }
 
 /**
+ * @brief GkMultimedia::ffmpegWriteAdtsHeaders writes out the ADTS headers for such audio formats as AAC.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ctx
+ * @param frameLength The frame length plus an additional +7 bytes for the header itself that also needs to be provided.
+ * @param isAlcLc Are we dealing with AAC LC specifically here?
+ * @return The required headers to be able to play back an audio encoded file such as AAC.
+ * @note Markus Schumann <https://stackoverflow.com/a/65150073>.
+ */
+unsigned char *GkMultimedia::ffmpegWriteAdtsHeaders(AVCodecContext *ctx, const qint32 &frameLength, const bool &isAacLc)
+{
+    unsigned char *adts_header = new unsigned char[7];
+    qint32 aac_profile = 1;
+    if (isAacLc) {
+        aac_profile = 2;
+    }
+
+    qint32 frequencey_index = 4; // 44,100Hz
+    qint32 channel_configuration = 2; // Stereo (left, right)
+
+    //
+    // Fill in the ADTS data!
+    adts_header[0] = (unsigned char)0xFF;
+    adts_header[1] = (unsigned char)0xF9;
+    adts_header[2] = (unsigned char)(((aac_profile -1) << 6 ) + (frequencey_index << 2) + (channel_configuration >> 2));
+    adts_header[3] = (unsigned char)(((channel_configuration & 3) << 6) + (frameLength >> 11));
+    adts_header[4] = (unsigned char)((frameLength & 0x7FF) >> 3);
+    adts_header[5] = (unsigned char)(((frameLength & 7) << 5) + 0x1F);
+    adts_header[6] = (unsigned char)0xFC;
+
+    return adts_header;
+}
+
+/**
  * @brief GkMultimedia::openAlSelectBitDepth is for querying against the OpenAL libraries alongside the end-user's
  * desired configuration, so that the highest bit-depth that we are able to make use of can be chosen. This is
  * particularly pertinent towards encoding audio with FFmpeg.
@@ -533,7 +576,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
                                    const int64_t &avg_bitrate)
 {
     try {
-        if (!recording_device) {
+        if (!recording_device || !m_recordBuffer) {
             throw std::invalid_argument(tr("An invalid audio device has been specified; unable to proceed with recording! Please check your settings and try again.").toStdString());
         }
 
@@ -616,8 +659,14 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         AVPacket *pkt;
         const AVCodec *codec;
         AVCodecContext *ctx = nullptr;
+        AVFormatContext *formatCtx = nullptr;
         AVFrame *frame;
         FILE *f;
+
+        formatCtx = avformat_alloc_context();
+        if (!formatCtx) {
+            throw std::runtime_error(tr("Unable to allocate output context.").toStdString());
+        }
 
         //
         // Find the desired encoder!
@@ -633,22 +682,30 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
         //
         // Configure sample format!
-        switch (chosenInputDevice.pref_sample_rate) {
-            case AL_FORMAT_MONO8:
-                ctx->sample_fmt = AV_SAMPLE_FMT_U8;
-                break;
-            case AL_FORMAT_MONO16:
-                ctx->sample_fmt = AV_SAMPLE_FMT_S16;
-                break;
-            case AL_FORMAT_STEREO8:
-                ctx->sample_fmt = AV_SAMPLE_FMT_U8;
-                break;
-            case AL_FORMAT_STEREO16:
-                ctx->sample_fmt = AV_SAMPLE_FMT_S16;
-                break;
-            default:
-                ctx->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
-                break;
+        if (ctx->codec_id == AV_CODEC_ID_AAC || ctx->codec_id == AV_CODEC_ID_VORBIS || ctx->codec_id == AV_CODEC_ID_OPUS) {
+            //
+            // A floating point format must be employed for these given codecs!
+            ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+        } else {
+            //
+            // Sample formats for all other codecs!
+            switch (chosenInputDevice.pref_sample_rate) {
+                case AL_FORMAT_MONO8:
+                    ctx->sample_fmt = AV_SAMPLE_FMT_U8;
+                    break;
+                case AL_FORMAT_MONO16:
+                    ctx->sample_fmt = AV_SAMPLE_FMT_S16;
+                    break;
+                case AL_FORMAT_STEREO8:
+                    ctx->sample_fmt = AV_SAMPLE_FMT_U8;
+                    break;
+                case AL_FORMAT_STEREO16:
+                    ctx->sample_fmt = AV_SAMPLE_FMT_S16;
+                    break;
+                default:
+                    ctx->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
+                    break;
+            }
         }
 
         //
@@ -667,12 +724,21 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         ctx->channels = av_get_channel_layout_nb_channels(ctx->channel_layout);
 
         //
+        // Convert the absolute file path to an std::string!
+        const std::string absFilePath = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath());
+
+        //
         // Initiate the encoding process
         if (avcodec_open2(ctx, codec, nullptr) < 0) {
             throw std::runtime_error(tr("Unable to open audio codec to begin encoding with.").toStdString());
         }
 
-        f = fopen(file_path.absoluteFilePath().toStdString().c_str(), "wb"); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
+        //
+        // Print detailed information about the input or output format, such as duration, bitrate, streams, container,
+        // programs, metadata, side data, codec, and time base.
+        av_dump_format(formatCtx, 0, absFilePath.c_str(), 1);
+
+        f = fopen(absFilePath.c_str(), "wb"); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
         if (!f) {
             throw std::runtime_error(tr("Unable to open file, \"%1\"!").arg(file_path.fileName()).toStdString());
         }
@@ -703,8 +769,12 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         }
 
         //
-        // Setup the data pointers in the AVframe!
-        avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (const uint8_t*)m_recordBuffer, bufSize, 0);
+        // Write the stream header, if any! Whether anything actually is written to the IO context at this step depends
+        // on the muxer, but this function must always be called.
+        error = avformat_write_header(formatCtx, nullptr);
+        if (error < 0) {
+            throw std::invalid_argument(tr("Error encountered when attempting to open output file: \"%1\"").arg(QString::fromStdString(absFilePath)).toStdString());
+        }
 
         alcCaptureStart(rec_dev);
         do {
@@ -715,14 +785,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
                 continue;
             }
 
-            if (count > bufSize) {
-                ALbyte *data = static_cast<ALbyte *>(calloc(m_frameSize, (ALuint) count));
-                free(m_recordBuffer);
-                m_recordBuffer = data;
-                bufSize = count;
-            }
-
-            alcCaptureSamples(rec_dev, (ALCvoid *)m_recordBuffer, count);
+            alcCaptureSamples(rec_dev, reinterpret_cast<ALCvoid *>(m_recordBuffer->data()), count);
 
             //
             // Make sure the audio frame is writeable -- it also makes a copy if the encoder kept a reference internally!
@@ -733,7 +796,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
             //
             // Setup the audio buffers
-            m_recordBuffer = reinterpret_cast<ALbyte *>(frame->data[0]);
+            std::copy(m_recordBuffer->begin(), m_recordBuffer->end(), *frame->data);
 
             //
             // Encode the audio samples!
@@ -742,7 +805,14 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
 
         //
         // Flush the encoder
-        ffmpegEncodeAudio(ctx, frame, pkt, f);
+        ffmpegEncodeAudio(ctx, nullptr, pkt, f);
+
+        //
+        // Write the trailer, if any. The trailer must be written before you attempt to close the AVCodecContext pointer,
+        // which is when you wrote the header, as otherwise, `av_write_trailer()` may try to use memory that was freed
+        // on `av_codec_close()`!
+        //
+        av_write_trailer(formatCtx);
 
         //
         // Close the file pointer
@@ -752,6 +822,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         // Free up FFmpeg resources
         av_frame_free(&frame);
         av_packet_free(&pkt);
+        avformat_free_context(formatCtx);
         avcodec_free_context(&ctx);
 
         //
@@ -768,7 +839,7 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
     } catch (const std::exception &e) {
         emit recordingFinished();
         emit updateAudioState(GkAudioState::Stopped); // Immediately halt any recording!
-        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        gkStringFuncs->print_exception(e);
     }
 
     return;

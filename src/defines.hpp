@@ -207,12 +207,13 @@ namespace GekkoFyre {
 #define GK_AUDIO_VOL_PLAYBACK_REFRESH_INTERVAL (10)             // The time, measured in milliseconds, for how often to refresh for any new and updated status changes whilst playing back or recording audio.
 #define GK_AUDIO_VOL_REFRESH_INTERV_DURATION (250)              // How often should OpenAL and the volume widget check for new changes when the QSlider is actioned. A higher value, measured in milliseconds, means less impact on system resources.
 
-#define AUDIO_PLAYBACK_CODEC_PCM_IDX (4)
-#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (5)
+#define AUDIO_PLAYBACK_CODEC_PCM_IDX (5)
+#define AUDIO_PLAYBACK_CODEC_AAC_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (6)
 #define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (1)
 #define AUDIO_PLAYBACK_CODEC_CODEC2_IDX (0)
-#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (2)
-#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (3)
+#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (3)
+#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (4)
 
 #define AUDIO_RECORDING_DEF_BITRATE (192)
 #define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
@@ -1014,6 +1015,7 @@ namespace Database {
                 ALCdevice *alDevice;                                                // The pointer to the openAL device itself.
                 ALCcontext *alDeviceCtx;                                            // The pointer to the openAL device's context.
                 ALCboolean alDeviceCtxCurr;                                         // The current context of the openAL device.
+                std::shared_ptr<std::vector<ALshort>> alDeviceRecBuf;               // The buffer for recording/capturing audio samples towards! It should be noted that `ALshort` is likely equivalent to `int16_t`!
                 QString audio_dev_str;                                              // The referred towards name of the device, as a formatted string.
                 GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
                 GkAudioFramework::GkAudioRecordStatus status;                       // The device's status, whether the audio stream is active, paused, stopped, etc.
@@ -1252,6 +1254,7 @@ namespace GkAudioFramework {
         Codec2,
         Opus,
         FLAC,
+        AAC,
         Unsupported,
         Unknown
     };

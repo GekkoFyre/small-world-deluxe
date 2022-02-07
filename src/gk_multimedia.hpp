@@ -124,13 +124,17 @@ private:
 
     ALuint audioPlaybackSource;
     ALuint m_frameSize;
-    ALbyte *m_recordBuffer;
+    std::shared_ptr<std::vector<ALshort>> m_recordBuffer;
 
     [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
     [[nodiscard]] qint32 ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt);
     [[nodiscard]] qint32 ffmpegSelectSampleRate(const AVCodec *codec);
     [[nodiscard]] qint32 ffmpegSelectChannelLayout(const AVCodec *codec);
     void ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPacket *pkt, FILE *output);
+
+    //
+    // Functions for writing out headers to encoded audio files!
+    [[nodiscard]] unsigned char *ffmpegWriteAdtsHeaders(AVCodecContext *ctx, const qint32 &frameLength, const bool &isAacLc = false);
 
     [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
 

@@ -94,7 +94,7 @@ StringFuncs::~StringFuncs()
 
 void StringFuncs::print_exception(const std::exception &e, int level)
 {
-    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    QMessageBox::critical(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
 
     try {
         std::rethrow_if_nested(e);

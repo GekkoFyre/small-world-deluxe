@@ -2994,6 +2994,8 @@ GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEn
     switch (codec_support_idx) {
         case AUDIO_PLAYBACK_CODEC_PCM_IDX:
             return GekkoFyre::GkAudioFramework::CodecSupport::PCM;
+        case AUDIO_PLAYBACK_CODEC_AAC_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::AAC;
         case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
             return GekkoFyre::GkAudioFramework::CodecSupport::Loopback;
         case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:

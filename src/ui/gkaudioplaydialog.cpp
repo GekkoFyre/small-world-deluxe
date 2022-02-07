@@ -126,8 +126,9 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
 
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Codec2);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
-        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::AAC);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
         prefillAudioSourceComboBoxes();
@@ -313,6 +314,9 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
     switch (index) {
         case AUDIO_PLAYBACK_CODEC_PCM_IDX:
             m_rec_codec_chosen = CodecSupport::PCM;
+            return;
+        case AUDIO_PLAYBACK_CODEC_AAC_IDX:
+            m_rec_codec_chosen = CodecSupport::AAC;
             return;
         case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
             m_rec_codec_chosen = CodecSupport::Loopback;
@@ -655,7 +659,7 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
             ui->lineEdit_playback_audio_codec->clear();
             ui->lineEdit_playback_bitrate->clear();
             ui->lineEdit_playback_sample_rate->clear();
-            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_CODEC2_IDX);
             ui->horizontalSlider_playback_rec_bitrate->setValue(AUDIO_RECORDING_DEF_BITRATE);
             ui->label_playback_timer->setText(tr("-- : --"));
             ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
@@ -668,7 +672,7 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
             ui->lineEdit_playback_audio_codec->clear();
             ui->lineEdit_playback_bitrate->clear();
             ui->lineEdit_playback_sample_rate->clear();
-            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_CODEC2_IDX);
             ui->horizontalSlider_playback_rec_bitrate->setValue(AUDIO_RECORDING_DEF_BITRATE);
             ui->label_playback_timer->setText(tr("-- : --"));
             ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
@@ -717,6 +721,9 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
     switch (supported_codec) {
         case CodecSupport::PCM:
             ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_PCM_IDX, tr("PCM"), AUDIO_PLAYBACK_CODEC_PCM_IDX);
+            break;
+        case CodecSupport::AAC:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_AAC_IDX, tr("AAC (w/ ADTS container)"), AUDIO_PLAYBACK_CODEC_AAC_IDX);
             break;
         case CodecSupport::Loopback:
             ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);

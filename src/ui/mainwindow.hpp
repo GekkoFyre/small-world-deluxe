@@ -383,11 +383,6 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // Audio System initialization, buffers, and event-loops
-    //
-    std::shared_ptr<std::vector<ALshort>> mInputDeviceBuf; // `ALshort` should be equivalent to `int16_t`!
-
-    //
     // Audio System miscellaneous variables
     //
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> gkSysOutputAudioDevs;
@@ -402,7 +397,7 @@ private:
     //
     // Audio sub-system
     //
-    void captureAlcSamples(ALCdevice *device, ALCsizei samples);
+    void captureAlcSamples(ALCdevice *device, std::shared_ptr<std::vector<ALshort>> deviceRecBuf, ALCsizei samples);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
     quint32 m_maxAmplitude;

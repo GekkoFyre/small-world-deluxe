@@ -592,7 +592,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                     //
                                     // Begin capture of audio stream from given audio device!
                                     // NOTE: A 'context' is not required in this instance unlike an output audio device...
-                                    mInputDeviceBuf = std::make_shared<std::vector<ALshort>>(audioFrameSampleCountTotal); // Initialize the `std::vector`!
+                                    it->alDeviceRecBuf = std::make_shared<std::vector<ALshort>>(audioFrameSampleCountTotal); // Initialize the `std::vector`!
                                     alcCaptureStart(it->alDevice);
                                     it->alc_error = alcGetError(it->alDevice);
                                     if (it->alc_error != AL_NO_ERROR) {
@@ -603,7 +603,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                     //
                                     // Initiate the while-loop for the capture of actual audio samples!
                                     gkSysInputDevStatus = GkAudioRecordStatus::Active;
-                                    capture_input_audio_samples = std::thread(&MainWindow::captureAlcSamples, this, it->alDevice, audioFrameSampleCountPerChannel);
+                                    capture_input_audio_samples = std::thread(&MainWindow::captureAlcSamples, this, it->alDevice, it->alDeviceRecBuf, audioFrameSampleCountPerChannel);
                                     capture_input_audio_samples.detach();
 
                                     //
@@ -637,7 +637,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         for (const auto &input_audio_dev: gkSysInputAudioDevs) {
             if (input_audio_dev.isEnabled) {
-                gkFftAudio = new GekkoFyre::GkFFTAudio(mInputDeviceBuf, input_audio_dev, gkAudioDevices,
+                gkFftAudio = new GekkoFyre::GkFFTAudio(input_audio_dev.alDeviceRecBuf, input_audio_dev, gkAudioDevices,
                                                        gkSpectroWaterfall, gkStringFuncs, gkEventLogger,
                                                        &gkAudioInputThread);
                 break;
@@ -1523,16 +1523,17 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  * @brief MainWindow::captureAlcSamples for the capturing/recording of audio samples.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param device
+ * @param deviceRecBuf The buffer for recording/capturing audio samples towards.
  * @param samples
  * @note Radosław Cybulski <https://stackoverflow.com/a/56651424>.
  */
-void MainWindow::captureAlcSamples(ALCdevice *device, ALCsizei samples)
+void MainWindow::captureAlcSamples(ALCdevice *device, std::shared_ptr<std::vector<ALshort>> deviceRecBuf, ALCsizei samples)
 {
     try {
         while (gkSysInputDevStatus == GkAudioRecordStatus::Active) {
             std::lock_guard<std::mutex> lck_guard(gkCaptureAudioSamplesMtx);
             alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
-            alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(mInputDeviceBuf->data()), samples);
+            alcCaptureSamples(device, reinterpret_cast<ALCvoid *>(deviceRecBuf->data()), samples);
         }
     } catch (const std::exception &e) {
         for (auto it = gkSysInputAudioDevs.begin(), end = gkSysInputAudioDevs.end(); it != end; ++it) {
