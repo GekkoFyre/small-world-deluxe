@@ -130,7 +130,7 @@ private:
     [[nodiscard]] qint32 ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt);
     [[nodiscard]] qint32 ffmpegSelectSampleRate(const AVCodec *codec);
     [[nodiscard]] qint32 ffmpegSelectChannelLayout(const AVCodec *codec);
-    void ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, QFile *output);
+    [[nodiscard]] qint32 ffmpegInitPacket(AVPacket **packet);
 
     [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
 

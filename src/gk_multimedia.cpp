@@ -308,52 +308,6 @@ qint32 GkMultimedia::ffmpegSelectChannelLayout(const AVCodec *codec)
 }
 
 /**
- * @brief GkMultimedia::ffmpegEncodeAudioPacket attempts to universally encode any given audio file via given PCM data,
- * provided the desired codec is a supported format as provided by FFmpeg.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codecCtx Contexual information for the audio file's codec and other errata.
- * @param frame
- * @param pkt
- * @param output
- * @note Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
- */
-void GkMultimedia::ffmpegEncodeAudioPacket(AVCodecContext *codecCtx, AVFrame *frame, AVPacket *pkt, QFile *output)
-{
-    try {
-        qint32 ret = 0;
-
-        //
-        // Send the frame for encoding via FFmpeg!
-        ret = avcodec_send_frame(codecCtx, frame);
-        if (ret < 0) {
-            throw std::invalid_argument(tr("Error encountered with sending audio frame to the encoder!").toStdString());
-        }
-
-        //
-        // Read all the available output packets (in general there maybe any number of them)!
-        while (ret >= 0) {
-            ret = avcodec_receive_packet(codecCtx, pkt);
-            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-                return;
-            } else if (ret < 0) {
-                throw std::runtime_error(tr("Error encountered with encoding audio frame!").toStdString());
-            }
-
-            char *buf;
-            std::memcpy(buf, pkt->data, pkt->size);
-            output->write(buf);
-            av_packet_unref(pkt);
-        }
-
-        return;
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));;
-    }
-
-    return;
-}
-
-/**
  * @brief GkMultimedia::openAlSelectBitDepth is for querying against the OpenAL libraries alongside the end-user's
  * desired configuration, so that the highest bit-depth that we are able to make use of can be chosen. This is
  * particularly pertinent towards encoding audio with FFmpeg.
@@ -526,7 +480,11 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
  * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
  * @note OpenAL Recording Example <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>,
  * Nikolaus Gradwohl <https://stackoverflow.com/a/3164561>,
- * Fabrice Bellard <https://ffmpeg.org/doxygen/trunk/encode__audio_8c_source.html>.
+ * Fabrice Bellard <http://ffmpeg.org/doxygen/trunk/doc_2examples_2decoding_encoding_8c-example.html>,
+ * Andreas Unterweger <https://ffmpeg.org/doxygen/trunk/transcode_aac_8c-example.html>,
+ * Jonathan Baldwin <https://ffmpeg.org/doxygen/trunk/openal-dec_8c_source.html
+ *
+ * >.
  */
 void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id,
                                    const int64_t &avg_bitrate)
@@ -610,12 +568,14 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             .arg(chosenInputDevice.audio_dev_str).toStdString());
         }
 
-        qint32 ret = 0;
+        qint32 error;
+        qint32 recv_output;
+        qint32 i;
+        AVPacket pkt;
         const AVCodec *codec;
-        AVCodecContext *c = nullptr;
+        AVCodecContext *ctx = nullptr;
         AVFrame *frame;
-        AVPacket *pkt;
-        QFile *file;
+        FILE *f;
 
         //
         // Find the desired encoder!
@@ -624,8 +584,8 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             throw std::invalid_argument(tr("Audio codec could not be found!").toStdString());
         }
 
-        c = avcodec_alloc_context3(codec);
-        if (!c) {
+        ctx = avcodec_alloc_context3(codec);
+        if (!ctx) {
             throw std::runtime_error(tr("Could not allocate audio codec context!").toStdString());
         }
 
@@ -633,53 +593,46 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         // Configure sample format!
         switch (chosenInputDevice.pref_sample_rate) {
             case AL_FORMAT_MONO8:
-                c->sample_fmt = AV_SAMPLE_FMT_U8;
+                ctx->sample_fmt = AV_SAMPLE_FMT_U8;
                 break;
             case AL_FORMAT_MONO16:
-                c->sample_fmt = AV_SAMPLE_FMT_S16;
+                ctx->sample_fmt = AV_SAMPLE_FMT_S16;
                 break;
             case AL_FORMAT_STEREO8:
-                c->sample_fmt = AV_SAMPLE_FMT_U8;
+                ctx->sample_fmt = AV_SAMPLE_FMT_U8;
                 break;
             case AL_FORMAT_STEREO16:
-                c->sample_fmt = AV_SAMPLE_FMT_S16;
+                ctx->sample_fmt = AV_SAMPLE_FMT_S16;
                 break;
             default:
-                c->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
+                ctx->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
                 break;
         }
 
         //
         // Configure sample parameters!
-        c->bit_rate = avg_bitrate * 1000;
+        ctx->bit_rate = avg_bitrate * 1000;
 
-        if (!ffmpegCheckSampleFormat(codec, c->sample_fmt)) {
+        if (!ffmpegCheckSampleFormat(codec, ctx->sample_fmt)) {
             throw std::invalid_argument(tr("Chosen audio encoder does not support given sample format, \"%1\"!")
-                                                .arg(QString::fromStdString(av_get_sample_fmt_name(c->sample_fmt))).toStdString());
+                                                .arg(QString::fromStdString(av_get_sample_fmt_name(ctx->sample_fmt))).toStdString());
         }
 
         //
         // Configure other audio paramete   rs supported by the chosen encoder!
-        c->sample_rate = ffmpegSelectSampleRate(codec);
-        c->channel_layout = ffmpegSelectChannelLayout(codec);
-        c->channels = av_get_channel_layout_nb_channels(c->channel_layout);
+        ctx->sample_rate = ffmpegSelectSampleRate(codec);
+        ctx->channel_layout = ffmpegSelectChannelLayout(codec);
+        ctx->channels = av_get_channel_layout_nb_channels(ctx->channel_layout);
 
         //
         // Initiate the encoding process
-        if (avcodec_open2(c, codec, nullptr) < 0) {
+        if (avcodec_open2(ctx, codec, nullptr) < 0) {
             throw std::runtime_error(tr("Unable to open audio codec to begin encoding with.").toStdString());
         }
 
-        file = new QFile(file_path.absoluteFilePath()); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
-        if (!file->open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
+        f = fopen(file_path.absoluteFilePath().toStdString().c_str(), "wb"); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
+        if (!f) {
             throw std::runtime_error(tr("Unable to open file, \"%1\"!").arg(file_path.fileName()).toStdString());
-        }
-
-        //
-        // Packet for holding encoded output!
-        pkt = av_packet_alloc();
-        if (!pkt) {
-            throw std::runtime_error(tr("Could not allocate the packet for encoding audio with.").toStdString());
         }
 
         //
@@ -689,19 +642,26 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             throw std::runtime_error(tr("Could not allocate audio frame.").toStdString());
         }
 
-        frame->nb_samples = c->frame_size;
-        frame->format = c->sample_fmt;
-        frame->channel_layout = c->channel_layout;
+        frame->nb_samples = ctx->frame_size;
+        frame->format = ctx->sample_fmt;
+        frame->channel_layout = ctx->channel_layout;
 
         //
         // Allocate the data buffers!
-        ret = av_frame_get_buffer(frame, 0);
-        if (ret < 0) {
+        error = av_frame_get_buffer(frame, 0);
+        if (error < 0) {
             throw std::runtime_error(tr("Unable to allocate audio data buffers for encoding!").toStdString());
         }
 
+        //
+        // Setup the data pointers in the AVframe!
+        avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (const uint8_t*)m_recordBuffer, bufSize, 0);
+
         alcCaptureStart(rec_dev);
         do {
+            pkt.data = nullptr; // Packet data will be allocated by the encoder itself!
+            pkt.size = 0;
+
             ALCint count = 0;
             alcGetIntegerv(rec_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &count);
             if (count < 1) {
@@ -717,26 +677,40 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             }
 
             alcCaptureSamples(rec_dev, (ALCvoid *)m_recordBuffer, count);
-            std::memcpy(frame->data[0], m_recordBuffer, count);
 
             //
-            // Record and encode the buffer!
-            ffmpegEncodeAudioPacket(c, frame, pkt, file);
+            // Encode the audio samples!
+            error = avcodec_encode_audio2(ctx, &pkt, frame, &recv_output);
+            if (error < 0) {
+                throw std::runtime_error(tr("Error encountered while attempting to encode an audio frame.").toStdString());
+            }
+
+            if (recv_output) {
+                fwrite(pkt.data, 1, pkt.size, f);
+            }
         } while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording);
 
         //
-        // Flush the encoder
-        ffmpegEncodeAudioPacket(c, nullptr, pkt, file);
+        // Obtain the delayed frames
+        for (recv_output = 1; recv_output; ++i) {
+            error = avcodec_encode_audio2(ctx, &pkt, NULL, &recv_output);
+            if (error < 0) {
+                throw std::runtime_error(tr("Error encountered while attempting to encode an audio frame.").toStdString());
+            }
+
+            if (recv_output) {
+                fwrite(pkt.data, 1, pkt.size, f);
+            }
+        }
 
         //
         // Close the file pointer
-        file->close();
+        fclose(f);
 
         //
         // Free up FFmpeg resources
         av_frame_free(&frame);
-        av_packet_free(&pkt);
-        avcodec_free_context(&c);
+        avcodec_free_context(&ctx);
 
         //
         // Free up OpenAL sources
