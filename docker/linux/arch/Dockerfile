@@ -182,7 +182,6 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
         mingw-w64-python-bin \
-		mingw-w64-ffmpeg \
 		mingw-w64-openal \
 		mingw-w64-taglib
 
@@ -259,7 +258,6 @@ RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S aria2 --noconfirm
 RUN pacman -S openal --noconfirm
-RUN pacman -S ffmpeg --noconfirm
 RUN pacman -S libsndfile --noconfirm
 RUN pacman -S taglib --noconfirm
 

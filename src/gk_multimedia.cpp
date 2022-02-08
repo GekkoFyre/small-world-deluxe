@@ -40,11 +40,14 @@
  ****************************************************************************************************/
 
 #include "src/gk_multimedia.hpp"
+#include <opus/opus.h>
 #include <cstdio>
 #include <future>
 #include <cstring>
+#include <cstdlib>
 #include <utility>
 #include <exception>
+#include <QDir>
 #include <QMessageBox>
 
 #ifdef __cplusplus
@@ -53,11 +56,6 @@ extern "C"
 #endif
 
 #include <sndfile.h>
-#include <libswresample/swresample.h>
-#include <libavutil/samplefmt.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/dict.h>
-#include <libavutil/opt.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -124,35 +122,35 @@ GkMultimedia::~GkMultimedia()
 }
 
 /**
- * @brief GkMultimedia::convFFmpegCodecIdToEnum converts a given, QComboBox index to its equivalent enumerator as found
- * within the FFmpeg source code. Only codecs officially supported and tested by Small World Deluxe are convertable.
+ * @brief GkMultimedia::convAudioCodecIdxToEnum converts a given, QComboBox index to its equivalent enumerator as found
+ * within the, `defines.hpp`, source file. Only codecs officially supported and tested by Small World Deluxe are
+ * convertable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codec_id_str The QComboBox index to be converted towards its equivalent enumerator, as found within the FFmpeg
- * source code.
- * @return The equivalent enumerator, as found within the FFmpeg source code.
+ * @param codec_id_str The QComboBox index to be converted towards its equivalent, audio codec-defined enumerator.
+ * @return The equivalent enumerator, as found within the `defines.hpp` source file.
  */
-AVCodecID GkMultimedia::convFFmpegCodecIdToEnum(const qint32 &codec_id_str)
+CodecSupport GkMultimedia::convAudioCodecIdxToEnum(const qint32 &codec_id_str)
 {
     switch (codec_id_str) {
         case AUDIO_PLAYBACK_CODEC_CODEC2_IDX:
-            return AV_CODEC_ID_CODEC2;
+            return CodecSupport::Codec2;
         case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
-            return AV_CODEC_ID_VORBIS;
+            return CodecSupport::OggVorbis;
         case AUDIO_PLAYBACK_CODEC_AAC_IDX:
-            return AV_CODEC_ID_AAC;
+            return CodecSupport::AAC;
         case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
-            return AV_CODEC_ID_OPUS;
+            return CodecSupport::Opus;
         case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
-            return AV_CODEC_ID_FLAC;
+            return CodecSupport::FLAC;
         case AUDIO_PLAYBACK_CODEC_PCM_IDX:
-            return AV_CODEC_ID_PCM_S16LE;
+            return CodecSupport::PCM;
         case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
-            return AV_CODEC_ID_NONE;
+            return CodecSupport::Loopback;
         default:
-            return AV_CODEC_ID_NONE;
+            return CodecSupport::Unsupported;
     }
 
-    return AV_CODEC_ID_NONE;
+    return CodecSupport::Unknown;
 }
 
 /**
@@ -213,7 +211,7 @@ ALuint GkMultimedia::loadAudioFile(const QFileInfo &file_path)
         membuf = static_cast<short *>(malloc((size_t) (sfinfo.frames * sfinfo.channels) * sizeof(short)));
         num_frames = sf_readf_short(sndfile, membuf, sfinfo.frames);
         if (num_frames < 1) {
-            free(membuf);
+            std::free(membuf);
             sf_close(sndfile);
             throw std::runtime_error(tr("Failed to read samples in %1 (%2 frames)!")
                                              .arg(file_path.canonicalFilePath(), QString::number(num_frames)).toStdString());
@@ -226,7 +224,7 @@ ALuint GkMultimedia::loadAudioFile(const QFileInfo &file_path)
         alCall(alGenBuffers, GK_AUDIO_STREAM_NUM_BUFS, &buffer);
         alBufferData(buffer, format, membuf, num_bytes, sfinfo.samplerate);
 
-        free(membuf);
+        std::free(membuf);
         sf_close(sndfile);
 
         return buffer;
@@ -238,121 +236,51 @@ ALuint GkMultimedia::loadAudioFile(const QFileInfo &file_path)
 }
 
 /**
- * @brief GkMultimedia::ffmpegCheckSampleFormat checks that a given sample format is supported by the encoder.
+ * @brief GkMultimedia::checkForFileToBeginRecording initiates the first process/function in beginning a sequence to
+ * record towards a given file, in that it asks the end-user what to do in the event of an already existing file,
+ * provided a path towards an existing file has been provided. Otherwise, the function simply remains dormant. A
+ * QMessageBox is presented to the end-user in the event of an existing file being provided as the given file-path,
+ * asking what action should precede the initiation of a recording session.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codec The desired codec to be used and its associated information.
- * @param sample_fmt The desired sample format the check is to be made against.
- * @return Whether a positive result has been garnered or not.
- * @note Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>.
+ * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
  */
-qint32 GkMultimedia::ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt)
-{
-    const enum AVSampleFormat *p = codec->sample_fmts;
-    while (*p != AV_SAMPLE_FMT_NONE) {
-        if (*p == sample_fmt) {
-            return 1;
-        }
-
-        ++p;
-    }
-
-    return 0;
-}
-
-/**
- * @brief GkMultimedia::ffmpegSelectSampleRate simply picks the highest available and supported sample rate.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codec The desired codec to be used and its associated information.
- * @return The best, possible and highest available sample rate that we can use with regards to encoding an audio file.
- */
-qint32 GkMultimedia::ffmpegSelectSampleRate(const AVCodec *codec)
-{
-    const qint32 *p;
-    qint32 bestSampleRate = 0;
-
-    if (!codec->supported_samplerates) {
-        return GK_AUDIO_FFMPEG_DEFAULT_SAMPLE_RATE;
-    }
-
-    p = codec->supported_samplerates;
-    while (*p) {
-        if (!bestSampleRate || std::abs(GK_AUDIO_FFMPEG_DEFAULT_SAMPLE_RATE - *p) < std::abs(GK_AUDIO_FFMPEG_DEFAULT_SAMPLE_RATE - bestSampleRate)) {
-            bestSampleRate = *p;
-        }
-
-        ++p;
-    }
-
-    return bestSampleRate;
-}
-
-/**
- * @brief GkMultimedia::ffmpegSelectChannelLayout will select/determine a layout with the possible highest channel count.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codec The desired codec to be used and its associated information.
- * @return
- * @note Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>.
- */
-qint32 GkMultimedia::ffmpegSelectChannelLayout(const AVCodec *codec)
-{
-    const uint64_t *p;
-    uint64_t bestChLayout = 0;
-    qint32 bestNbChannels = 0;
-
-    if (!codec->channel_layouts) {
-        return AV_CH_LAYOUT_STEREO;
-    }
-
-    p = codec->channel_layouts;
-    while (*p) {
-        qint32 nbChannels = av_get_channel_layout_nb_channels(*p);
-        if (nbChannels > bestNbChannels) {
-            bestChLayout = *p;
-            bestNbChannels = nbChannels;
-        }
-
-        ++p;
-    }
-
-    return bestChLayout;
-}
-
-/**
- * @brief GkMultimedia::ffmpegEncodeAudio performs the encoding process on the given audio samples to any, supported
- * format within the FFmpeg libraries, such as FLAC, MP3, Ogg Vorbis, etc.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param ctx
- * @param frame
- * @param pkt
- * @param output
- */
-void GkMultimedia::ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPacket *pkt, FILE *output)
+void GkMultimedia::checkForFileToBeginRecording(const QFileInfo &file_path)
 {
     try {
-        qint32 ret;
+        if (file_path.exists()) {
+            if (file_path.isFile()) {
+                //
+                // We are working with a file
+                QMessageBox msgBox;
+                msgBox.setParent(nullptr);
+                msgBox.setWindowTitle(tr("Invalid destination!"));
+                msgBox.setText(tr("You are attempting to record over a pre-existing file: \"%1\"\n\nDo you wish to continue?").arg(file_path.canonicalFilePath()));
+                msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel | QMessageBox::Abort);
+                msgBox.setDefaultButton(QMessageBox::Ok);
+                msgBox.setIcon(QMessageBox::Icon::Warning);
+                int ret = msgBox.exec();
 
-        //
-        // Send the frame for encoding
-        ret = avcodec_send_frame(ctx, frame);
-        if (ret < 0) {
-            throw std::runtime_error(tr("Error encountered with sending audio frame to FFmpeg encoder.").toStdString());
-        }
-
-        //
-        // Read all the available output packets (in general there may be any number of them)!
-        while (ret >= 0) {
-            ret = avcodec_receive_packet(ctx, pkt);
-            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-                return;
-            } else if (ret < 0) {
-                throw std::runtime_error(tr("Error encountered while encoding audio frame.").toStdString());
+                switch (ret) {
+                    case QMessageBox::Ok:
+                        QFile::remove(file_path.canonicalFilePath());
+                        break;
+                    case QMessageBox::Cancel:
+                        return;
+                    case QMessageBox::Abort:
+                        return;
+                    default:
+                        return;
+                }
+            } else if (file_path.isDir()) {
+                //
+                // We are working with a directory
+                throw std::invalid_argument(tr("Unable to record towards given object, since it is an already existing directory.").toStdString());
+            } else {
+                //
+                // The given object is of an unknown nature
+                throw std::invalid_argument(tr("The given file-path points to an existing object of unknown nature. Please select another destination and try again.").toStdString());
             }
-
-            fwrite(pkt->data, 1, pkt->size, output);
-            av_packet_unref(pkt);
         }
-
-        return;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
@@ -361,36 +289,281 @@ void GkMultimedia::ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPack
 }
 
 /**
- * @brief GkMultimedia::ffmpegWriteAdtsHeaders writes out the ADTS headers for such audio formats as AAC.
+ * @brief GkMultimedia::convAudioCodecToFileExtStr converts a given codec enumerator/identifier to the given string, but
+ * more importantly, it does this in a way that's suitable for use as a file extension.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param ctx
- * @param frameLength The frame length plus an additional +7 bytes for the header itself that also needs to be provided.
- * @param isAlcLc Are we dealing with AAC LC specifically here?
- * @return The required headers to be able to play back an audio encoded file such as AAC.
- * @note Markus Schumann <https://stackoverflow.com/a/65150073>.
+ * @param codec_id The type of audio codec we are dealing with.
+ * @return The codec enumerator as a string, but suited for use as a file extension.
  */
-unsigned char *GkMultimedia::ffmpegWriteAdtsHeaders(AVCodecContext *ctx, const qint32 &frameLength, const bool &isAacLc)
+QString GkMultimedia::convAudioCodecToFileExtStr(GkAudioFramework::CodecSupport codec_id)
 {
-    unsigned char *adts_header = new unsigned char[7];
-    qint32 aac_profile = 1;
-    if (isAacLc) {
-        aac_profile = 2;
+    switch (codec_id) {
+        case GkAudioFramework::CodecSupport::Codec2:
+            return Filesystem::audio_format_codec2;
+        case GkAudioFramework::CodecSupport::PCM:
+            return Filesystem::audio_format_pcm_wav;
+        case GkAudioFramework::CodecSupport::Loopback:
+            return Filesystem::audio_format_loopback;
+        case GkAudioFramework::CodecSupport::OggVorbis:
+            return Filesystem::audio_format_ogg_vorbis;
+        case GkAudioFramework::CodecSupport::Opus:
+            return Filesystem::audio_format_ogg_opus;
+        case GkAudioFramework::CodecSupport::FLAC:
+            return Filesystem::audio_format_flac;
+        case GkAudioFramework::CodecSupport::AAC:
+            return Filesystem::audio_format_aac;
+        case GkAudioFramework::CodecSupport::RawData:
+            return Filesystem::audio_format_raw_data;
+        case GkAudioFramework::CodecSupport::Unsupported:
+            return Filesystem::audio_format_unsupported;
+        case GkAudioFramework::CodecSupport::Unknown:
+            return Filesystem::audio_format_unknown;
+        default:
+            return Filesystem::audio_format_default;
     }
 
-    qint32 frequencey_index = 4; // 44,100Hz
-    qint32 channel_configuration = 2; // Stereo (left, right)
+    return QString();
+}
 
-    //
-    // Fill in the ADTS data!
-    adts_header[0] = (unsigned char)0xFF;
-    adts_header[1] = (unsigned char)0xF9;
-    adts_header[2] = (unsigned char)(((aac_profile -1) << 6 ) + (frequencey_index << 2) + (channel_configuration >> 2));
-    adts_header[3] = (unsigned char)(((channel_configuration & 3) << 6) + (frameLength >> 11));
-    adts_header[4] = (unsigned char)((frameLength & 0x7FF) >> 3);
-    adts_header[5] = (unsigned char)(((frameLength & 7) << 5) + 0x1F);
-    adts_header[6] = (unsigned char)0xFC;
+/**
+ * @brief GkMultimedia::convertToPcm converts raw audio samples to the PCM WAV audio format, via the libsndfile
+ * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
+ * 16-bit integer type are to be converted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param samples The raw audio samples that are to be converted to the PCM WAV format.
+ * @param sample_size The size of the `samples` 16-bit integer array.
+ * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
+ */
+void GkMultimedia::convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size)
+{
+    try {
+        SF_INFO readInfo, writeInfo;
+        readInfo.format = 0;
 
-    return adts_header;
+        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
+        if (!in) {
+            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
+        }
+
+        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+        writeInfo.samplerate = readInfo.samplerate;
+        writeInfo.channels   = readInfo.channels;
+
+        QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + convAudioCodecToFileExtStr(CodecSupport::PCM));
+        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
+        if (!out) {
+            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
+        }
+
+        while (true) {
+            qint32 items = sf_read_short(in, samples, sample_size);
+            if (items > 0) {
+                sf_write_short(out, samples, items);
+            } else {
+                break;
+            }
+        }
+
+        //
+        // Clean up any items that are now disused!
+        sf_close(in);
+        sf_close(out);
+
+        //
+        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
+        if (file_path.exists() && file_path.isFile()) {
+            if (!QFile(file_path.absoluteFilePath()).remove()) {
+                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkMultimedia::convertToPcm converts raw audio samples to the PCM WAV audio format, via the libsndfile
+ * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
+ * 32-bit integer type are to be converted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param samples The raw audio samples that are to be converted to the PCM WAV format.
+ * @param sample_size The size of the `samples` 32-bit integer array.
+ * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
+ */
+void GkMultimedia::convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size)
+{
+    try {
+        SF_INFO readInfo, writeInfo;
+        readInfo.format = 0;
+
+        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
+        if (!in) {
+            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
+        }
+
+        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+        writeInfo.samplerate = readInfo.samplerate;
+        writeInfo.channels   = readInfo.channels;
+
+        QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + convAudioCodecToFileExtStr(CodecSupport::PCM));
+        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
+        if (!out) {
+            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
+        }
+
+        while (true) {
+            qint64 items = sf_read_int(in, samples, sample_size);
+            if (items > 0) {
+                sf_write_int(out, samples, items);
+            } else {
+                break;
+            }
+        }
+
+        //
+        // Clean up any items that are now disused!
+        sf_close(in);
+        sf_close(out);
+
+        //
+        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
+        if (file_path.exists() && file_path.isFile()) {
+            if (!QFile(file_path.absoluteFilePath()).remove()) {
+                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkMultimedia::convertToPcm converts raw audio samples to the PCM WAV audio format, via the libsndfile
+ * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
+ * float-type are to be converted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param samples The raw audio samples that are to be converted to the PCM WAV format.
+ * @param sample_size The size of the `samples` floating-point array.
+ * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
+ */
+void GkMultimedia::convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size)
+{
+    try {
+        SF_INFO readInfo, writeInfo;
+        readInfo.format = 0;
+
+        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
+        if (!in) {
+            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
+        }
+
+        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+        writeInfo.samplerate = readInfo.samplerate;
+        writeInfo.channels   = readInfo.channels;
+
+        QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + convAudioCodecToFileExtStr(CodecSupport::PCM));
+        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
+        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
+        if (!out) {
+            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
+        }
+
+        while (true) {
+            qint64 items = sf_read_float(in, samples, sample_size);
+            if (items > 0) {
+                sf_write_float(out, samples, items);
+            } else {
+                break;
+            }
+        }
+
+        //
+        // Clean up any items that are now disused!
+        sf_close(in);
+        sf_close(out);
+
+        //
+        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
+        if (file_path.exists() && file_path.isFile()) {
+            if (!QFile(file_path.absoluteFilePath()).remove()) {
+                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkMultimedia::encodeOpus encodes to the Opus format. A container must be provided separately, such as Ogg
+ * which is commonly used alongside Opus. Only parses data which is in the PCM Format already, so must use a function
+ * such as **GkMultimedia::convertToPcm()** to do the pre-encoding firstly.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param f The system file pointer.
+ * @param pcm_data The raw, PCM data to be encoded by the Opus codec.
+ * @parm sample_rate The given sample rate to encode for, such as 44,100 kHz.
+ * @parm samples_size The number of the audio samples within the audio buffer used for encoding.
+ * @parm num_channels The number of available audio channels to encode for, whether it be '1' for mono or '2' for
+ * stereo, as an example.
+ * @note Matin Kh <https://stackoverflow.com/q/56368106>.
+ * @see GkMultimedia::convertToPcm().
+ */
+void GkMultimedia::encodeOpus(FILE *f, float *pcm_data, const qint32 &sample_rate, const qint32 &samples_size,
+                              const qint32 &num_channels)
+{
+    try {
+        std::vector<unsigned char> output_buf;
+        qint32 error;
+
+        OpusEncoder *encoder = opus_encoder_create(sample_rate, 1, OPUS_APPLICATION_VOIP, &error);
+        if (error != OPUS_OK) {
+            throw std::runtime_error(tr("Failed to create Opus codec pointer! Out of memory?").toStdString());
+        }
+
+        qint32 bytes_written = opus_encode_float(encoder, pcm_data, samples_size, output_buf.data(), 4000);
+        if (bytes_written < 0) {
+            if (bytes_written == OPUS_BAD_ARG) {
+                throw std::invalid_argument(tr("Invalid arguments given for encoding with the Opus audio format.").toStdString());
+            } else {
+                throw std::invalid_argument(tr("Failed to initiate encoding with the Opus audio format.").toStdString());
+            }
+        }
+
+        //
+        // Output the encoded data to the given file pointer!
+        fwrite(output_buf.data(), bytes_written, 1, f);
+
+        //
+        // Clean up the now, unneeded, PCM data!
+        std::free(pcm_data);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkMultimedia::addOggContainer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkMultimedia::addOggContainer()
+{
+    return;
 }
 
 /**
@@ -479,7 +652,7 @@ void GkMultimedia::checkOpenAlExtensions()
  * @brief GkMultimedia::playAudioFile will attempt to play an audio file of any, given, supported audio format provided
  * it's either supported by FFmpeg or it's simply a WAV file.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical path to the given audio file to be played.
+ * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
  * @note OpenAL Source Play Example <https://github.com/kcat/openal-soft/blob/master/examples/alplay.c>.
  */
 void GkMultimedia::playAudioFile(const QFileInfo &file_path)
@@ -565,56 +738,25 @@ void GkMultimedia::playAudioFile(const QFileInfo &file_path)
  * @param codec_id The codec used in encoding a given audio stream.
  * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
  * @note OpenAL Recording Example <https://github.com/kcat/openal-soft/blob/master/examples/alrecord.c>,
- * Nikolaus Gradwohl <https://stackoverflow.com/a/3164561>,
- * Fabrice Bellard <https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/encode_audio.c>,
- * Andreas Unterweger <https://ffmpeg.org/doxygen/trunk/transcode_aac_8c-example.html>,
- * Jonathan Baldwin <https://ffmpeg.org/doxygen/trunk/openal-dec_8c_source.html
- *
- * >.
+ * @see GkMultimedia::convertToPcm(), GkMultimedia::encodeOpus().
  */
-void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id,
-                                   const int64_t &avg_bitrate)
+void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device,
+                                   const GkAudioFramework::CodecSupport &codec_id, const int64_t &avg_bitrate)
 {
     try {
         if (!recording_device || !m_recordBuffer) {
             throw std::invalid_argument(tr("An invalid audio device has been specified; unable to proceed with recording! Please check your settings and try again.").toStdString());
         }
 
+        //
+        // Check that the requisite OpenAL extensions are available and ready-to-use!
         checkOpenAlExtensions();
-        if (file_path.exists()) {
-            if (file_path.isFile()) {
-                //
-                // We are working with a file
-                QMessageBox msgBox;
-                msgBox.setParent(nullptr);
-                msgBox.setWindowTitle(tr("Invalid destination!"));
-                msgBox.setText(tr("You are attempting to record over a pre-existing file: \"%1\"\n\nDo you wish to continue?").arg(file_path.canonicalFilePath()));
-                msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel | QMessageBox::Abort);
-                msgBox.setDefaultButton(QMessageBox::Ok);
-                msgBox.setIcon(QMessageBox::Icon::Warning);
-                int ret = msgBox.exec();
 
-                switch (ret) {
-                    case QMessageBox::Ok:
-                        QFile::remove(file_path.canonicalFilePath());
-                        break;
-                    case QMessageBox::Cancel:
-                        return;
-                    case QMessageBox::Abort:
-                        return;
-                    default:
-                        return;
-                }
-            } else if (file_path.isDir()) {
-                //
-                // We are working with a directory
-                throw std::invalid_argument(tr("Unable to record towards given object, since it is an already existing directory.").toStdString());
-            } else {
-                //
-                // The given object is of an unknown nature
-                throw std::invalid_argument(tr("The given file-path points to an existing object of unknown nature. Please select another destination and try again.").toStdString());
-            }
-        }
+        //
+        // Ask the user what action should precede the initiation of a recording session (i.e., the code below) in the
+        // event that the given file-path is one to an already existing file!
+        //
+        checkForFileToBeginRecording(file_path);
 
         GkDevice chosenInputDevice;
         for (const auto &input_audio_dev: gkSysInputAudioDevs) {
@@ -654,130 +796,20 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             .arg(chosenInputDevice.audio_dev_str).toStdString());
         }
 
-        qint32 error;
-        qint32 i;
-        AVPacket *pkt;
-        const AVCodec *codec;
-        AVCodecContext *ctx = nullptr;
-        AVFormatContext *formatCtx = nullptr;
-        AVFrame *frame;
         FILE *f;
-
-        formatCtx = avformat_alloc_context();
-        if (!formatCtx) {
-            throw std::runtime_error(tr("Unable to allocate output context.").toStdString());
-        }
-
-        //
-        // Find the desired encoder!
-        codec = avcodec_find_encoder(codec_id);
-        if (!codec) {
-            throw std::invalid_argument(tr("Audio codec could not be found!").toStdString());
-        }
-
-        ctx = avcodec_alloc_context3(codec);
-        if (!ctx) {
-            throw std::runtime_error(tr("Could not allocate audio codec context!").toStdString());
-        }
-
-        //
-        // Configure sample format!
-        if (ctx->codec_id == AV_CODEC_ID_AAC || ctx->codec_id == AV_CODEC_ID_VORBIS || ctx->codec_id == AV_CODEC_ID_OPUS) {
-            //
-            // A floating point format must be employed for these given codecs!
-            ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
-        } else {
-            //
-            // Sample formats for all other codecs!
-            switch (chosenInputDevice.pref_sample_rate) {
-                case AL_FORMAT_MONO8:
-                    ctx->sample_fmt = AV_SAMPLE_FMT_U8;
-                    break;
-                case AL_FORMAT_MONO16:
-                    ctx->sample_fmt = AV_SAMPLE_FMT_S16;
-                    break;
-                case AL_FORMAT_STEREO8:
-                    ctx->sample_fmt = AV_SAMPLE_FMT_U8;
-                    break;
-                case AL_FORMAT_STEREO16:
-                    ctx->sample_fmt = AV_SAMPLE_FMT_S16;
-                    break;
-                default:
-                    ctx->sample_fmt = AV_SAMPLE_FMT_S16; // Default value to return!
-                    break;
-            }
-        }
-
-        //
-        // Configure sample parameters!
-        ctx->bit_rate = avg_bitrate * 1000;
-
-        if (!ffmpegCheckSampleFormat(codec, ctx->sample_fmt)) {
-            throw std::invalid_argument(tr("Chosen audio encoder does not support given sample format, \"%1\"!")
-                                                .arg(QString::fromStdString(av_get_sample_fmt_name(ctx->sample_fmt))).toStdString());
-        }
-
-        //
-        // Configure other audio paramete   rs supported by the chosen encoder!
-        ctx->sample_rate = ffmpegSelectSampleRate(codec);
-        ctx->channel_layout = ffmpegSelectChannelLayout(codec);
-        ctx->channels = av_get_channel_layout_nb_channels(ctx->channel_layout);
+        size_t samples_size = chosenInputDevice.pref_sample_rate / 25;
 
         //
         // Convert the absolute file path to an std::string!
         const std::string absFilePath = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath());
-
-        //
-        // Initiate the encoding process
-        if (avcodec_open2(ctx, codec, nullptr) < 0) {
-            throw std::runtime_error(tr("Unable to open audio codec to begin encoding with.").toStdString());
-        }
-
-        //
-        // Print detailed information about the input or output format, such as duration, bitrate, streams, container,
-        // programs, metadata, side data, codec, and time base.
-        av_dump_format(formatCtx, 0, absFilePath.c_str(), 1);
 
         f = fopen(absFilePath.c_str(), "wb"); // NOTE: Cannot use canonical file path here, as if the file does not exist, it returns an empty string!
         if (!f) {
             throw std::runtime_error(tr("Unable to open file, \"%1\"!").arg(file_path.fileName()).toStdString());
         }
 
-        //
-        // Packet for holding encoded output
-        pkt = av_packet_alloc();
-        if (!pkt) {
-            throw std::runtime_error(tr("Could not allocate output audio packet buffer.").toStdString());
-        }
-
-        //
-        // Frame containing raw audio input
-        frame = av_frame_alloc();
-        if (!frame) {
-            throw std::runtime_error(tr("Could not allocate audio frame.").toStdString());
-        }
-
-        frame->nb_samples = ctx->frame_size;
-        frame->format = ctx->sample_fmt;
-        frame->channel_layout = ctx->channel_layout;
-
-        //
-        // Allocate the data buffers!
-        error = av_frame_get_buffer(frame, 0);
-        if (error < 0) {
-            throw std::runtime_error(tr("Unable to allocate audio data buffers for encoding!").toStdString());
-        }
-
-        //
-        // Write the stream header, if any! Whether anything actually is written to the IO context at this step depends
-        // on the muxer, but this function must always be called.
-        error = avformat_write_header(formatCtx, nullptr);
-        if (error < 0) {
-            throw std::invalid_argument(tr("Error encountered when attempting to open output file: \"%1\"").arg(QString::fromStdString(absFilePath)).toStdString());
-        }
-
         alcCaptureStart(rec_dev);
-        do {
+        while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording) {
             ALCsizei count = 0;
             alcGetIntegerv(rec_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &count);
             if (count < 1) {
@@ -788,42 +820,19 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
             alcCaptureSamples(rec_dev, reinterpret_cast<ALCvoid *>(m_recordBuffer->data()), count);
 
             //
-            // Make sure the audio frame is writeable -- it also makes a copy if the encoder kept a reference internally!
-            error = av_frame_make_writable(frame);
-            if (error < 0) {
-                return;
+            // Setup the audio buffers
+            const size_t pcm_data_size = samples_size * chosenInputDevice.sel_channels * sizeof(float);
+            float *pcm_data = static_cast<float *>(std::malloc(pcm_data_size));
+            for (size_t i = 0; i < pcm_data_size; ++i) {
+                pcm_data[i] = static_cast<float>(m_recordBuffer->at(i));
             }
 
-            //
-            // Setup the audio buffers
-            std::copy(m_recordBuffer->begin(), m_recordBuffer->end(), *frame->data);
-
-            //
-            // Encode the audio samples!
-            ffmpegEncodeAudio(ctx, frame, pkt, f);
-        } while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording);
+            encodeOpus(f, pcm_data, chosenInputDevice.pref_sample_rate, samples_size, chosenInputDevice.sel_channels);
+        };
 
         //
-        // Flush the encoder
-        ffmpegEncodeAudio(ctx, nullptr, pkt, f);
-
-        //
-        // Write the trailer, if any. The trailer must be written before you attempt to close the AVCodecContext pointer,
-        // which is when you wrote the header, as otherwise, `av_write_trailer()` may try to use memory that was freed
-        // on `av_codec_close()`!
-        //
-        av_write_trailer(formatCtx);
-
-        //
-        // Close the file pointer
+        // Close the file pointer in order to begin cleaning up!
         fclose(f);
-
-        //
-        // Free up FFmpeg resources
-        av_frame_free(&frame);
-        av_packet_free(&pkt);
-        avformat_free_context(formatCtx);
-        avcodec_free_context(&ctx);
 
         //
         // Free up OpenAL sources
@@ -851,14 +860,14 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
  * of multi-threaded processes.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_state The media state we are supposed to action.
+ * @param codec_id The codec used in encoding a given audio stream.
  * @param file_path The audio file we are supposed to be playing or recording towards, given the right multimedia
  * @param recording_device The audio device we are to record an audio stream from.
- * @param codec_id The codec used in encoding a given audio stream.
  * @param avg_bitrate The average bitrate for encoding with. This is unused for constant quantizer encoding.
  * action.
  */
 void GkMultimedia::mediaAction(const GkAudioState &media_state, const QFileInfo &file_path, const ALCchar *recording_device,
-                               const AVCodecID &codec_id, const int64_t &avg_bitrate)
+                               const CodecSupport &codec_id, const int64_t &avg_bitrate)
 {
     try {
         if (media_state == GkAudioState::Playing) {
@@ -875,7 +884,6 @@ void GkMultimedia::mediaAction(const GkAudioState &media_state, const QFileInfo 
                 throw std::invalid_argument(tr("An invalid audio device has been specified; unable to proceed with recording! Please check your settings and try again.").toStdString());
             }
 
-            Q_ASSERT(codec_id != AV_CODEC_ID_NONE);
             recordAudioFileThread = std::thread(&GkMultimedia::recordAudioFile, this, file_path, recording_device, codec_id, avg_bitrate);
             recordAudioFileThread.detach();
 

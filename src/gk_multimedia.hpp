@@ -61,20 +61,6 @@
 #include <QPointer>
 #include <QFileInfo>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavcodec/avcodec.h>
-#include <libavcodec/codec_id.h>
-#include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class GkMultimedia : public QObject {
@@ -91,11 +77,12 @@ public:
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getOutputAudioDevice();
     [[nodiscard]] GekkoFyre::Database::Settings::Audio::GkDevice getInputAudioDevice();
 
-    [[nodiscard]] AVCodecID convFFmpegCodecIdToEnum(const qint32 &codec_id_str);
+    [[nodiscard]] GkAudioFramework::CodecSupport convAudioCodecIdxToEnum(const qint32 &codec_id_str);
 
 public slots:
     void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
-                     const ALCchar *recording_device = nullptr, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                     const ALCchar *recording_device = nullptr,
+                     const GkAudioFramework::CodecSupport &codec_id = GkAudioFramework::CodecSupport::Opus,
                      const int64_t &avg_bitrate = 64000);
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
     void changeVolume(const qint32 &value);
@@ -127,20 +114,25 @@ private:
     std::shared_ptr<std::vector<ALshort>> m_recordBuffer;
 
     [[nodiscard]] ALuint loadAudioFile(const QFileInfo &file_path);
-    [[nodiscard]] qint32 ffmpegCheckSampleFormat(const AVCodec *codec, const AVSampleFormat &sample_fmt);
-    [[nodiscard]] qint32 ffmpegSelectSampleRate(const AVCodec *codec);
-    [[nodiscard]] qint32 ffmpegSelectChannelLayout(const AVCodec *codec);
-    void ffmpegEncodeAudio(AVCodecContext *ctx, AVFrame *frame, AVPacket *pkt, FILE *output);
+    void checkForFileToBeginRecording(const QFileInfo &file_path);
+    [[nodiscard]] QString convAudioCodecToFileExtStr(GkAudioFramework::CodecSupport codec_id);
 
     //
-    // Functions for writing out headers to encoded audio files!
-    [[nodiscard]] unsigned char *ffmpegWriteAdtsHeaders(AVCodecContext *ctx, const qint32 &frameLength, const bool &isAacLc = false);
+    // Raw audio encoders
+    void convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size);
+    void convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size);
+    void convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size);
+    void encodeOpus(FILE *f, float *pcm_data, const qint32 &sample_rate, const qint32 &samples_size, const qint32 &num_channels);
+
+    //
+    // Container encoders
+    void addOggContainer();
 
     [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
 
     void checkOpenAlExtensions();
     void playAudioFile(const QFileInfo &file_path);
-    void recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id,
+    void recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const GkAudioFramework::CodecSupport &codec_id,
                          const int64_t &avg_bitrate);
 
     [[nodiscard]] bool is_big_endian();

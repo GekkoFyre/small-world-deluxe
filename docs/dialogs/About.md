@@ -1,6 +1,6 @@
 ### [Small World Deluxe](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/) (pre-alpha)
 
-Copyright © 2019 - 2021 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
+Copyright © 2019 - 2022 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
 
 I must offer my sincere thanks to the closest of friends, Arctic Emerald, BarkerJr, Davwyn, Kenric D'Souza, Lord Flame Stryke, Luxatos, Mazzeh, Oxtylxq, and others for supporting me in my efforts with coding SWD ^,==,^
 
@@ -25,7 +25,7 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `QXmpp - Copyright © 2008 - 2020 The QXmpp Developers.`
 
-`FFmpeg - Copyright © 2021 Michael Niedermayer and Marton Balint et al.`
+`libsndfile - Copyright © 2001 - 2016 Erik de Castro Lopo et al.`
 
 `TagLib - Copyright © 2021 Scott Wheeler.`
 

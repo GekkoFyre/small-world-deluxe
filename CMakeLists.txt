@@ -214,20 +214,6 @@ else()
 endif(Boost_FOUND)
 
 #
-# FFmpeg
-# https://www.ffmpeg.org/
-# https://github.com/FFmpeg/FFmpeg
-#
-find_package(FFmpeg COMPONENTS AVFORMAT AVUTIL AVCODEC SWRESAMPLE REQUIRED)
-if (FFMPEG_FOUND)
-    include_directories(${FFMPEG_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFMPEG_LIBRARIES})
-    message(STATUS "The 'FFmpeg' cross-platform multimedia library have been configured!")
-else()
-    message(FATAL_ERROR "The 'FFmpeg' cross-platform multimedia library could not be found!")
-endif(FFMPEG_FOUND)
-
-#
 # TagLib by Scott Wheeler
 # https://github.com/taglib/taglib
 #

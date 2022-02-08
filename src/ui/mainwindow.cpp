@@ -48,11 +48,9 @@
 #include "src/models/tableview/gk_active_msgs_model.hpp"
 #include "src/models/tableview/gk_callsign_msgs_model.hpp"
 #include "src/gk_codec2.hpp"
-#include "src/contrib/Gist/src/Gist.h"
 #include <marble/AbstractFloatItem.h>
 #include <marble/MarbleDirs.h>
 #include <marble/GeoDataCoordinates.h>
-#include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
 #include <chrono>
@@ -69,7 +67,6 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QIODevice>
-#include <QResource>
 #include <QMultiMap>
 #include <QtGlobal>
 #include <QVariant>
@@ -109,7 +106,6 @@ namespace sys = boost::system;
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> MainWindow::gkRadioModels = initRadioModelsVar();
 
 std::mutex steady_timer_mtx;
-std::mutex mtx_update_vol_widgets;
 std::mutex info_bar_mtx;
 
 /**
@@ -140,7 +136,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioState>("GekkoFyre::GkAudioFramework::GkAudioState");
-    qRegisterMetaType<AVCodecID>("AVCodecID");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");

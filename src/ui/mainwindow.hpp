@@ -108,17 +108,6 @@
 #include <qwt/qwt_legend_data.h>
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavcodec/codec_id.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace Ui {
 class MainWindow;
 }
@@ -549,7 +538,6 @@ Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioState);
-Q_DECLARE_METATYPE(AVCodecID);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

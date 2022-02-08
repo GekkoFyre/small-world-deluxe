@@ -107,8 +107,6 @@ extern "C"
 #include <sentry.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
-#include <libavutil/samplefmt.h>
-#include <libavcodec/avcodec.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -460,7 +458,13 @@ namespace Filesystem {
     constexpr char audio_format_ogg_opus[] = "opus";
     constexpr char audio_format_flac[] = "flac";
     constexpr char audio_format_mp3[] = "mp3";
+    constexpr char audio_format_aac[] = "aac";
     constexpr char audio_format_codec2[] = "dat";
+    constexpr char audio_format_raw_data[] = "dat";
+    constexpr char audio_format_loopback[] = "loopback";
+    constexpr char audio_format_unsupported[] = "unsupported";
+    constexpr char audio_format_unknown[] = "unknown";
+    constexpr char audio_format_default[] = "dat";
 
     //
     // User interface language
@@ -1255,6 +1259,7 @@ namespace GkAudioFramework {
         Opus,
         FLAC,
         AAC,
+        RawData,
         Unsupported,
         Unknown
     };
@@ -1291,7 +1296,6 @@ namespace GkAudioFramework {
         qint32 sample_size;
         qint32 stream_idx;
         QString sample_format_str;
-        AVSampleFormat sample_format;
     };
 
     struct GkAudioFileInfo {
@@ -1305,7 +1309,6 @@ namespace GkAudioFramework {
         qint64 bit_depth;                                                       // Whether 8, 16, or 24-bit in nature.
         qint32 num_samples_per_channel;                                         // The number of samples per each channel.
         GkAudioFileProperties info;                                             // The audio properties of the given multimedia file itself.
-        AVCodecContext *codecCtx;                                               // The codec context this audio object is associated with.
     };
 
     struct GkAudioFileDecoded {

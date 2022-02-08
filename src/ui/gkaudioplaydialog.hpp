@@ -56,17 +56,6 @@
 #include <QPointer>
 #include <QFileInfo>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavcodec/codec_id.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace Ui {
 class GkAudioPlayDialog;
 }
@@ -96,12 +85,13 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
-    void playlistInsert(const QFileInfo &file_path, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &priority, const bool &printToConsole = false);
+    void playlistInsert(const QFileInfo &file_path, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &priority,
+                        const bool &printToConsole = false);
     void playlistRemove(const QFileInfo &file_path);
     void startPlaying();
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
-    void startRecording(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+    void startRecording(const QFileInfo &file_path, const ALCchar *recording_device, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                         const int64_t &avg_bitrate = 64000);
 
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
@@ -118,11 +108,11 @@ signals:
     void beginPlaying();
     void updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
 
-    void beginRecording(const QFileInfo &file_path, const ALCchar *recording_device, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+    void beginRecording(const QFileInfo &file_path, const ALCchar *recording_device, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                         const int64_t &avg_bitrate = 64000);
 
     void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
-                     const ALCchar *recording_device = nullptr, const AVCodecID &codec_id = AV_CODEC_ID_NONE,
+                     const ALCchar *recording_device = nullptr, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                      const int64_t &avg_bitrate = 64000);
 
 private:

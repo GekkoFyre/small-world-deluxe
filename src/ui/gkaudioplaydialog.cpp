@@ -39,6 +39,7 @@
 #include "ui_gkaudioplaydialog.h"
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
+#include <taglib/tpropertymap.h>
 #include <exception>
 #include <utility>
 #include <QTimer>
@@ -46,19 +47,6 @@
 #include <QEventLoop>
 #include <QFileDialog>
 #include <QStandardPaths>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -100,11 +88,11 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
                          this, SIGNAL(updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &)));
         QObject::connect(this, SIGNAL(addToPlaylist(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)),
                          this, SLOT(playlistInsert(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)));
-        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
-                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
+        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)),
+                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)));
         QObject::connect(this, SIGNAL(beginPlaying()), this, SLOT(startPlaying()));
-        QObject::connect(this, SIGNAL(beginRecording(const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)),
-                         this, SLOT(startRecording(const QFileInfo &, const ALCchar *, const AVCodecID &, const int64_t &)));
+        QObject::connect(this, SIGNAL(beginRecording(const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)),
+                         this, SLOT(startRecording(const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)));
 
         //
         // Initialize variables
@@ -234,13 +222,14 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
-        const AVCodecID codec_id = gkMultimedia->convFFmpegCodecIdToEnum(ui->comboBox_playback_rec_codec->currentIndex());
+        const CodecSupport codec_id = gkMultimedia->convAudioCodecIdxToEnum(
+                ui->comboBox_playback_rec_codec->currentIndex());
         const QString chosen_openal_audio_dev = ui->comboBox_playback_rec_source->currentData().toString();
         if (chosen_openal_audio_dev.isEmpty()) {
             throw std::invalid_argument(tr("An invalid audio device has been specified; please check your settings and try again.").toStdString());
         }
 
-        if (codec_id != AV_CODEC_ID_NONE) {
+        if (codec_id != CodecSupport::Unsupported) {
             const auto filePath = openFileBrowser(true);
             if (!filePath.isEmpty()) {
                 ui->pushButton_playback_skip_back->setEnabled(false);
@@ -258,7 +247,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 
             return;
         } else {
-            throw std::invalid_argument(tr("An invalid or currently unsupported codec for encoding with has been selected!").toStdString());
+            throw std::invalid_argument(tr("An invalid or currently unsupported codec for encoding hence-with has been selected!").toStdString());
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
@@ -381,76 +370,28 @@ void GkAudioPlayDialog::playlistInsert(const QFileInfo &file_path, const GkAudio
                 audioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(file_path.size());
 
                 //
-                // Setup FFmpeg variables!
-                AVFrame *frame = av_frame_alloc();
-
-                if (!frame) {
-                    throw std::runtime_error(tr("Error allocating FFmpeg frame!").toStdString());
-                }
-
-                AVFormatContext *formatCtx = nullptr;
-                if (avformat_open_input(&formatCtx, file_path.canonicalFilePath().toStdString().c_str(), nullptr, nullptr) != 0) {
-                    av_free(frame);
-                    throw std::runtime_error(tr("Error encountered with opening file, \"%1\"!")
-                                                     .arg(audioFileInfo.audio_file_path.fileName()).toStdString());
-                }
-
-                if (avformat_find_stream_info(formatCtx, nullptr) < 0) {
-                    av_free(frame);
-                    avformat_close_input(&formatCtx);
-                    throw std::runtime_error(tr("Error finding the FFmpeg stream info for file, \"%1\"!")
-                                                     .arg(audioFileInfo.audio_file_path.fileName()).toStdString());
-                }
+                // Setup TagLib parameters!
+                GkAudioFramework::GkAudioFileMetadata meta;
+                TagLib::FileRef fileRef(file_path.canonicalFilePath().toStdString().c_str());
+                TagLib::Tag *tag = fileRef.tag();
 
                 //
-                // Find the audio stream via FFmpeg!
-                qint32 streamIdx = av_find_best_stream(formatCtx, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
-                if (streamIdx < 0) {
-                    av_free(frame);
-                    avformat_close_input(&formatCtx);
-                    throw std::runtime_error(tr("Could not find any audio stream within file, \"%1\"!")
-                                                     .arg(audioFileInfo.audio_file_path.fileName()).toStdString());
-                }
+                // Information for gathering properties about the audio source, the codec, etc. itself with regard to
+                // the file, via TagLib!
+                TagLib::AudioProperties *properties = fileRef.audioProperties();
 
-                AVStream *audioStream = formatCtx->streams[streamIdx];
-                AVCodec *codec = avcodec_find_decoder(audioStream->codecpar->codec_id);
-                if (!codec) {
-                    av_free(frame);
-                    avformat_close_input(&formatCtx);
-                    throw std::runtime_error(tr("Unable to determine codec for given file, \"%1\"!")
-                                                     .arg(audioFileInfo.audio_file_path.fileName()).toStdString());
-                }
-
-                AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
-                if (avcodec_parameters_to_context(codecCtx, audioStream->codecpar) < 0) {
-                    av_free(frame);
-                    avformat_close_input(&formatCtx);
-                    throw std::runtime_error(tr("Unable to determine audio and codec parameters for given file, \"%1\"!")
-                                                     .arg(audioFileInfo.audio_file_path.fileName()).toStdString());
-                }
-
-                if (avcodec_open2(codecCtx, codec, nullptr) != 0) {
-                    av_free(frame);
-                    avformat_close_input(&formatCtx);
-                    avcodec_free_context(&codecCtx);
-                    throw std::runtime_error(tr("Couldn't open the FFmpeg context with the decoder!").toStdString());
-                }
-
-                audioFileInfo.num_audio_channels = gkAudioDevices->convAudioChannelsToEnum(codecCtx->channels);
-                audioFileInfo.codecCtx = codecCtx;
-                audioFileInfo.info.sampleRate = codecCtx->sample_rate; // Measured in plain Hz!
-                audioFileInfo.bit_depth = codecCtx->bit_rate;
-                audioFileInfo.type_codec_str = avcodec_get_name(codecCtx->codec_id);
-                audioFileInfo.info.lengthInSeconds = formatCtx->duration;
+                audioFileInfo.num_audio_channels = gkAudioDevices->convAudioChannelsToEnum(properties->channels());
+                audioFileInfo.info.sampleRate = properties->sampleRate(); // Measured in plain Hz!
+                audioFileInfo.bit_depth = properties->bitrate();
+                audioFileInfo.type_codec_str = tr("Unsupported"); // TODO: Work on this feature when the time comes!
+                audioFileInfo.info.lengthInSeconds = properties->lengthInSeconds();
+                audioFileInfo.info.lengthInMilliseconds = properties->lengthInMilliseconds();
 
                 QString lengthMinutesHr = tr("0 seconds");
                 if (audioFileInfo.info.lengthInSeconds > 0) {
                     lengthMinutesHr = gkStringFuncs->convSecondsToMinutes(static_cast<double>(audioFileInfo.info.lengthInSeconds));
                 }
 
-                GkAudioFramework::GkAudioFileMetadata meta;
-                TagLib::FileRef fileRef(file_path.canonicalFilePath().toStdString().c_str());
-                TagLib::Tag *tag = fileRef.tag();
                 meta.title = QString::fromWCharArray(tag->title().toCWString());
                 meta.artist = QString::fromWCharArray(tag->artist().toCWString());
                 meta.album = QString::fromWCharArray(tag->album().toCWString());
@@ -504,10 +445,6 @@ void GkAudioPlayDialog::playlistInsert(const QFileInfo &file_path, const GkAudio
                     emit updateAudioState(GkAudioState::Playing);
                     emit beginPlaying();
                 }
-
-                av_free(frame);
-                avformat_close_input(&formatCtx);
-                avcodec_free_context(&codecCtx);
             }
         }
     } catch (const std::exception &e) {
@@ -539,11 +476,6 @@ void GkAudioPlayDialog::startPlaying()
 {
     try {
         for (const auto &audio_file: gkAudioFileInfo) {
-            if (!audio_file.codecCtx) {
-                throw std::invalid_argument(tr("Audio codec context deemed invalid; unable to play audio file, \"%1\"!")
-                .arg(QFileInfo(audio_file.audio_file_path).fileName()).toStdString());
-            }
-
             emit mediaAction(GkAudioState::Playing, audio_file.audio_file_path);
             QEventLoop loop;
             QObject::connect(gkMultimedia, SIGNAL(playingFinished()), &loop, SLOT(quit()));
@@ -579,7 +511,7 @@ void GkAudioPlayDialog::setAudioState(const GkAudioState &audioState)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkAudioPlayDialog::startRecording(const QFileInfo &file_path, const ALCchar *recording_device,
-                                       const AVCodecID &codec_id, const int64_t &avg_bitrate)
+                                       const CodecSupport &codec_id, const int64_t &avg_bitrate)
 {
     try {
         emit mediaAction(GkAudioState::Recording, file_path, recording_device, codec_id, avg_bitrate);
