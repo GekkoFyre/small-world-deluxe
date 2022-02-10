@@ -119,6 +119,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
+        prefillCodecComboBoxes(GkAudioFramework::CodecSupport::RawData);
         prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
         prefillAudioSourceComboBoxes();
     } catch (const std::exception &e) {
@@ -323,6 +324,9 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
             return;
         case AUDIO_PLAYBACK_CODEC_CODEC2_IDX:
             m_rec_codec_chosen = CodecSupport::Codec2;
+            return;
+        case AUDIO_PLAYBACK_CODEC_RAW_IDX:
+            m_rec_codec_chosen = CodecSupport::RawData;
             return;
         default:
             break;
@@ -696,6 +700,9 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
             break;
         case CodecSupport::Codec2:
             ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_CODEC2_IDX, tr("Codec2"), AUDIO_PLAYBACK_CODEC_CODEC2_IDX);
+            break;
+        case CodecSupport::RawData:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_RAW_IDX, tr("Raw Data"), AUDIO_PLAYBACK_CODEC_RAW_IDX);
             break;
         case CodecSupport::Unsupported:
             break;

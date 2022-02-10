@@ -145,6 +145,8 @@ CodecSupport GkMultimedia::convAudioCodecIdxToEnum(const qint32 &codec_id_str)
             return CodecSupport::FLAC;
         case AUDIO_PLAYBACK_CODEC_PCM_IDX:
             return CodecSupport::PCM;
+        case AUDIO_PLAYBACK_CODEC_RAW_IDX:
+            return CodecSupport::RawData;
         case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
             return CodecSupport::Loopback;
         default:
@@ -1068,6 +1070,8 @@ QString GkMultimedia::codecEnumToStr(const CodecSupport &codec)
             return QStringLiteral("FLAC");
         case CodecSupport::Codec2:
             return QStringLiteral("Codec2");
+        case CodecSupport::RawData:
+            return tr("Raw Data");
         case CodecSupport::Unsupported:
             return tr("Unsupported");
         default:
