@@ -48,19 +48,9 @@
 #include <utility>
 #include <exception>
 #include <QDir>
+#include <QBuffer>
 #include <QMessageBox>
 #include <QTemporaryDir>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sndfile.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 #define RAW_OUT_ON_PLANAR true
 
@@ -333,39 +323,30 @@ QString GkMultimedia::convAudioCodecToFileExtStr(GkAudioFramework::CodecSupport 
  * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
  * 16-bit integer type are to be converted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param sample_buf A QByteArray containing the audio samples, ready for further processing by libsndfile.
+ * @param channels The number of audio channels within the given audio samples.
+ * @param sample_rate The sample rate of the given audio samples.
  * @param samples The raw audio samples that are to be converted to the PCM WAV format.
  * @param sample_size The size of the `samples` 16-bit integer array.
  * @return The file-path to where the converted, PCM WAV data is stored.
  * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
  */
-QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size)
+GkSndFile GkMultimedia::convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                     const qint32 &sample_rate, std::vector<qint16> samples, const size_t &sample_size)
 {
     try {
         SF_INFO readInfo, writeInfo;
         readInfo.format = 0;
 
-        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
-        if (!in) {
-            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
-        }
-
-        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-        writeInfo.samplerate = readInfo.samplerate;
-        writeInfo.channels   = readInfo.channels;
-
-        const QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + QStringLiteral(".") + convAudioCodecToFileExtStr(CodecSupport::PCM));
-        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
-        if (!out) {
-            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
-        }
+        std::shared_ptr<QByteArray> empty_buf = std::make_shared<QByteArray>();
+        GkSndFile sndVirtIn = openVirtualSndFile(SFM_READ, channels, sample_rate, SF_FORMAT_RAW | SF_FORMAT_PCM_S8, QIODevice::ReadWrite, sample_buf);
+        GkSndFile sndVirtOut = openVirtualSndFile(SFM_WRITE, channels, sample_rate, SF_FORMAT_WAV | SF_FORMAT_FLOAT, QIODevice::ReadOnly, empty_buf);
 
         while (true) {
-            qint32 items = sf_read_short(in, samples, sample_size);
+            qint64 items = sf_readf_short(sndVirtIn.sndFile, samples.data(), sample_size);
             if (items > 0) {
-                sf_write_short(out, samples, items);
+                sf_writef_short(sndVirtOut.sndFile, samples.data(), items);
+                continue;
             } else {
                 break;
             }
@@ -373,27 +354,17 @@ QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint16 *samples
 
         //
         // Clean up any items that are now disused!
-        sf_close(in);
-        sf_close(out);
+        sndVirtOut.buf->close();
+        sndVirtIn.buf->close();
+        sf_close(sndVirtOut.sndFile);
+        sf_close(sndVirtIn.sndFile);
 
-        //
-        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
-        if (file_path.exists() && file_path.isFile()) {
-            if (!QFile(file_path.absoluteFilePath()).remove()) {
-                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
-            }
-        }
-
-        if (!QFileInfo(out_file_path).exists() || !QFileInfo(out_file_path).isFile()) {
-            throw std::runtime_error(tr("Issues were encountered with the encoding process!").toStdString()); // Don't specify the temporary PCM WAV file in the error, as it may confuse end-user's who do not understand/know the process of encoding!
-        }
-
-        return out_file_path;
+        return sndVirtOut;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
-    return QFileInfo();
+    return GkSndFile{};
 }
 
 /**
@@ -401,39 +372,30 @@ QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint16 *samples
  * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
  * 32-bit integer type are to be converted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param sample_buf A QByteArray containing the audio samples, ready for further processing by libsndfile.
+ * @param channels The number of audio channels within the given audio samples.
+ * @param sample_rate The sample rate of the given audio samples.
  * @param samples The raw audio samples that are to be converted to the PCM WAV format.
  * @param sample_size The size of the `samples` 32-bit integer array.
  * @return The file-path to where the converted, PCM WAV data is stored.
  * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
  */
-QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size)
+GkSndFile GkMultimedia::convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                     const qint32 &sample_rate, std::vector<qint32> samples, const size_t &sample_size)
 {
     try {
         SF_INFO readInfo, writeInfo;
         readInfo.format = 0;
 
-        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
-        if (!in) {
-            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
-        }
-
-        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-        writeInfo.samplerate = readInfo.samplerate;
-        writeInfo.channels   = readInfo.channels;
-
-        const QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + QStringLiteral(".") + convAudioCodecToFileExtStr(CodecSupport::PCM));
-        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
-        if (!out) {
-            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
-        }
+        std::shared_ptr<QByteArray> empty_buf = std::make_shared<QByteArray>();
+        GkSndFile sndVirtIn = openVirtualSndFile(SFM_READ, channels, sample_rate, SF_FORMAT_RAW | SF_FORMAT_PCM_16, QIODevice::ReadWrite, sample_buf);
+        GkSndFile sndVirtOut = openVirtualSndFile(SFM_WRITE, channels, sample_rate, SF_FORMAT_WAV | SF_FORMAT_FLOAT, QIODevice::ReadOnly, empty_buf);
 
         while (true) {
-            qint64 items = sf_read_int(in, samples, sample_size);
+            qint64 items = sf_readf_int(sndVirtIn.sndFile, samples.data(), sample_size);
             if (items > 0) {
-                sf_write_int(out, samples, items);
+                sf_writef_int(sndVirtOut.sndFile, samples.data(), items);
+                continue;
             } else {
                 break;
             }
@@ -441,27 +403,17 @@ QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint32 *samples
 
         //
         // Clean up any items that are now disused!
-        sf_close(in);
-        sf_close(out);
+        sndVirtOut.buf->close();
+        sndVirtIn.buf->close();
+        sf_close(sndVirtOut.sndFile);
+        sf_close(sndVirtIn.sndFile);
 
-        //
-        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
-        if (file_path.exists() && file_path.isFile()) {
-            if (!QFile(file_path.absoluteFilePath()).remove()) {
-                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
-            }
-        }
-
-        if (!QFileInfo(out_file_path).exists() || !QFileInfo(out_file_path).isFile()) {
-            throw std::runtime_error(tr("Issues were encountered with the encoding process!").toStdString()); // Don't specify the temporary PCM WAV file in the error, as it may confuse end-user's who do not understand/know the process of encoding!
-        }
-
-        return out_file_path;
+        return sndVirtOut;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
-    return QFileInfo();
+    return GkSndFile{};
 }
 
 /**
@@ -469,39 +421,30 @@ QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, qint32 *samples
  * multimedia set of libraries. This function is overloaded and in this particular case, samples that are of the
  * float-type are to be converted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The canonical, or in this use case, the absolute path to the given audio file to be played.
+ * @param sample_buf A QByteArray containing the audio samples, ready for further processing by libsndfile.
+ * @param channels The number of audio channels within the given audio samples.
+ * @param sample_rate The sample rate of the given audio samples.
  * @param samples The raw audio samples that are to be converted to the PCM WAV format.
  * @param sample_size The size of the `samples` floating-point array.
  * @return The file-path to where the converted, PCM WAV data is stored.
  * @note Thai Pangsakulyanont <https://gist.github.com/dtinth/1177001>.
  */
-QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size)
+GkSndFile GkMultimedia::convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                     const qint32 &sample_rate, std::vector<float> samples, const size_t &sample_size)
 {
     try {
         SF_INFO readInfo, writeInfo;
         readInfo.format = 0;
 
-        const std::string conv_in_file_path = gkStringFuncs->convTo8BitStr(file_path.absoluteFilePath()); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *in = sf_open(conv_in_file_path.c_str(), SFM_READ, &readInfo);
-        if (!in) {
-            throw std::runtime_error(tr("Cannot open file for reading: \"%1\"").arg(file_path.fileName()).toStdString());
-        }
-
-        writeInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-        writeInfo.samplerate = readInfo.samplerate;
-        writeInfo.channels   = readInfo.channels;
-
-        const QString out_file_path = QDir(file_path.absolutePath()).filePath(file_path.baseName() + QStringLiteral(".") + convAudioCodecToFileExtStr(CodecSupport::PCM));
-        const std::string conv_out_file_path = gkStringFuncs->convTo8BitStr(out_file_path); // Ensure that the file-path is converted fairly and truly to the correct std::string!
-        SNDFILE *out = sf_open(conv_out_file_path.c_str(), SFM_WRITE, &writeInfo);
-        if (!out) {
-            throw std::runtime_error(tr("Cannot open file for writing: \"%1\"").arg(QFileInfo(out_file_path).fileName()).toStdString());
-        }
+        std::shared_ptr<QByteArray> empty_buf = std::make_shared<QByteArray>();
+        GkSndFile sndVirtIn = openVirtualSndFile(SFM_READ, channels, sample_rate, SF_FORMAT_RAW | SF_FORMAT_FLOAT, QIODevice::ReadWrite, sample_buf);
+        GkSndFile sndVirtOut = openVirtualSndFile(SFM_WRITE, channels, sample_rate, SF_FORMAT_WAV | SF_FORMAT_FLOAT, QIODevice::ReadOnly, empty_buf);
 
         while (true) {
-            qint64 items = sf_read_float(in, samples, sample_size);
+            qint64 items = sf_readf_float(sndVirtIn.sndFile, samples.data(), sample_size);
             if (items > 0) {
-                sf_write_float(out, samples, items);
+                sf_writef_float(sndVirtOut.sndFile, samples.data(), items);
+                continue;
             } else {
                 break;
             }
@@ -509,27 +452,17 @@ QFileInfo GkMultimedia::convertToPcm(const QFileInfo &file_path, float *samples,
 
         //
         // Clean up any items that are now disused!
-        sf_close(in);
-        sf_close(out);
+        sndVirtOut.buf->close();
+        sndVirtIn.buf->close();
+        sf_close(sndVirtOut.sndFile);
+        sf_close(sndVirtIn.sndFile);
 
-        //
-        // Now we wish to delete the original file which contained the **raw data**, and is only a temporary file anyway!
-        if (file_path.exists() && file_path.isFile()) {
-            if (!QFile(file_path.absoluteFilePath()).remove()) {
-                throw std::runtime_error(tr("Issues were encountered with attempting to remove temporary file, \"%1\"").arg(file_path.fileName()).toStdString());
-            }
-        }
-
-        if (!QFileInfo(out_file_path).exists() || !QFileInfo(out_file_path).isFile()) {
-            throw std::runtime_error(tr("Issues were encountered with the encoding process!").toStdString()); // Don't specify the temporary PCM WAV file in the error, as it may confuse end-user's who do not understand/know the process of encoding!
-        }
-
-        return out_file_path;
+        return sndVirtOut;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));;
     }
 
-    return QFileInfo();
+    return GkSndFile{};
 }
 
 /**
@@ -591,6 +524,137 @@ void GkMultimedia::addOggContainer()
 }
 
 /**
+ * @brief GkMultimedia::qbufGetFileLen
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param user_data
+ * @return
+ */
+sf_count_t GkMultimedia::qbufGetFileLen(void *user_data)
+{
+    QBuffer *buf = (QBuffer *)user_data;
+    return buf->size();
+}
+
+/**
+ * @brief GkMultimedia::qbufSeek
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param offset
+ * @param whence
+ * @param user_data
+ * @return
+ */
+sf_count_t GkMultimedia::qbufSeek(sf_count_t offset, qint32 whence, void *user_data)
+{
+    QBuffer *buf = (QBuffer *)user_data;
+    switch (whence) {
+        case SEEK_SET:
+            buf->seek(offset);
+            break;
+        case SEEK_CUR:
+            buf->seek(buf->pos() + offset);
+            break;
+        case SEEK_END:
+            buf->seek(buf->size() + offset);
+            break;
+        default:
+            break;
+    }
+
+    return buf->pos();
+}
+
+/**
+ * @brief GkMultimedia::qbufRead
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptr
+ * @param count
+ * @param user_data
+ * @return
+ */
+sf_count_t GkMultimedia::qbufRead(void *ptr, sf_count_t count, void *user_data)
+{
+    QBuffer *buf = (QBuffer *)user_data;
+    return buf->read((char *)ptr, count);
+}
+
+/**
+ * @brief GkMultimedia::qbufWrite
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptr
+ * @param count
+ * @param user_data
+ * @return
+ */
+sf_count_t GkMultimedia::qbufWrite(const void *ptr, sf_count_t count, void *user_data)
+{
+    QBuffer *buf = (QBuffer *)user_data;
+    return buf->write((const char *)ptr, count);
+}
+
+/**
+ * @brief GkMultimedia::qbufTell
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param user_data
+ * @return
+ */
+sf_count_t GkMultimedia::qbufTell(void *user_data)
+{
+    QBuffer *buf = (QBuffer *) user_data;
+    return buf->pos();
+}
+
+/**
+ * @brief GkMultimedia::openVirtualSndFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mode
+ * @param channels
+ * @param sample_rate
+ * @param format
+ * @param buf_mode The mode to which we open QBuffer in, such as `QIODevice::ReadWrite`, for example.
+ * @param sample_buf A QByteArray containing the audio samples, ready for further processing by libsndfile.
+ * @return
+ * @note Soheil Armin <https://stackoverflow.com/a/59233795/4293625>.
+ */
+GkSndFile GkMultimedia::openVirtualSndFile(const qint32 &mode, const qint32 &channels, const qint32 &sample_rate,
+                                           const qint32 &format, const QIODevice::OpenModeFlag &buf_mode,
+                                           std::shared_ptr<QByteArray> &sample_buf)
+{
+    try {
+        GkSndFile sndFileStruct;
+        sndFileStruct.vioPtr.get_filelen = qbufGetFileLen;
+        sndFileStruct.vioPtr.seek = qbufSeek;
+        sndFileStruct.vioPtr.read = qbufRead;
+        sndFileStruct.vioPtr.write = qbufWrite;
+        sndFileStruct.vioPtr.tell = qbufTell;
+
+        sndFileStruct.sfInfo.channels = channels;
+        sndFileStruct.sfInfo.samplerate = sample_rate;
+        sndFileStruct.sfInfo.format = format;
+        if (!sf_format_check(&sndFileStruct.sfInfo)) {
+            throw std::invalid_argument(tr("Incorrect parameters have been passed to libsndfile encoder!").toStdString());
+        }
+
+        if (!sample_buf->isEmpty()) {
+            sndFileStruct.buf = std::make_shared<QBuffer>(sample_buf.get());
+        } else {
+            sndFileStruct.buf = std::make_shared<QBuffer>();
+        }
+
+        sndFileStruct.buf->open(buf_mode);
+        sndFileStruct.sndFile = sf_open_virtual(&sndFileStruct.vioPtr, mode, &sndFileStruct.sfInfo, (void *)(sndFileStruct.buf.get()));
+        if (!sndFileStruct.sndFile) {
+            throw std::runtime_error(tr("Unable to open Virtual I/O interface with regards to libsndfile!").toStdString());
+        }
+
+        return sndFileStruct;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));;
+    }
+
+    return GkSndFile{};
+}
+
+/**
  * @brief GkMultimedia::outputFileContents reads out the contents of a given file as raw, binary data, into a buffer and
  * therefore into memory, ready for further processing down the line.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -618,67 +682,6 @@ char *GkMultimedia::outputFileContents(const QFileInfo &file_path)
     }
 
     return nullptr;
-}
-
-/**
- * @brief GkMultimedia::outputPcm16Data reads the contents of a PCM WAV file and converts said data to a 16-bit integer
- * type, ready for further processing/encoding.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The file that is to have the PCM WAV data read from and outputted into memory.
- * @return Buffered PCM WAV data that has been read into memory, ready for further processing/encoding.
- */
-std::vector<qint16> GkMultimedia::outputPcm16Data(const QFileInfo &file_path)
-{
-    return std::vector<qint16>{};
-}
-
-/**
- * @brief GkMultimedia::outputPcm32Data reads the contents of a PCM WAV file and converts said data to a 32-bit integer
- * type, ready for further processing/encoding.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The file that is to have the PCM WAV data read from and outputted into memory.
- * @return Buffered PCM WAV data that has been read into memory, ready for further processing/encoding.
- */
-std::vector<qint32> GkMultimedia::outputPcm32Data(const QFileInfo &file_path)
-{
-    return std::vector<qint32>{};
-}
-
-/**
- * @brief GkMultimedia::outputPcmFloatData reads the contents of a PCM WAV file and converts said data to a floating
- * type, ready for further processing/encoding.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param file_path The file that is to have the PCM WAV data read from and outputted into memory.
- * @return Buffered PCM WAV data that has been read into memory, ready for further processing/encoding.
- */
-std::vector<float> GkMultimedia::outputPcmFloatData(const QFileInfo &file_path)
-{
-    try {
-        char *buffer = outputFileContents(file_path);
-        if (!buffer) {
-            throw std::runtime_error(tr("Unable to read temporary input file!").toStdString());
-        }
-
-        //
-        // Now extract vector/integers using the following approach!
-        size_t offset = 0;
-        qint32 vectorSize = *reinterpret_cast<qint32 *>(buffer);
-        offset += sizeof(qint32);
-
-        float *vectorData = reinterpret_cast<float *>(buffer + offset);
-        std::vector<float> floats(vectorSize);
-        std::copy(vectorData, vectorData + vectorSize, floats.begin());
-
-        //
-        // Free up any allocated and now dis-used memory!
-        delete[] buffer;
-
-        return floats;
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));;
-    }
-
-    return std::vector<float>{};
 }
 
 /**
@@ -905,40 +908,40 @@ void GkMultimedia::recordAudioFile(const QFileInfo &file_path, const ALCchar *re
         }
 
         while (alGetError() == AL_NO_ERROR && gkAudioState == GkAudioState::Recording) {
-            if (codec_id == CodecSupport::Opus) {
+            QTemporaryDir dir;
+            std::vector<float> output_raw_pcm;
+            if (dir.isValid()) {
                 //
-                // The Opus set of libraries require that we first convert the raw audio data to that of a PCM WAV format!
-                // We also need to specify the name and location of a temporary file that will be created, for storing the
-                // raw audio data itself on the end-user's HDD or SSD, since it will be quite large in size and expecting
-                // to store it all in RAM is a bit much to ask.
-                // TODO: Upgrade this local HDD/SSD buffer to one that is circular in nature, and more capable of being
-                // stored in RAM!
-                //
-                QTemporaryDir dir;
-                if (dir.isValid()) {
+                // We have to create a PCM WAV file for these particular codecs!
+                if (codec_id == CodecSupport::Opus) {
                     //
                     // Convert the raw audio data to a PCM WAV file through the creation of temporary files on the
                     // end-users local storage (i.e. HDD/SSD). These temporary files will be created and deleted as
                     // needed.
                     //
-                    const QString raw_file_path = QDir(dir.path()).filePath(file_path.baseName() + QStringLiteral(".") + convAudioCodecToFileExtStr(CodecSupport::RawData));
-                    const QFileInfo conv_pcm_file = convertToPcm(raw_file_path, m_recordBuffer->data(), m_recordBuffer->size());
+                    std::shared_ptr<QByteArray> input_raw_audio = std::make_shared<QByteArray>(reinterpret_cast<const char*>(m_recordBuffer->data()), m_recordBuffer->size());
+                    convertToPcm(input_raw_audio, input_audio_dev_chosen_number_channels,
+                                 input_audio_dev_chosen_sample_rate, output_raw_pcm, m_recordBuffer->size());
+                }
 
+                //
+                // Proceed with encoding of audio files to the specified codec, whether that be AAC, MP3, etc.!
+                if (codec_id == CodecSupport::Opus) {
                     //
                     // Setup the audio buffers
-                    std::vector<float> pcm_data = outputPcmFloatData(conv_pcm_file);
-                    if (pcm_data.empty()) {
+                    if (output_raw_pcm.empty()) {
                         throw std::invalid_argument(tr("Unable to process PCM data in preparation for conversion towards, \"%1\"!.")
-                        .arg(codecEnumToStr(codec_id)).toStdString());
+                                                            .arg(codecEnumToStr(codec_id)).toStdString());
                     }
 
-                    encodeOpus(f, pcm_data.data(), chosenInputDevice.pref_sample_rate, samples_size, chosenInputDevice.sel_channels);
-                    pcm_data.clear();
+                    encodeOpus(f, output_raw_pcm.data(), chosenInputDevice.pref_sample_rate, samples_size, chosenInputDevice.sel_channels);
+                    output_raw_pcm.clear();
+                } else {
+                    break;
                 }
-            } else {
-                break;
             }
 
+            output_raw_pcm.clear();
             continue;
         };
 

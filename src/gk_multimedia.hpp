@@ -59,9 +59,28 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QIODevice>
 #include <QFileInfo>
+#include <QByteArray>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sndfile.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
+
+typedef sf_count_t  (* sf_vio_get_filelen) (void *user_data);
+typedef sf_count_t  (* sf_vio_seek)        (sf_count_t offset, int whence, void *user_data);
+typedef sf_count_t  (* sf_vio_read)        (void *ptr, sf_count_t count, void *user_data);
+typedef sf_count_t  (* sf_vio_write)       (const void *ptr, sf_count_t count, void *user_data);
+typedef sf_count_t  (* sf_vio_tell)        (void *user_data);
 
 class GkMultimedia : public QObject {
     Q_OBJECT
@@ -119,29 +138,51 @@ private:
 
     //
     // Raw audio encoders
-    QFileInfo convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size);
-    QFileInfo convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size);
-    QFileInfo convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size);
-    static void encodeOpus(FILE *f, float *pcm_data, const ALuint &sample_rate, const size_t &samples_size, const qint32 &num_channels);
+    Database::Settings::Audio::GkSndFile convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                                      const qint32 &sample_rate, std::vector<qint16> samples,
+                                                      const size_t &sample_size);
+    Database::Settings::Audio::GkSndFile convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                                      const qint32 &sample_rate, std::vector<qint32> samples,
+                                                      const size_t &sample_size);
+    Database::Settings::Audio::GkSndFile convertToPcm(std::shared_ptr<QByteArray> &sample_buf, const qint32 &channels,
+                                                      const qint32 &sample_rate, std::vector<float> samples,
+                                                      const size_t &sample_size);
+    static void encodeOpus(FILE *f, float *pcm_data, const ALuint &sample_rate, const size_t &samples_size,
+                           const qint32 &num_channels);
 
     //
     // Container encoders
     void addOggContainer();
 
     //
+    // libsndfile related functions
+    static sf_count_t qbufGetFileLen (void *user_data);
+    static sf_count_t qbufSeek (sf_count_t offset, qint32 whence, void *user_data);
+    static sf_count_t qbufRead (void *ptr, sf_count_t count, void *user_data);
+    static sf_count_t qbufWrite (const void *ptr, sf_count_t count, void *user_data);
+    static sf_count_t qbufTell (void *user_data);
+    [[nodiscard]] Database::Settings::Audio::GkSndFile openVirtualSndFile(const qint32 &mode, const qint32 &channels,
+                                                                          const qint32 &sample_rate, const qint32 &format,
+                                                                          const QIODevice::OpenModeFlag &buf_mode,
+                                                                          std::shared_ptr<QByteArray> &sample_buf);
+
+    //
     // File-specific functions
     [[nodiscard]] char *outputFileContents(const QFileInfo &file_path);
-    [[nodiscard]] std::vector<qint16> outputPcm16Data(const QFileInfo &file_path);
-    [[nodiscard]] std::vector<qint32> outputPcm32Data(const QFileInfo &file_path);
-    [[nodiscard]] std::vector<float> outputPcmFloatData(const QFileInfo &file_path);
 
+    //
+    // OpenAL library
     [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
-
     void checkOpenAlExtensions();
+
+    //
+    // Playing and recording of audio
     void playAudioFile(const QFileInfo &file_path);
     void recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const GkAudioFramework::CodecSupport &codec_id,
                          const int64_t &avg_bitrate);
 
+    //
+    // Miscellaneous
     [[nodiscard]] QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
     [[nodiscard]] bool is_big_endian();
     [[nodiscard]] std::int32_t convert_to_int(char *buffer, std::size_t len);

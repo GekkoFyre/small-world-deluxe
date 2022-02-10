@@ -77,6 +77,7 @@
 #include <QQueue>
 #include <QString>
 #include <QVector>
+#include <QBuffer>
 #include <QVariant>
 #include <QtGlobal>
 #include <QPointer>
@@ -105,6 +106,7 @@ extern "C"
 #endif
 
 #include <sentry.h>
+#include <sndfile.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
@@ -1006,6 +1008,14 @@ namespace Database {
                 SampleType sample_type;
                 Endian endian_type;
                 qint32 bytesPerFrame;
+            };
+
+            struct GkSndFile {
+                SF_INFO sfInfo;
+                SF_VIRTUAL_IO vioPtr;
+                SNDFILE *sndFile;
+                std::shared_ptr<QBuffer> buf;
+                qint32 mode;
             };
 
             struct GkAudioDeviceInfo {
