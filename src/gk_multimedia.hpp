@@ -82,7 +82,7 @@ public:
 public slots:
     void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
                      const ALCchar *recording_device = nullptr,
-                     const GkAudioFramework::CodecSupport &codec_id = GkAudioFramework::CodecSupport::Opus,
+                     const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                      const int64_t &avg_bitrate = 64000);
     void setAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &audioState);
     void changeVolume(const qint32 &value);
@@ -119,14 +119,21 @@ private:
 
     //
     // Raw audio encoders
-    void convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size);
-    void convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size);
-    void convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size);
-    void encodeOpus(FILE *f, float *pcm_data, const qint32 &sample_rate, const qint32 &samples_size, const qint32 &num_channels);
+    QFileInfo convertToPcm(const QFileInfo &file_path, qint16 *samples, const qint32 &sample_size);
+    QFileInfo convertToPcm(const QFileInfo &file_path, qint32 *samples, const qint32 &sample_size);
+    QFileInfo convertToPcm(const QFileInfo &file_path, float *samples, const qint32 &sample_size);
+    static void encodeOpus(FILE *f, float *pcm_data, const ALuint &sample_rate, const size_t &samples_size, const qint32 &num_channels);
 
     //
     // Container encoders
     void addOggContainer();
+
+    //
+    // File-specific functions
+    [[nodiscard]] char *outputFileContents(const QFileInfo &file_path);
+    [[nodiscard]] std::vector<qint16> outputPcm16Data(const QFileInfo &file_path);
+    [[nodiscard]] std::vector<qint32> outputPcm32Data(const QFileInfo &file_path);
+    [[nodiscard]] std::vector<float> outputPcmFloatData(const QFileInfo &file_path);
 
     [[nodiscard]] qint32 openAlSelectBitDepth(const ALenum &bit_depth);
 
@@ -135,6 +142,7 @@ private:
     void recordAudioFile(const QFileInfo &file_path, const ALCchar *recording_device, const GkAudioFramework::CodecSupport &codec_id,
                          const int64_t &avg_bitrate);
 
+    [[nodiscard]] QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
     [[nodiscard]] bool is_big_endian();
     [[nodiscard]] std::int32_t convert_to_int(char *buffer, std::size_t len);
 

@@ -93,6 +93,7 @@ private slots:
 
     void startRecording(const QFileInfo &file_path, const ALCchar *recording_device, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                         const int64_t &avg_bitrate = 64000);
+    void recordLockSettings(const bool &unlock = false);
 
     void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
 
@@ -110,9 +111,11 @@ signals:
 
     void beginRecording(const QFileInfo &file_path, const ALCchar *recording_device, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                         const int64_t &avg_bitrate = 64000);
+    void lockSettingsUponRecord(const bool &unlock = false);
 
     void mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &media_state, const QFileInfo &file_path,
-                     const ALCchar *recording_device = nullptr, const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
+                     const ALCchar *recording_device = nullptr,
+                     const GekkoFyre::GkAudioFramework::CodecSupport &codec_id = GekkoFyre::GkAudioFramework::CodecSupport::Opus,
                      const int64_t &avg_bitrate = 64000);
 
 private:
@@ -160,7 +163,6 @@ private:
 
     [[nodiscard]] QString openFileBrowser(const bool &isRecord = false);
 
-    void recordLockSettings(const bool &unlock = false);
     void print_exception(const std::exception &e, int level = 0);
 
 };

@@ -88,11 +88,12 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<Gekk
                          this, SIGNAL(updateAudioState(const GekkoFyre::GkAudioFramework::GkAudioState &)));
         QObject::connect(this, SIGNAL(addToPlaylist(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)),
                          this, SLOT(playlistInsert(const QFileInfo &, const GekkoFyre::GkAudioFramework::GkAudioPlaylistPriority &, const bool &)));
-        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)),
-                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)));
+        QObject::connect(this, SIGNAL(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const GekkoFyre::GkAudioFramework::CodecSupport &, const int64_t &)),
+                         gkMultimedia, SLOT(mediaAction(const GekkoFyre::GkAudioFramework::GkAudioState &, const QFileInfo &, const ALCchar *, const GekkoFyre::GkAudioFramework::CodecSupport &, const int64_t &)));
         QObject::connect(this, SIGNAL(beginPlaying()), this, SLOT(startPlaying()));
-        QObject::connect(this, SIGNAL(beginRecording(const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)),
-                         this, SLOT(startRecording(const QFileInfo &, const ALCchar *, const CodecSupport &, const int64_t &)));
+        QObject::connect(this, SIGNAL(beginRecording(const QFileInfo &, const ALCchar *, const GekkoFyre::GkAudioFramework::CodecSupport &, const int64_t &)),
+                         this, SLOT(startRecording(const QFileInfo &, const ALCchar *, const GekkoFyre::GkAudioFramework::CodecSupport &, const int64_t &)));
+        QObject::connect(this, SIGNAL(lockSettingsUponRecord(const bool &)), this, SLOT(recordLockSettings(const bool &)));
 
         //
         // Initialize variables
@@ -168,6 +169,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
                 break;
             case GkAudioState::Recording:
                 ui->pushButton_playback_record->setEnabled(true);
+                emit lockSettingsUponRecord(false);
                 break;
             case GkAudioState::Stopped:
                 break;
@@ -222,8 +224,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
-        const CodecSupport codec_id = gkMultimedia->convAudioCodecIdxToEnum(
-                ui->comboBox_playback_rec_codec->currentIndex());
+        const CodecSupport codec_id = gkMultimedia->convAudioCodecIdxToEnum(ui->comboBox_playback_rec_codec->currentIndex());
         const QString chosen_openal_audio_dev = ui->comboBox_playback_rec_source->currentData().toString();
         if (chosen_openal_audio_dev.isEmpty()) {
             throw std::invalid_argument(tr("An invalid audio device has been specified; please check your settings and try again.").toStdString());
@@ -241,6 +242,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 //
                 // Initiate the recording process!
                 emit updateAudioState(GkAudioState::Recording);
+                emit lockSettingsUponRecord(true);
                 emit beginRecording(filePath, chosen_openal_audio_dev.toStdString().c_str(),
                                     codec_id, ui->horizontalSlider_playback_rec_bitrate->value());
             }
@@ -527,6 +529,29 @@ void GkAudioPlayDialog::startRecording(const QFileInfo &file_path, const ALCchar
 }
 
 /**
+ * @brief GkAudioPlayDialog::recordLockSettings will lock the form/settings upon a recording session being initiated, with
+ * the exception of the 'Stop' button and related.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::recordLockSettings(const bool &unlock)
+{
+    ui->comboBox_playback_rec_codec->setEnabled(unlock);
+    ui->comboBox_playback_rec_source->setEnabled(unlock);
+    ui->horizontalSlider_playback_rec_bitrate->setEnabled(unlock);
+
+    ui->pushButton_playback_skip_back->setEnabled(unlock);
+    ui->pushButton_playback_skip_forward->setEnabled(unlock);
+    ui->pushButton_playback_play->setEnabled(unlock);
+
+    ui->lineEdit_playback_artist->setReadOnly(!unlock);
+    ui->lineEdit_playback_title->setReadOnly(!unlock);
+    ui->lineEdit_playback_album->setReadOnly(!unlock);
+    ui->pushButton_album_art_icon->setEnabled(unlock);
+
+    return;
+}
+
+/**
  * @brief GkAudioPlayDialog::setBytesRead adjusts the GUI widget(s) in question to display the amount of bytes read so
  * far, whether it be for uncompressed or compressed data.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -749,24 +774,6 @@ QString GkAudioPlayDialog::openFileBrowser(const bool &isRecord)
     gkDb->write_audio_playback_dlg_settings(filePath, AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
 
     return filePath;
-}
-
-/**
- * @brief GkAudioPlayDialog::recordLockSettings will lock the form/settings upon a recording session being initiated, with
- * the exception of the 'Stop' button and related.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkAudioPlayDialog::recordLockSettings(const bool &unlock)
-{
-    ui->comboBox_playback_rec_codec->setEnabled(unlock);
-    ui->comboBox_playback_rec_source->setEnabled(unlock);
-    ui->horizontalSlider_playback_rec_bitrate->setEnabled(unlock);
-
-    ui->pushButton_playback_skip_back->setEnabled(unlock);
-    ui->pushButton_playback_skip_forward->setEnabled(unlock);
-    ui->pushButton_playback_play->setEnabled(unlock);
-
-    return;
 }
 
 /**

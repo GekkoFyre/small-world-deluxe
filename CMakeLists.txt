@@ -769,8 +769,6 @@ set(GALAXY_UI_CPP
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
-    src/gk_audio_encoding.cpp
-    src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
@@ -874,8 +872,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
-    src/gk_audio_encoding.hpp
-    src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp

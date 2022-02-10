@@ -3023,22 +3023,24 @@ GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEn
 QString GkLevelDb::convCodecFormatToFileExtension(const CodecSupport &codec_support)
 {
     switch (codec_support) {
-        case CodecSupport::Opus:
-            return QString(".opus");
         case CodecSupport::PCM:
-            return tr(".pcm");
+            return QStringLiteral(".pcm");
+        case CodecSupport::AAC:
+            return QStringLiteral(".aac");
         case CodecSupport::Loopback:
-            return tr(".loopback");
+            return QStringLiteral(".loopback");
         case CodecSupport::OggVorbis:
-            return QString(".ogg");
+            return QStringLiteral(".ogg");
+        case CodecSupport::Opus:
+            return QStringLiteral(".opus");
         case CodecSupport::FLAC:
-            return QString(".opus");
+            return QStringLiteral(".flac");
         case CodecSupport::Codec2:
-            return QString(".c2");
+            return QStringLiteral(".c2");
         case CodecSupport::Unsupported:
-            return tr(".unsupported");
+            return QStringLiteral(".unsupported");
         case CodecSupport::Unknown:
-            return tr(".unknown");
+            return QStringLiteral(".unknown");
     }
 
     return QString();
