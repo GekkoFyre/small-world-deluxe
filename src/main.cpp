@@ -133,16 +133,15 @@ int main(int argc, char *argv[])
     QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
 
     //
-    // Display a splash screen!
+    // For some reason this interferes with Valgrind, Dr. Memory, etc. and other such diagnostic tools for reasons that
+    // are currently unknown. Therefore, we offer the end-user the option of disabling this feature, plus among others,
+    // if they are using any such diagnostic tools against Small World Deluxe!
     //
     #ifndef GK_ENBL_VALGRIND_SUPPORT
     //
-    // For some reason this too interferes with Valgrind, Dr. Memory, etc. and other such
-    // diagnostic tools for reasons that are currently unknown.
-    // std::unique_ptr<GekkoFyre::GkSplashDispModel> splash_model = std::make_unique<GekkoFyre::GkSplashDispModel>(&app);
-    // splash_model->show();
-    // splash_model->setProgress(10);
-    // QTimer::singleShot(3000, splash_model.get(), &QWidget::close);
+    // Initialize the QSplashScreen!
+    std::unique_ptr<GekkoFyre::GkSplashDispModel> gkSplashDisp = std::make_unique<GekkoFyre::GkSplashDispModel>(&app, nullptr, false);
+    gkSplashDisp->show();
     #endif
 
     //
@@ -181,6 +180,12 @@ int main(int argc, char *argv[])
     QApplication::setPalette(darkPalette);
 
     MainWindow w;
+    #ifndef GK_ENBL_VALGRIND_SUPPORT
+    QObject::connect(&w, SIGNAL(setStartupProgress(const qint32 &)), gkSplashDisp.get(), SLOT(setProgress(const qint32 &)));
+    #endif
+
+    //
+    // Now launch QMainWindow!
     w.setWindowState(Qt::WindowMaximized);
     w.show();
 

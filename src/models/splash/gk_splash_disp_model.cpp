@@ -40,14 +40,14 @@
  ****************************************************************************************************/
 
 #include "src/models/splash/gk_splash_disp_model.hpp"
-#include <utility>
 #include <QPixmap>
 #include <QStyleOption>
 
 using namespace GekkoFyre;
 using namespace System;
 
-GkSplashDispModel::GkSplashDispModel(QApplication *aApp, QWidget *parent) : QSplashScreen(parent), app(aApp), m_progress(0)
+GkSplashDispModel::GkSplashDispModel(QApplication *aApp, QWidget *parent, const bool &drawProgressBar) : QSplashScreen(parent), app(aApp), m_progress(0),
+                                                                                                         m_drawProgressBar(drawProgressBar)
 {
     QPixmap pixmap(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg");
     qint32 width = pixmap.width();
@@ -55,7 +55,10 @@ GkSplashDispModel::GkSplashDispModel(QApplication *aApp, QWidget *parent) : QSpl
     setPixmap(pixmap.scaled((width / 2), (height / 2), Qt::KeepAspectRatio));
     setCursor(Qt::BusyCursor);
 
-    // showMessage(General::companyName, Qt::AlignBottom); // Display a small message along the botom of the splash-screen!
+    //
+    // TODO: Fix both the colour of how this should appear, along with the location of where it appears too!
+    // showMessage(tr(General::splashDispWelcomeMsg), Qt::AlignBottom | Qt::AlignCenter); // Display a small message along the bottom of the QSplashScreen!
+
     return;
 }
 
@@ -71,16 +74,19 @@ GkSplashDispModel::~GkSplashDispModel()
  */
 void GkSplashDispModel::setProgress(const qint32 &value)
 {
-    m_progress = value;
-    if (m_progress > 100) {
-        m_progress = 100;
+    if (m_drawProgressBar) {
+        m_progress = value;
+        if (m_progress > 100) {
+            m_progress = 100;
+        }
+
+        if (m_progress < 0) {
+            m_progress = 0;
+        }
+
+        update();
     }
 
-    if (m_progress < 0) {
-        m_progress = 0;
-    }
-
-    update();
     return;
 }
 
@@ -91,19 +97,27 @@ void GkSplashDispModel::setProgress(const qint32 &value)
  */
 void GkSplashDispModel::drawContents(QPainter *painter)
 {
-    QSplashScreen::drawContents(painter);
+    if (m_drawProgressBar) {
+        QSplashScreen::drawContents(painter);
 
-    // Set a style for the QProgressBar...
-    QStyleOptionProgressBar pbStyle;
-    pbStyle.initFrom(this);
-    pbStyle.state = QStyle::State_Enabled;
-    pbStyle.textVisible = false;
-    pbStyle.minimum = 0;
-    pbStyle.maximum = 100;
-    pbStyle.progress = m_progress;
-    pbStyle.invertedAppearance = false;
-    pbStyle.rect = QRect(0, 265, 380, 19); // Where is it.
+        // Set a style for the QProgressBar...
+        QStyleOptionProgressBar pbStyle;
+        pbStyle.initFrom(this);
+        pbStyle.state = QStyle::State_Enabled;
+        pbStyle.textVisible = false;
+        pbStyle.minimum = 0;
+        pbStyle.maximum = 100;
+        pbStyle.progress = m_progress;
+        pbStyle.invertedAppearance = false;
 
-    // Now we draw the object in question!
-    style()->drawControl(QStyle::CE_ProgressBar, &pbStyle, painter, this);
+        //
+        // The location and size of where/how the QProgressBar should appear!
+        pbStyle.rect = QRect((static_cast<qint32>(width() * GK_SPLASH_SCREEN_START_SHOW_LEFT)), static_cast<qint32>((height() * GK_SPLASH_SCREEN_START_SHOW_TOP)),
+                             static_cast<qint32>((width() * GK_SPLASH_SCREEN_START_SIZE_WIDTH)), static_cast<qint32>((height() * GK_SPLASH_SCREEN_START_SIZE_HEIGHT)));
+
+        // Now we draw the object in question!
+        style()->drawControl(QStyle::CE_ProgressBar, &pbStyle, painter, this);
+    }
+
+    return;
 }

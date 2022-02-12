@@ -56,17 +56,20 @@ class GkSplashDispModel : public QSplashScreen {
     Q_OBJECT
 
 public:
-    explicit GkSplashDispModel(QApplication *aApp, QWidget *parent = nullptr);
+    explicit GkSplashDispModel(QApplication *aApp, QWidget *parent = nullptr, const bool &drawProgressBar = false);
     ~GkSplashDispModel() override;
 
     QApplication *app;
-    qint32 m_progress;
 
 public slots:
     void setProgress(const qint32 &value);
 
 protected:
     void drawContents(QPainter *painter) Q_DECL_OVERRIDE;
+
+private:
+    qint32 m_progress;
+    bool m_drawProgressBar;
 
 };
 };

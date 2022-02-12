@@ -146,6 +146,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::vector<double>>("std::vector<double>");
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
 
+    #ifndef GK_ENBL_VALGRIND_SUPPORT
+    //
+    // Initialize the QSplashScreen!
+    emit setStartupProgress(0);
+    #endif
+
     sys::error_code ec;
     fs::path slash = "/";
     native_slash = slash.make_preferred().native();
@@ -263,6 +269,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QMessageBox::warning(this, tr("Error!"), tr("An issue has been encountered whilst initializing Google LevelDB!\n\n%1")
                                  .arg(QString::fromStdString(ec.message())), QMessageBox::Ok);
         }
+
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(10);
+        #endif
 
         // Some basic optimizations; this is the easiest way to get Google LevelDB to perform well
         leveldb::Options options;
@@ -397,6 +407,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     gkEventLogger->publishEvent(tr("Exception and crash monitoring as enabled by Sentry is now active."), GkSeverity::Info, false, true, false, false);
                 }
 
+                #ifndef GK_ENBL_VALGRIND_SUPPORT
+                emit setStartupProgress(20);
+                #endif
+
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr == nullptr) {
                     gkRadioPtr = std::make_shared<GkRadio>();
@@ -443,6 +457,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         std::unique_ptr<QString> error_msg = std::make_unique<QString>("");
         gkCli->parseCommandLine(error_msg.get());
+
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(30);
+        #endif
 
         //
         // Collect settings from QMainWindow, among other miscellaneous settings, upon termination of Small World Deluxe!
@@ -533,6 +551,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
             }
         });
+
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(40);
+        #endif
 
         //
         // Input audio device
@@ -625,6 +647,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         output_audio_init.get();
         input_audio_init.get();
 
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(50);
+        #endif
+
         //
         // Initialize the Waterfall / Spectrograph
         //
@@ -666,6 +692,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
         #endif
 
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(60);
+        #endif
+
         //
         // Sound & Audio Devices
         //
@@ -705,6 +735,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // QMainWindow widgets
         prefillAmateurBands();
 
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(70);
+        #endif
+
         info_timer = new QTimer(this);
         QObject::connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         info_timer->start(1000);
@@ -736,6 +770,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         label_sstv_rx_saved_image->setText("");
 
         label_sstv_rx_live_image->setPixmap(QPixmap(":/resources/contrib/images/raster/unknown-author/sstv/sstv-image-placeholder.jpg"));
+
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(80);
+        #endif
 
         //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
@@ -776,6 +814,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, this);
+
+        #ifndef GK_ENBL_VALGRIND_SUPPORT
+        emit setStartupProgress(100);
+        #endif
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);

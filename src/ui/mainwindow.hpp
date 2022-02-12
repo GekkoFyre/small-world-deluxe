@@ -305,6 +305,11 @@ signals:
     void gkExitApp();
 
     //
+    // QSplashScreen and startup
+    //
+    void setStartupProgress(const qint32 &value);
+
+    //
     // Radio and Hamlib specific functions
     //
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);

@@ -130,6 +130,15 @@ namespace GekkoFyre {
 #define GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING (8)              // The maximum amount of zero padding to add towards error messages produced by HRESULT's within Microsoft Window's specific C/C++ code.
 
 //
+// QSplashScreen
+//
+#define GK_SPLASH_SCREEN_START_TIMEOUT_MSECS (1000)             // The amount of time, in milliseconds, until the QSplashScreen at startup timeouts after Small World Deluxe has finished fully launching.
+#define GK_SPLASH_SCREEN_START_SHOW_LEFT (0.1)                  // Our best attempt at centering the QProgressBar within the GekkoFyre Networks' logo of the QSplashScreen!
+#define GK_SPLASH_SCREEN_START_SHOW_TOP (1.25)                  // Make sure that the QProgresBar of the QSplashScreen appears just beneath the GekkoFyre Networks' logo!
+#define GK_SPLASH_SCREEN_START_SIZE_WIDTH (0.75)                // Ensure that the QProgressBar fits nice and snug within the GekkoFyre Networks' logo of the QSplashScreen!
+#define GK_SPLASH_SCREEN_START_SIZE_HEIGHT (0.08)               // The vertical size of the QProgressBar itself.
+
+//
 // Firewall and network security specific settings
 //
 #define GK_SECURITY_FIREWALL_TCP_PORT_HTTP_80 (80)
@@ -394,6 +403,7 @@ namespace General {
     constexpr char xmppResourceGFyre[] = "GekkoFyre";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
+    constexpr char splashDispWelcomeMsg[] = "Loading...";
 
     constexpr char gk_sentry_dsn_uri[] = "https://2c7b92c7437b4728a2856a6ca71ddbe6@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
