@@ -59,6 +59,16 @@ public:
     explicit GkSolarWeatherForecast(QWidget *parent = nullptr);
     ~GkSolarWeatherForecast();
 
+private slots:
+    //
+    // Miscellaneous!
+    void on_pushButton_okay_clicked();
+    void on_pushButton_cancel_clicked();
+
+    //
+    // Network / Internet-related
+    void on_pushButton_refresh_data_clicked();
+
 private:
     Ui::GkSolarWeatherForecast *ui;
 };

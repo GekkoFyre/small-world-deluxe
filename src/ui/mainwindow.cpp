@@ -1765,6 +1765,23 @@ void MainWindow::startMappingRoutines()
 }
 
 /**
+ * @brief MainWindow::createSolarWeatherForecastDlg
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createSolarWeatherForecastDlg()
+{
+    gkSolarWeatherForecast = new GkSolarWeatherForecast(this);
+    gkSolarWeatherForecast->setWindowFlags(Qt::Window);
+    gkSolarWeatherForecast->setAttribute(Qt::WA_DeleteOnClose, true);
+
+    //
+    // Now show the dialog itself!
+    gkSolarWeatherForecast->show();
+
+    return;
+}
+
+/**
  * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qstatusbar.html>
@@ -2764,6 +2781,8 @@ void MainWindow::launchSstvTab()
  */
 void MainWindow::on_actionSolar_Weather_Forecast_triggered()
 {
+    createSolarWeatherForecastDlg(); // Launch the QDialog responsible for this action!
+
     return;
 }
 

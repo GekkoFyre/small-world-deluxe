@@ -72,3 +72,31 @@ GkSolarWeatherForecast::~GkSolarWeatherForecast()
     delete ui;
     return;
 }
+
+/**
+ * @brief GkSolarWeatherForecast::on_pushButton_okay_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSolarWeatherForecast::on_pushButton_okay_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkSolarWeatherForecast::on_pushButton_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSolarWeatherForecast::on_pushButton_cancel_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkSolarWeatherForecast::on_pushButton_refresh_data_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSolarWeatherForecast::on_pushButton_refresh_data_clicked()
+{
+    return;
+}
+

@@ -53,6 +53,7 @@
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
+#include "src/ui/weather/signal-propagation/gksolarweatherforecast.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
@@ -496,6 +497,11 @@ private:
     QPointer<GkAtlasDialog> gkAtlasDlg;
 
     //
+    // Solar weather, forecasts, etc.
+    //
+    QPointer<GkSolarWeatherForecast> gkSolarWeatherForecast;
+
+    //
     // System tray icon
     //
     QPointer<QSystemTrayIcon> m_trayIcon;
@@ -509,6 +515,7 @@ private:
     void spectroSamplesUpdated();
 
     void startMappingRoutines();
+    void createSolarWeatherForecastDlg();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

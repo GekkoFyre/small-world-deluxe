@@ -822,6 +822,7 @@ set(GALAXY_UI_CPP
     src/models/tableview/gk_xmpp_recv_msgs_model.cpp
 	src/models/tableview/gk_xmpp_roster_presence_model.cpp
 	src/models/tableview/gk_qdatetime_filter_proxy_model.cpp
+	src/models/tableview/gk_solar_weather_forecast_model.cpp
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.cpp
@@ -927,6 +928,7 @@ set(GALAXY_OBJ_HEADERS
     src/models/tableview/gk_xmpp_recv_msgs_model.hpp
 	src/models/tableview/gk_xmpp_roster_presence_model.hpp
 	src/models/tableview/gk_qdatetime_filter_proxy_model.hpp
+	src/models/tableview/gk_solar_weather_forecast_model.hpp
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.hpp
