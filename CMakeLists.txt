@@ -81,6 +81,34 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
+SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
+
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs")
+SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
+SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+if(MSYS OR MINGW OR LINUX)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
+elseif(WIN32)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        # Using Microsoft Visual Studio C++
+        if(CMAKE_BUILD_TYPE MATCHES "Debug")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        elseif(CMAKE_BUILD_TYPE MATCHES "Release")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        endif()
+    endif()
+else()
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
+endif()
+
 #
 # Auto everything!
 # Reference: https://cmake.org/cmake/help/latest/manual/cmake-qt.7.html
@@ -231,7 +259,7 @@ endif(TAGLIB_FOUND)
 # https://github.com/qxmpp-project/qxmpp
 #
 function(install_qxmpp)
-    find_package(QXmpp REQUIRED)
+    find_package(QXMPP REQUIRED)
     if (QXMPP_FOUND)
         include_directories(${QXMPP_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
@@ -1132,32 +1160,4 @@ elseif (LINUX)
 				LIBRARY DESTINATION lib)
 else()
 	message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
-endif()
-
-SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
-SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
-
-SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wno-deprecated -Wno-deprecated-copy")
-SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
-SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
-
-if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers -Wno-deprecated -Wno-deprecated-copy)
-	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
-elseif(WIN32)
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        # Using Microsoft Visual Studio C++
-        if(CMAKE_BUILD_TYPE MATCHES "Debug")
-            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
-        elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
-        endif()
-    endif()
-else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers -Wno-deprecated -Wno-deprecated-copy)
-	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
