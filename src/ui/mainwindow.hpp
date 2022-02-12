@@ -261,6 +261,11 @@ private slots:
     void launchSstvTab();
 
     //
+    // Weather-forecast and signal propagation related
+    //
+    void on_actionSolar_Weather_Forecast_triggered();
+
+    //
     // Settings dialog and related
     //
     void launchSettingsWin(const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation);

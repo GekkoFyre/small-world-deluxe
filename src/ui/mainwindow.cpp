@@ -2759,6 +2759,15 @@ void MainWindow::launchSstvTab()
 }
 
 /**
+ * @brief MainWindow::on_actionSolar_Weather_Forecast_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionSolar_Weather_Forecast_triggered()
+{
+    return;
+}
+
+/**
  * @brief MainWindow::on_pushButton_radio_tune_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param checked

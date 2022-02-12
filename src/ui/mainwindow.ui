@@ -843,8 +843,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>16</width>
-                                <height>16</height>
+                                <width>100</width>
+                                <height>30</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1702,10 +1702,26 @@ QPushButton:disabled {
     </property>
     <addaction name="actionConnect"/>
    </widget>
+   <widget class="QMenu" name="menuSola_r_Forecast">
+    <property name="title">
+     <string>Sola&amp;r &amp;&amp; Forecast</string>
+    </property>
+    <widget class="QMenu" name="menu_Propagation">
+     <property name="toolTip">
+      <string>Weather-related information, whether contained to Earth or extraterrestial in nature, that ham's can use to predict the propagation paths of their transmissions.</string>
+     </property>
+     <property name="title">
+      <string>&amp;Propagation</string>
+     </property>
+     <addaction name="actionSolar_Weather_Forecast"/>
+    </widget>
+    <addaction name="menu_Propagation"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
    <addaction name="menuC_ontrol"/>
    <addaction name="menuChat_XMPP"/>
+   <addaction name="menuSola_r_Forecast"/>
    <addaction name="menu_Tools"/>
    <addaction name="menu_Remote"/>
    <addaction name="menuSa_ve"/>
@@ -2070,6 +2086,14 @@ QPushButton:disabled {
    </property>
    <property name="toolTip">
     <string>Connect to a remote instance of Small World Deluxe!</string>
+   </property>
+  </action>
+  <action name="actionSolar_Weather_Forecast">
+   <property name="text">
+    <string>Solar &amp;Weather Forecast</string>
+   </property>
+   <property name="toolTip">
+    <string>Obtain up-to-date solar weather-related information that hams can use to predict their signal propagation.</string>
    </property>
   </action>
  </widget>

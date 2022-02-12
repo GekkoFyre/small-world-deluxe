@@ -763,7 +763,8 @@ qt5_wrap_ui(UI_HEADERS
 	src/ui/gkupdateinfodialog.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
-    src/ui/xmpp/gkxmppregistrationdialog.ui)
+    src/ui/xmpp/gkxmppregistrationdialog.ui
+	src/ui/weather/signal-propagation/gksolarweatherforecast.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -789,6 +790,7 @@ set(GALAXY_UI_CPP
     src/ui/xmpp/gkxmpprosterdialog.cpp
     src/ui/xmpp/gkxmppmessagedialog.cpp
     src/ui/xmpp/gkxmppregistrationdialog.cpp
+	src/ui/weather/signal-propagation/gksolarweatherforecast.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -892,6 +894,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/xmpp/gkxmpprosterdialog.hpp
     src/ui/xmpp/gkxmppmessagedialog.hpp
     src/ui/xmpp/gkxmppregistrationdialog.hpp
+	src/ui/weather/signal-propagation/gksolarweatherforecast.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
