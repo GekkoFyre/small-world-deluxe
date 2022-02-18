@@ -86,14 +86,14 @@ SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
 
-SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs")
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs -Wno-reorder")
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
 SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -105,7 +105,7 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
 
