@@ -960,7 +960,8 @@ set(GK_AUTO_UPDATE_CPP
 	${GK_AUTO_UPDATE_CPP}
 	src/update/main.cpp
 	src/update/gk_auto_update.cpp
-	src/update/gk_check_update.cpp)
+	src/update/gk_check_update.cpp
+	src/update/ui/gkupdatemanagerdialog.cpp)
 
 #
 # Compile UIC!
@@ -968,7 +969,15 @@ set(GK_AUTO_UPDATE_CPP
 set(GK_AUTO_UPDATE_HEADERS
 	${GK_AUTO_UPDATE_HEADERS}
 	src/update/gk_auto_update.hpp
-	src/update/gk_check_update.hpp)
+	src/update/gk_check_update.hpp
+	src/update/ui/gkupdatemanagerdialog.hpp)
+
+#
+# Compile UIC!
+#
+qt5_wrap_ui(GK_AUTO_UPDATE_UI
+			${GK_AUTO_UPDATE_UI}
+			src/update/ui/gkupdatemanagerdialog.ui)
 
 #
 # Do not compile UIC for these!
@@ -1115,7 +1124,7 @@ target_link_libraries(smallworld PRIVATE galaxy) # Link with the 'Galaxy' set of
 # Compile the automatic updater and checker for Small World Deluxe! It's a separate executable so that 
 # end-user firewalls do not automatically block the primary for being network accessible.
 #
-add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${QM_FILES} ${GK_APP_VERS_HPP})
+add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${GK_AUTO_UPDATE_UI} ${QM_FILES} ${GK_APP_VERS_HPP})
 target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independent code!
 set_property(TARGET gk_update PROPERTY AUTOMOC ON)
 target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} cares Qt5::Core Qt5::Network SingleApplication::SingleApplication)

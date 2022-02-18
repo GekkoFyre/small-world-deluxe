@@ -41,10 +41,8 @@
 
 #include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
 #include <utility>
-#include <iostream>
 #include <exception>
-#include <QPainter>
-#include <QTextDocument>
+#include <QKeyEvent>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -63,7 +61,7 @@ using namespace Logging;
  * @param err_msg
  * @param err
  */
-GkXmppMsgEngine::GkXmppMsgEngine(QObject *parent) : QAbstractItemDelegate(parent)
+GkXmppMsgEngine::GkXmppMsgEngine(QObject *parent) : QObject(parent)
 {
     return;
 }
@@ -71,33 +69,27 @@ GkXmppMsgEngine::GkXmppMsgEngine(QObject *parent) : QAbstractItemDelegate(parent
 GkXmppMsgEngine::~GkXmppMsgEngine() {}
 
 /**
- * @brief GkXmppMsgEngine::paint
+ * @brief GkXmppMsgEngine::eventFilter
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param painter
- * @param option
- * @param index
- */
-void GkXmppMsgEngine::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    QTextDocument doc;
-    doc.setTextWidth(option.rect.width());
-    doc.setMarkdown(index.data().toString());
-    painter->save();
-    painter->translate(option.rect.topLeft());
-    doc.drawContents(painter,QRect(QPoint(0,0),option.rect.size()));
-    painter->restore();
-
-    return;
-}
-
-/**
- * @brief GkXmppMsgEngine::sizeHint
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param option
- * @param index
+ * @param obj
+ * @param event
  * @return
  */
-QSize GkXmppMsgEngine::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+bool GkXmppMsgEngine::eventFilter(QObject *obj, QEvent *event)
 {
-    return QSize();
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *key = static_cast<QKeyEvent *>(event);
+        if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+            // The return key has been pressed!
+            emit submitMsgEnterKey();
+        } else {
+            return QObject::eventFilter(obj, event);
+        }
+
+        return true;
+    } else {
+        return QObject::eventFilter(obj, event);
+    }
+
+    return false;
 }

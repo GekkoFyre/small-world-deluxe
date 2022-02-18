@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -39,27 +39,15 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/update/ui/gkupdatemanagerdialog.hpp"
+#include "ui_gkupdatemanagerdialog.h"
 
-#include "src/defines.hpp"
-#include <QEvent>
-#include <QString>
-#include <QObject>
+GkUpdateManagerDialog::GkUpdateManagerDialog(QWidget *parent) : QDialog(parent), ui(new Ui::GkUpdateManagerDialog)
+{
+    ui->setupUi(this);
+}
 
-namespace GekkoFyre {
-
-class GkXmppMsgEngine : public QObject {
-    Q_OBJECT
-
-public:
-    explicit GkXmppMsgEngine(QObject *parent = nullptr);
-    virtual ~GkXmppMsgEngine();
-
-protected:
-    bool eventFilter(QObject *obj, QEvent *event);
-
-signals:
-    void submitMsgEnterKey();
-
-};
-};
+GkUpdateManagerDialog::~GkUpdateManagerDialog()
+{
+    delete ui;
+}

@@ -265,7 +265,7 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         event_log.mesg.arguments = "";
     }
 
-    if (eventLogDb.empty()) {
+    if (eventLogDb.isEmpty()) {
         event_log.event_no = 1;
     } else {
         event_log.event_no = setEventNo(); // Set the event number accordingly!

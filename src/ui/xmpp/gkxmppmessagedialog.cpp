@@ -41,18 +41,15 @@
 
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
-#include "src/models/spelling/gk_text_edit_spelling_highlight.hpp"
+#include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
 #include <chrono>
 #include <thread>
 #include <utility>
 #include <iterator>
-#include <iostream>
 #include <algorithm>
-#include <QMap>
 #include <QIcon>
 #include <QUuid>
 #include <QPixmap>
-#include <QKeyEvent>
 #include <QFileDialog>
 #include <QStandardPaths>
 
@@ -70,25 +67,6 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
-
-bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
-{
-    if (event->type() == QEvent::KeyPress) {
-        QKeyEvent *key = static_cast<QKeyEvent *>(event);
-        if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-            // The return key has been pressed!
-            emit submitMsgEnterKey();
-        } else {
-            return QObject::eventFilter(obj, event);
-        }
-
-        return true;
-    } else {
-        return QObject::eventFilter(obj, event);
-    }
-
-    return false;
-}
 
 /**
  * @brief GkXmppMessageDialog::GkXmppMessageDialog
@@ -114,7 +92,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
         //
         // Initialize spelling and grammar checker, dictionaries, etc.
-        QPointer<GkTextEditSpellHighlight> gkSpellCheckerHighlighter = new GkTextEditSpellHighlight(gkEventLogger);
+        gkSpellCheckerHighlighter = new GkTextEditSpellHighlight(gkEventLogger);
         ui->verticalLayout_4->removeWidget(ui->textEdit_tx_msg_dialog);
         ui->verticalLayout_4->addWidget(gkSpellCheckerHighlighter);
 
@@ -155,19 +133,16 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
         ui->toolButton_attach_file->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/attached-file.svg"));
 
-        QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
-        QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
-        ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
+        QPointer<GkXmppMsgEngine> gkXmppMsgEngine = new GkXmppMsgEngine(this);
+        QObject::connect(gkXmppMsgEngine, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
+        gkSpellCheckerHighlighter->installEventFilter(gkXmppMsgEngine);
 
         determineNickname();
         updateInterface(m_bareJids);
 
-        if (!m_xmppClient->isConnected()) {
-            ui->textEdit_tx_msg_dialog->setEnabled(false);
-        }
-
+        gkSpellCheckerHighlighter->setEnabled(true);
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
-            ui->textEdit_tx_msg_dialog->setEnabled(false);
+            gkSpellCheckerHighlighter->setEnabled(false);
         });
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An error has occurred related to XMPP functions. The error in question:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -373,7 +348,7 @@ void GkXmppMessageDialog::determineNickname()
 }
 
 /**
- * @brief GkXmppMessageDialog::submitMsgEnterKey processes the carriage return for UI element, `ui->textEdit_tx_msg_dialog()`.
+ * @brief GkXmppMessageDialog::submitMsgEnterKey processes the carriage return for UI element, `gkSpellCheckerHighlighter()`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppMessageDialog::submitMsgEnterKey()
@@ -402,9 +377,9 @@ void GkXmppMessageDialog::submitMsgEnterKey()
     }
 
     if (m_xmppClient->isConnected()) {
-        const auto plaintext = ui->textEdit_tx_msg_dialog->toPlainText();
+        const auto plaintext = gkSpellCheckerHighlighter->toPlainText();
         if (!plaintext.isEmpty()) {
-            for (const auto bareJid: m_bareJids) {
+            for (const auto &bareJid: m_bareJids) {
                 if (!bareJid.isEmpty()) {
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
@@ -414,7 +389,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
             }
         }
 
-        ui->textEdit_tx_msg_dialog->clear();
+        gkSpellCheckerHighlighter->clear();
     } else {
         m_netState = m_xmppClient->getNetworkState();
         if (m_netState == GkNetworkState::Connecting) {
@@ -717,18 +692,20 @@ void GkXmppMessageDialog::updateUsersHelper()
             show();
         }
 
-        if (m_xmppClient->isConnected()) {
-            ui->textEdit_tx_msg_dialog->setEnabled(true);
-            dlArchivedMessages(); // Gather anything possible from the Google LevelDB database!
+        if (!gkSpellCheckerHighlighter.isNull()) {
+            if (m_xmppClient->isConnected()) {
+                gkSpellCheckerHighlighter->setEnabled(true);
+                dlArchivedMessages(); // Gather anything possible from the Google LevelDB database!
+            }
+
+            QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+                gkSpellCheckerHighlighter->setEnabled(true);
+
+                //
+                // Now gather any data possible from the given XMPP server via the Internet!
+                dlArchivedMessages();
+            });
         }
-
-        QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-            ui->textEdit_tx_msg_dialog->setEnabled(true);
-
-            //
-            // Now gather any data possible from the given XMPP server via the Internet!
-            dlArchivedMessages();
-        });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }

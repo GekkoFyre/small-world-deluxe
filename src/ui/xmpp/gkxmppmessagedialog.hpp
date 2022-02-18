@@ -48,6 +48,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
+#include "src/models/spelling/gk_text_edit_spelling_highlight.hpp"
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
 #include <mutex>
@@ -64,17 +65,6 @@
 namespace Ui {
 class GkXmppMessageDialog;
 }
-
-class GkPlainTextKeyEnter : public QObject {
-    Q_OBJECT
-
-protected:
-    bool eventFilter(QObject *obj, QEvent *event);
-
-signals:
-    void submitMsgEnterKey();
-
-};
 
 class GkXmppMessageDialog : public QDialog
 {
@@ -149,6 +139,10 @@ private:
     // QPointer<GekkoFyre::GkXmppMsgEngine> gkXmppMsgEngine;
 
     //
+    // Widgets
+    QPointer<GekkoFyre::GkTextEditSpellHighlight> gkSpellCheckerHighlighter;
+
+    //4
     // Multithreading, mutexes, etc.
     //
     std::mutex m_archivedMsgsFromDbMtx;
