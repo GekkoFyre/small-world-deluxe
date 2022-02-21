@@ -49,6 +49,7 @@
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/update/gk_network.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
@@ -555,6 +556,7 @@ Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioState);
+Q_DECLARE_METATYPE(GekkoFyre::Network::GkDataState);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

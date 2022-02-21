@@ -961,6 +961,7 @@ set(GK_AUTO_UPDATE_CPP
 	src/update/main.cpp
 	src/update/gk_auto_update.cpp
 	src/update/gk_check_update.cpp
+	src/update/gk_network.cpp
 	src/update/ui/gkupdatemanagerdialog.cpp)
 
 #
@@ -970,6 +971,7 @@ set(GK_AUTO_UPDATE_HEADERS
 	${GK_AUTO_UPDATE_HEADERS}
 	src/update/gk_auto_update.hpp
 	src/update/gk_check_update.hpp
+	src/update/gk_network.hpp
 	src/update/ui/gkupdatemanagerdialog.hpp)
 
 #

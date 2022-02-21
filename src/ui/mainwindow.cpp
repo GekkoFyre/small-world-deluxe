@@ -136,6 +136,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioState>("GekkoFyre::GkAudioFramework::GkAudioState");
+    qRegisterMetaType<GekkoFyre::Network::GkDataState>("GekkoFyre::Network::GkDataState");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");

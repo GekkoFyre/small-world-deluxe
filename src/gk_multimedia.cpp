@@ -52,8 +52,6 @@
 #include <QMessageBox>
 #include <QTemporaryDir>
 
-#define RAW_OUT_ON_PLANAR true
-
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;

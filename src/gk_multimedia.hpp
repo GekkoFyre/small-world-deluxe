@@ -76,12 +76,6 @@ extern "C"
 
 namespace GekkoFyre {
 
-typedef sf_count_t  (* sf_vio_get_filelen) (void *user_data);
-typedef sf_count_t  (* sf_vio_seek)        (sf_count_t offset, int whence, void *user_data);
-typedef sf_count_t  (* sf_vio_read)        (void *ptr, sf_count_t count, void *user_data);
-typedef sf_count_t  (* sf_vio_write)       (const void *ptr, sf_count_t count, void *user_data);
-typedef sf_count_t  (* sf_vio_tell)        (void *user_data);
-
 class GkMultimedia : public QObject {
     Q_OBJECT
 
