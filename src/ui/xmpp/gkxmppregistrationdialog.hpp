@@ -100,6 +100,13 @@ private slots:
     void on_comboBox_xmpp_change_password_server_type_currentIndexChanged(int index);
     void on_comboBox_change_email_server_type_currentIndexChanged(int index);
 
+    void on_radioButton_account_create_muc_visibility_public_toggled(bool checked);
+    void on_radioButton_account_create_muc_visibility_private_toggled(bool checked);
+    void on_pushButton_account_create_muc_submit_clicked();
+    void on_pushButton_account_create_muc_reset_clicked();
+    void on_pushButton_account_create_muc_cancel_clicked();
+    void on_comboBox_account_create_muc_server_type_currentIndexChanged(int index);
+
     //
     // User, roster and presence details
     void on_checkBox_remember_credentials_stateChanged(int arg1);

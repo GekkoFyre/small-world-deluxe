@@ -87,6 +87,7 @@ private slots:
     void on_pushButton_user_create_account_clicked();
     void on_tableView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
     void on_actionAdd_Contact_triggered();
+    void on_actionStart_Join_MUC_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
     void on_pushButton_self_avatar_clicked();
@@ -165,7 +166,7 @@ signals:
     void updateBlockedTableViewModel();
 
     void launchMsgDlg(const QString &bareJid, const qint32 &tabIdx);
-    void launchMsgDlg(const QStringList &bareJids, const qint32 &tabIdx);
+    void launchMucDlg(const QString &mucJid, const qint32 &tabIdx);
 
 private:
     Ui::GkXmppRosterDialog *ui;

@@ -790,6 +790,62 @@ void GkXmppRegistrationDialog::on_comboBox_change_email_server_type_currentIndex
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_public_toggled
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_public_toggled(bool checked)
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_private_toggled
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_private_toggled(bool checked)
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_account_create_muc_submit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_account_create_muc_submit_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_account_create_muc_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_account_create_muc_reset_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_account_create_muc_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_account_create_muc_cancel_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_comboBox_account_create_muc_server_type_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_comboBox_account_create_muc_server_type_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::on_checkBox_remember_credentials_stateChanged indicates whether the user credentials, such
  * as the login username (and if applicable) password, should be saved to the Google LevelDB database or not.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

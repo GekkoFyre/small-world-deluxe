@@ -826,6 +826,7 @@ set(GALAXY_UI_CPP
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.cpp
+	src/models/treeview/xmpp/gk_xmpp_muc_roster_model.cpp
 	src/models/xmpp/gk_xmpp_msg_handler.cpp
 	src/models/xmpp/gk_xmpp_msg_history.cpp
 	src/models/spelling/gk_text_edit_spelling_highlight.cpp)
@@ -932,6 +933,7 @@ set(GALAXY_OBJ_HEADERS
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.hpp
+	src/models/treeview/xmpp/gk_xmpp_muc_roster_model.hpp
 	src/models/xmpp/gk_xmpp_msg_handler.hpp
 	src/models/xmpp/gk_xmpp_msg_history.hpp
 	src/models/spelling/gk_text_edit_spelling_highlight.hpp)

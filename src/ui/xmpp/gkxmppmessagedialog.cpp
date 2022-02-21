@@ -111,8 +111,10 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         //
         // Setup and initialize QTableView's...
         gkXmppRecvMsgsTableViewModel = new GkXmppRecvMsgsTableViewModel(ui->tableView_recv_msg_dlg, m_xmppClient, this);
+        gkXmppRecvMucChatTableViewModel = new GkXmppRecvMsgsTableViewModel(ui->tableView_muc_recv_conversation, m_xmppClient, this);
         // gkXmppMsgEngine = new GkXmppMsgEngine(this);
         ui->tableView_recv_msg_dlg->setModel(gkXmppRecvMsgsTableViewModel);
+        ui->tableView_muc_recv_conversation->setModel(gkXmppRecvMucChatTableViewModel);
         // ui->tableView_recv_msg_dlg->setItemDelegate(gkXmppMsgEngine);
 
         ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX, QHeaderView::ResizeToContents);
@@ -179,17 +181,16 @@ void GkXmppMessageDialog::openMsgDlg(const QString &bareJid, const qint32 &tabId
 }
 
 /**
- * @brief GkXmppMessageDialog::openMsgDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
- * manager, so that the end-user may send/receive messages to other end-users.
+ * @brief GkXmppMessageDialog::openMucDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * manager, based upon a MUC so that the end-user may send/receive messages to others within the framework of a
+ * chat-room.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJids The end-users to open the message dialog we are in communiqué with, as a IRC-styled chat-room.
+ * @param mucJid The MUC to open the message dialog we are in communiqué with, as a IRC-styled chat-room.
  * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
  * a new tab should be opened for a brand new chat.
  */
-void GkXmppMessageDialog::openMsgDlg(const QStringList &bareJids, const qint32 &tabIdx)
+void GkXmppMessageDialog::openMucDlg(const QString &mucJid, const qint32 &tabIdx)
 {
-    emit updateGlobal(bareJids, tabIdx);
-
     return;
 }
 
@@ -289,6 +290,71 @@ void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
  * @param index
  */
 void GkXmppMessageDialog::on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_muc_view_roster_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_muc_view_roster_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_muc_font_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_muc_font_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_muc_font_reset_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_muc_font_reset_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_muc_insert_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_muc_insert_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_muc_attach_file_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_muc_attach_file_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_comboBox_muc_tx_msg_shortcut_cmds_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppMessageDialog::on_comboBox_muc_tx_msg_shortcut_cmds_currentIndexChanged(int index)
 {
     return;
 }

@@ -208,7 +208,7 @@
       <item>
        <widget class="QStackedWidget" name="stackedWidget_roster_ui">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="page_user_roster">
          <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -818,6 +818,14 @@
   <action name="actionBlockPresenceUser">
    <property name="text">
     <string>Block User</string>
+   </property>
+  </action>
+  <action name="actionStart_Join_MUC">
+   <property name="text">
+    <string>Start / Join MUC</string>
+   </property>
+   <property name="toolTip">
+    <string>Either create a new MUC (multi-user chat) instance or join a pre-existing one!</string>
    </property>
   </action>
  </widget>

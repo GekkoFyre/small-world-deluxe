@@ -80,18 +80,30 @@ public:
 
 public slots:
     void openMsgDlg(const QString &bareJid, const qint32 &tabIdx);
-    void openMsgDlg(const QStringList &bareJids, const qint32 &tabIdx);
+    void openMucDlg(const QString &mucJid, const qint32 &tabIdx);
 
 private slots:
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
     void on_textEdit_tx_msg_dialog_textChanged();
     void on_lineEdit_message_search_returnPressed();
+
+    //
+    // Individual one-on-one chat
     void on_toolButton_view_roster_triggered(QAction *arg1);
     void on_toolButton_font_triggered(QAction *arg1);
     void on_toolButton_font_reset_triggered(QAction *arg1);
     void on_toolButton_insert_triggered(QAction *arg1);
     void on_toolButton_attach_file_triggered(QAction *arg1);
     void on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged(int index);
+
+    //
+    // MUC rooms
+    void on_toolButton_muc_view_roster_triggered(QAction *arg1);
+    void on_toolButton_muc_font_triggered(QAction *arg1);
+    void on_toolButton_muc_font_reset_triggered(QAction *arg1);
+    void on_toolButton_muc_insert_triggered(QAction *arg1);
+    void on_toolButton_muc_attach_file_triggered(QAction *arg1);
+    void on_comboBox_muc_tx_msg_shortcut_cmds_currentIndexChanged(int index);
 
     void updateInterface(const QStringList &bareJids);
     void determineNickname();
@@ -136,6 +148,7 @@ private:
     // QTableView and related
     //
     QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
+    QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMucChatTableViewModel;
     // QPointer<GekkoFyre::GkXmppMsgEngine> gkXmppMsgEngine;
 
     //

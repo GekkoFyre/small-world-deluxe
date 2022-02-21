@@ -114,6 +114,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         ui->pushButton_add_contact_submit->setTabOrder(nullptr, nullptr);
         ui->pushButton_add_contact_cancel->setTabOrder(nullptr, nullptr);
 
+        ui->actionStart_Join_MUC->setEnabled(false);
         ui->actionEdit_Contact->setEnabled(false);
         ui->actionDelete_Contact->setEnabled(false);
         ui->actionBlockPresenceUser->setEnabled(false);
@@ -131,7 +132,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails,
                                                                              m_xmppClient, m_rosterList, this);
         QObject::connect(this, SIGNAL(launchMsgDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QString &, const qint32 &)));
-        QObject::connect(this, SIGNAL(launchMsgDlg(const QStringList &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QStringList &, const qint32 &)));
+        QObject::connect(this, SIGNAL(launchMucDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMucDlg(const QString &, const qint32 &)));
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
@@ -203,6 +204,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
             ui->actionEdit_Nickname->setEnabled(true);
+            ui->actionStart_Join_MUC->setEnabled(true);
             if (m_presenceManuallySet) {
                 if (ui->comboBox_current_status->currentIndex() == GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX) {
                     ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX);
@@ -216,6 +218,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
             ui->actionEdit_Nickname->setEnabled(false);
+            ui->actionStart_Join_MUC->setEnabled(false);
 
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
             cleanupTables();
@@ -832,6 +835,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_customContextMenuRequeste
 {
     std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_callsigns_groups);
     contextMenu->addAction(ui->actionAdd_Contact);
+    contextMenu->addAction(ui->actionStart_Join_MUC);
     contextMenu->addAction(ui->actionEdit_Contact);
     contextMenu->addAction(ui->actionDelete_Contact);
     contextMenu->addAction(ui->actionBlockPresenceUser);
@@ -841,6 +845,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_customContextMenuRequeste
     //
     // Save the position data to the QAction
     ui->actionAdd_Contact->setData(QVariant(pos));
+    ui->actionStart_Join_MUC->setData(QVariant(pos));
     ui->actionEdit_Contact->setData(QVariant(pos));
     ui->actionDelete_Contact->setData(QVariant(pos));
     ui->actionBlockPresenceUser->setData(QVariant(pos));
@@ -859,6 +864,16 @@ void GkXmppRosterDialog::on_actionAdd_Contact_triggered()
 {
     ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_add_new_contact);
 
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionStart_Join_MUC_triggered initiates the process of creating a new MUC or joining
+ * a pre-existing one.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionStart_Join_MUC_triggered()
+{
     return;
 }
 
