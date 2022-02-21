@@ -138,6 +138,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioState>("GekkoFyre::GkAudioFramework::GkAudioState");
     qRegisterMetaType<GekkoFyre::Network::GkDataState>("GekkoFyre::Network::GkDataState");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
+    qRegisterMetaType<std::shared_ptr<aria2::DownloadHandle>>("std::shared_ptr<aria2::DownloadHandle>");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");

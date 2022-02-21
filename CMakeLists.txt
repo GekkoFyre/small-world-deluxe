@@ -93,7 +93,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -105,7 +105,7 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
 
@@ -962,6 +962,7 @@ set(GK_AUTO_UPDATE_CPP
 	src/update/gk_auto_update.cpp
 	src/update/gk_check_update.cpp
 	src/update/gk_network.cpp
+	src/update/ui/gkfiletransferdialog.cpp
 	src/update/ui/gkupdatemanagerdialog.cpp)
 
 #
@@ -972,6 +973,7 @@ set(GK_AUTO_UPDATE_HEADERS
 	src/update/gk_auto_update.hpp
 	src/update/gk_check_update.hpp
 	src/update/gk_network.hpp
+	src/update/ui/gkfiletransferdialog.hpp
 	src/update/ui/gkupdatemanagerdialog.hpp)
 
 #
@@ -979,6 +981,7 @@ set(GK_AUTO_UPDATE_HEADERS
 #
 qt5_wrap_ui(GK_AUTO_UPDATE_UI
 			${GK_AUTO_UPDATE_UI}
+			src/update/ui/gkfiletransferdialog.ui
 			src/update/ui/gkupdatemanagerdialog.ui)
 
 #

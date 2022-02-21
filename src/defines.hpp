@@ -138,6 +138,11 @@ namespace GekkoFyre {
 #define GK_SPLASH_SCREEN_START_SIZE_HEIGHT (0.08)               // The vertical size of the QProgressBar itself.
 
 //
+// Downloads, network, and file transfers
+//
+#define GK_NETWORK_FILE_TRANSFER_REFRESH_MSECS (500)
+
+//
 // Firewall and network security specific settings
 //
 #define GK_SECURITY_FIREWALL_TCP_PORT_HTTP_80 (80)

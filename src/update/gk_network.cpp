@@ -70,36 +70,44 @@ GkNetwork::GkNetwork(QObject *parent) : QObject(parent)
     // Setup any SIGNALs and SLOTs!
     QObject::connect(this, SIGNAL(changeNetworkState(const Network::GkXmpp::GkDataState &)),
                      this, SLOT(modifyNetworkState(const Network::GkXmpp::GkDataState &)));
-    QObject::connect(this, SIGNAL(recvFileFromUrl(const QString &)),
-                     this, SLOT(recvFileViaHttp(const QString &)));
-    QObject::connect(this, SIGNAL(startDownload(const std::vector<std::string> &)),
-                     this, SLOT(dataCaptureFromUri(const std::vector<std::string> &)));
+    QObject::connect(this, SIGNAL(recvFileFromUrl(const std::string &)),
+                     this, SLOT(addFileToDownload(const std::string &)));
+    QObject::connect(this, SIGNAL(startDownload(const std::vector<QString> &)),
+                     this, SLOT(dataCaptureFromUri(const std::vector<QString> &)));
+    QObject::connect(this, SIGNAL(pauseDownload(const std::vector<QString> &)),
+                     this, SLOT(suspendDownload(const std::vector<QString> &)));
+    QObject::connect(this, SIGNAL(stopDownload(const std::vector<QString> &)),
+                     this, SLOT(removeDownload(const std::vector<QString> &)));
 
     return;
 }
 
 GkNetwork::~GkNetwork()
 {
+    //
+    // Cleanup after the initiation of the Aria2 library!
+    aria2::libraryDeinit();
+
     return;
 }
 
 /**
- * @brief GkNetwork::recvFileViaHttp will attempt to receive/download a file, remotely, via the HTTP(S) protocol over
+ * @brief GkNetwork::addFileToDownload will attempt to receive/download a file, remotely, via the HTTP(S) protocol over
  * the Internet (i.e. a wide area network).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param recv_url The URL for which to attempt to download as a file.
  * @note C++ library interface to aria2 <http://aria2.github.io/manual/en/html/libaria2.html>.
  */
-void GkNetwork::recvFileViaHttp(const QString &recv_url)
+void GkNetwork::addFileToDownload(const std::string &recv_url)
 {
     //
-    // Added download item(s) to the aforementioned session which has just been created!
+    // Add to the queue, pre-existing or not!
     qint32 rv;
-    for (qint32 i = 1; i < recv_url; ++i) {
-        //
-        // Add to the queue, pre-existing or not!
-        uris.emplace(convTo8BitStr(recv_url));
-    }
+    Network::GkDownload download;
+    download.uri = recv_url;
+    download.state = GkDataState::Downloading;
+    download.handle = nullptr;
+    dlQueue.enqueue(download);
 
     return;
 }
@@ -110,8 +118,16 @@ void GkNetwork::recvFileViaHttp(const QString &recv_url)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param recv_uris The URI or URIs in which to attempt to download as a file or set of files.
  */
-void GkNetwork::dataCaptureFromUri(const std::vector<std::string> &recv_uris)
+void GkNetwork::dataCaptureFromUri(const std::vector<QString> &recv_uris)
 {
+    for (const auto &uri: recv_uris) {
+        if (!uri.isNull()) {
+            if (!uri.isEmpty()) {
+                emit recvFileFromUrl(convTo8BitStr(uri));
+            }
+        }
+    }
+
     qint32 rv;
     auto start = std::chrono::steady_clock::now();
     for (;;) {
@@ -129,6 +145,43 @@ void GkNetwork::dataCaptureFromUri(const std::vector<std::string> &recv_uris)
             start = now;
             aria2::GlobalStat gstat = aria2::getGlobalStat(aria_session.get());
             std::vector<aria2::A2Gid> gids = aria2::getActiveDownload(aria_session.get());
+            for (const auto &gid: gids) {
+                std::shared_ptr<aria2::DownloadHandle> dh;
+                dh.reset(aria2::getDownloadHandle(aria_session.get(), gid), [](aria2::DownloadHandle *dh){aria2::deleteDownloadHandle(dh);});
+                if (dh.get()) {
+                    emit sendDownloadHandle(dh);
+                }
+            }
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkNetwork::suspendDownload suspends the downloading/transferring of a file and any data in the process.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param uris The URI or URIs in which to attempt to download as a file or set of files.
+ */
+void GkNetwork::suspendDownload(const std::vector<QString> &uris)
+{
+    return;
+}
+
+/**
+ * @brief GkNetwork::removeDownload removes an ongoing download and its associated URI from any queues while suspending
+ * the downloading/transferring of any data in the process.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param uris The URI or URIs in which to attempt to download as a file or set of files.
+ */
+void GkNetwork::removeDownload(const std::vector<QString> &uris)
+{
+    for (auto it = dlQueue.begin(), end = dlQueue.end(); it != end; ++it) {
+        for (const auto &resource: uris) {
+            if (it->uri == convTo8BitStr(resource)) {
+                dlQueue.erase(it);
+                break;
+            }
         }
     }
 
@@ -224,9 +277,10 @@ void GkNetwork::processDownloads()
         qint32 rv;
         std::vector<std::string> uri_vec_tmp;
 
-        while (!uris.empty()) {
-            const std::string conv_uri_str = uris.front();
+        while (!dlQueue.empty()) {
+            const std::string conv_uri_str = dlQueue.front().uri;
             uri_vec_tmp.emplace_back(conv_uri_str);
+
             aria2::KeyVals options;
             rv = aria2::addUri(aria_session.get(), nullptr, uri_vec_tmp, options);
             if (rv < 0) {

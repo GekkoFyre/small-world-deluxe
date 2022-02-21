@@ -42,12 +42,12 @@
 #pragma once
 
 #include <aria2/aria2.h>
-#include <queue>
 #include <mutex>
 #include <vector>
 #include <memory>
 #include <string>
 #include <thread>
+#include <QQueue>
 #include <QObject>
 #include <QString>
 #include <QIODevice>
@@ -58,6 +58,12 @@ namespace GekkoFyre {
             Paused,
             Downloading,
             Uploading
+        };
+
+        struct GkDownload {
+            GkDataState state;
+            std::string uri;
+            std::shared_ptr<aria2::DownloadHandle> handle;
         };
     }
 
@@ -72,20 +78,25 @@ public slots:
     void modifyNetworkState(const Network::GkDataState &network_state);
 
 signals:
-    void recvFileFromUrl(const QString &recv_url);
+    void recvFileFromUrl(const std::string &recv_url);
     void changeNetworkState(const Network::GkDataState &network_state);
-    void startDownload(const std::vector<std::string> &recv_uris);
+    void startDownload(const std::vector<QString> &uris);
+    void pauseDownload(const std::vector<QString> &uris);
+    void stopDownload(const std::vector<QString> &uris);
+    void sendDownloadHandle(const std::shared_ptr<aria2::DownloadHandle> &dh);
 
 private slots:
-    void recvFileViaHttp(const QString &recv_url);
-    void dataCaptureFromUri(const std::vector<std::string> &recv_uris);
+    void addFileToDownload(const std::string &recv_url);
+    void dataCaptureFromUri(const std::vector<QString> &recv_uris);
+    void suspendDownload(const std::vector<QString> &uris);
+    void removeDownload(const std::vector<QString> &uris);
 
 private:
     //
     // Aria2-related variables, etc.
     Network::GkDataState m_networkState;
     std::shared_ptr<aria2::Session> aria_session;
-    std::queue<std::string> uris;
+    QQueue<Network::GkDownload> dlQueue;
 
     static qint32 downloadEventCallback(aria2::Session *session, aria2::DownloadEvent event, aria2::A2Gid gid,
                                         void *userData);
