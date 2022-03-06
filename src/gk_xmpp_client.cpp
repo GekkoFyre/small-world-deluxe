@@ -95,6 +95,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                               m_xmppLogger(QXmppLogger::getLogger()),
                                               m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                               m_rosterList(std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>>()),
+                                              m_mucList(std::make_shared<QList<GekkoFyre::Network::GkXmpp::GkXmppMuc>>()),
                                               QXmppClient(parent)
 {
     try {
@@ -245,6 +246,11 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                          this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)));
         QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
                          this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)));
+        QObject::connect(this, SIGNAL(createXmppMuc(const QString &, const QString &, const QString &)),
+                         this, SLOT(createMuc(const QString &, const QString &, const QString &)));
+        QObject::connect(this, SIGNAL(joinXmppMuc(const QString &)), this, SLOT(joinMuc(const QString &)));
+        QObject::connect(m_mucManager.get(), SIGNAL(invitationReceived(const QString &, const QString &, const QString &)),
+                         this, SLOT(invitationToMuc(const QString &, const QString &, const QString &)));
 
         //
         // The spelling mistake for the SIGNAL, QXmppMamManager::resultsRecieved(), seems to be unknowingly intentional by
@@ -423,71 +429,74 @@ GkXmppClient::~GkXmppClient()
 }
 
 /**
- * @brief GkXmppClient::createMuc
- * @author musimbate <https://stackoverflow.com/questions/29056790/qxmpp-creating-a-muc-room-xep-0045-on-the-server>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param room_name
- * @param room_subject
- * @param room_desc
- * @return
+ * @brief GkXmppClient::createMuc creates a brand new MUC from scratch instead of joining a pre-existing one.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param room_name The title of the soon-to-be created MUC.
+ * @param room_subject The subject of the MUC.
+ * @param room_desc The description of the MUC.
+ * @note musimbate <https://stackoverflow.com/questions/29056790/qxmpp-creating-a-muc-room-xep-0045-on-the-server>,
  */
-bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
+void GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
 {
     try {
         if ((isConnected() && m_netState != GkNetworkState::Connecting) && !room_name.isEmpty()) {
-            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(m_connDetails.server.url);
-            QList<QXmppMucRoom *> rooms = m_mucManager->rooms();
-            QXmppMucRoom *r;
-            foreach(r, rooms) {
-                if (r->jid() == room_jid) {
-                    gkEventLogger->publishEvent(tr("%1 has joined the MUC, \"%2\".")
-                    .arg(tr("<unknown>")).arg(room_jid), GkSeverity::Info, "",
-                    true, true, false, false);
+            QString room_jid = QStringLiteral("%1@conference.%2").arg(room_name, m_connDetails.server.url);
+            for (const auto &room: m_mucManager->rooms()) {
+                GkXmppMuc gkXmppMuc;
+                gkXmppMuc.room_ptr.reset(room);
+                gkXmppMuc.jid = room_jid;
+                if (gkXmppMuc.room_ptr->jid() == room_jid) {
+                    gkEventLogger->publishEvent(tr("%1 has joined the MUC, \"%2\".").arg(tr("<unknown>"), room_jid), GkSeverity::Info, "", true, true, false, false);
                 }
-            }
 
-            m_pRoom.reset(m_mucManager->addRoom(room_jid));
-            if (m_pRoom) {
-                // Nickname...
-                m_pRoom->setNickName(m_connDetails.nickname);
-                // Join the room itself...
-                m_pRoom->join();
-            }
+                gkXmppMuc.room_ptr.reset(m_mucManager->addRoom(room_jid));
+                if (gkXmppMuc.room_ptr) {
+                    //
+                    // Set the nickname...
+                    gkXmppMuc.room_ptr->setNickName(m_connDetails.nickname);
 
-            QXmppDataForm form(QXmppDataForm::Submit);
-            QList<QXmppDataForm::Field> fields;
+                    //
+                    // Then proceed to join the room itself!
+                    gkXmppMuc.room_ptr->join();
+                }
 
-            {
-                QXmppDataForm::Field field(QXmppDataForm::Field::HiddenField);
-                field.setKey("FORM_TYPE");
-                field.setValue("http://jabber.org/protocol/muc#roomconfig");
+                QXmppDataForm form(QXmppDataForm::Submit);
+                QList<QXmppDataForm::Field> fields;
+
+                {
+                    QXmppDataForm::Field field(QXmppDataForm::Field::HiddenField);
+                    field.setKey(QStringLiteral("FORM_TYPE"));
+                    field.setValue(QStringLiteral("http://jabber.org/protocol/muc#roomconfig"));
+                    fields.append(field);
+                }
+
+                QXmppDataForm::Field field;
+                field.setKey(QStringLiteral("muc#roomconfig_roomname"));
+                field.setValue(room_name);
                 fields.append(field);
-            }
 
-            QXmppDataForm::Field field;
-            field.setKey("muc#roomconfig_roomname");
-            field.setValue(room_name);
-            fields.append(field);
-
-            field.setKey("muc#roomconfig_subject");
-            field.setValue(room_subject);
-            fields.append(field);
-
-            field.setKey("muc#roomconfig_roomdesc");
-            field.setValue(room_desc);
-            fields.append(field);
-
-            {
-                QXmppDataForm::Field field(QXmppDataForm::Field::BooleanField);
-                field.setKey("muc#roomconfig_persistentroom");
-                field.setValue(true);
+                field.setKey(QStringLiteral("muc#roomconfig_subject"));
+                field.setValue(room_subject);
                 fields.append(field);
+
+                field.setKey(QStringLiteral("muc#roomconfig_roomdesc"));
+                field.setValue(room_desc);
+                fields.append(field);
+
+                {
+                    QXmppDataForm::Field field(QXmppDataForm::Field::BooleanField);
+                    field.setKey(QStringLiteral("muc#roomconfig_persistentroom"));
+                    field.setValue(true);
+                    fields.append(field);
+                }
+
+                form.setFields(fields);
+                gkXmppMuc.room_ptr->setConfiguration(form);
+
+                m_mucList->push_back(gkXmppMuc);
             }
 
-            form.setFields(fields);
-            m_pRoom->setConfiguration(form);
-
-            return true;
+            return;
         } else {
             throw std::runtime_error(tr("Are you connected to an XMPP server?").toStdString());
         }
@@ -495,7 +504,84 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
         emit sendError(tr("An issue was encountered while creating a MUC! Error: %1").arg(QString::fromStdString(e.what())));
     }
 
-    return false;
+    return;
+}
+
+/**
+ * @brief GkXmppClient::joinMuc joins a pre-existing MUC instead of creating a brand new one from scratch.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param room_addr The address to the room/server that is to be joined and connected towards.
+ */
+void GkXmppClient::joinMuc(const QString &room_addr)
+{
+    try {
+        if ((isConnected() && m_netState != GkNetworkState::Connecting) && !room_addr.isEmpty()) {
+            for (const auto &room: m_mucManager->rooms()) {
+                GkXmppMuc gkXmppMuc;
+                gkXmppMuc.room_ptr.reset(room);
+                gkXmppMuc.jid = room_addr;
+                if (gkXmppMuc.room_ptr->jid() == room_addr) {
+                    gkEventLogger->publishEvent(tr("%1 has joined the MUC, \"%2\".").arg(tr("<unknown>"), room_addr), GkSeverity::Info, "", true, true, false, false);
+                }
+
+                gkXmppMuc.room_ptr.reset(m_mucManager->addRoom(room_addr));
+                if (gkXmppMuc.room_ptr) {
+                    //
+                    // Set the nickname...
+                    gkXmppMuc.room_ptr->setNickName(m_connDetails.nickname);
+
+                    //
+                    // Then proceed to join the room itself!
+                    gkXmppMuc.room_ptr->join();
+                }
+
+                m_mucList->push_back(gkXmppMuc);
+            }
+
+            return;
+        } else {
+            throw std::runtime_error(tr("Are you connected to an XMPP server?").toStdString());
+        }
+    } catch (const std::exception &e) {
+        emit sendError(tr("An issue was encountered during the joining to an MUC! Error: %1").arg(QString::fromStdString(e.what())));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::invitationToMuc is called upon an invitation being given for an MUC.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param roomJid The address to the MUC itself.
+ * @param inviter The end-user who invited you to the MUC.
+ * @param reason The reason given for inviting you to the MUC in the first place, if provided.
+ */
+void GkXmppClient::invitationToMuc(const QString &roomJid, const QString &inviter, const QString &reason)
+{
+    try {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Invitation!"));
+        msgBox.setText(tr("You have been invited to the MUC, \"%1\", by %2? Do you wish to join?\n\nReason given: %3").arg(roomJid, inviter, reason));
+        msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Question);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                emit joinXmppMuc(roomJid);
+                break;
+            case QMessageBox::Cancel:
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        emit sendError(tr("An issue was encountered during invitation to an MUC! Error: %1").arg(QString::fromStdString(e.what())));
+    }
+
+    return;
 }
 
 /**

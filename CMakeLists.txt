@@ -86,14 +86,14 @@ SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
 
-SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs -Wno-reorder")
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor")
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
 SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -105,7 +105,7 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
 
@@ -490,7 +490,7 @@ else()
     message(FATAL_ERROR "The 'OpenSSL' cryptography libraries could not be found!")
 endif(OPENSSL_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network Positioning LinguistTools SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network Positioning LinguistTools SerialPort PrintSupport Xml Test REQUIRED)
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -804,7 +804,6 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
-    src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
 	src/gk_multimedia.cpp
@@ -910,7 +909,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
 	src/gk_multimedia.hpp
@@ -1080,7 +1078,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Positioning Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication KF5::SonnetCore KF5::SonnetUi sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Positioning Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication KF5::SonnetCore KF5::SonnetUi sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 #
 # Qt Translations

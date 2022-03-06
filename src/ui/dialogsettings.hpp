@@ -44,7 +44,6 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/ui/gkatlasdialog.hpp"
-#include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <marble/MarbleWidget.h>
 #include <marble/GeoDataCoordinates.h>
@@ -101,7 +100,6 @@ public:
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<Marble::MarbleWidget> mapWidget,
-                            QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
@@ -313,7 +311,7 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
+    // QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
 

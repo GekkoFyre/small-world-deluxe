@@ -118,7 +118,6 @@ public:
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
                                   const QString &jid = "", const bool &user_signup = false);
     void killConnectionFromServer(const bool &askReconnectPolicy = false);
-    bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     [[nodiscard]] static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
     [[nodiscard]] QXmppPresence getBareJidPresence(const QString &bareJid, const QString &resource = "");
@@ -181,6 +180,12 @@ public slots:
     //
     // QXmppMamManager handling
     void getArchivedMessagesBulk(const QString &from = QString());
+
+    //
+    // QXmppMucManager
+    void createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+    void joinMuc(const QString &room_addr);
+    void invitationToMuc(const QString &roomJid, const QString &inviter, const QString &reason);
 
     //
     // Message handling
@@ -279,6 +284,11 @@ signals:
     void procThirdPartyMsg(const QXmppMessage &message, const bool &enqueue = true);
     void sendXmppMsgToArchive(const QXmppMessage &message, const bool &enqueue = true);
 
+    //
+    // MUCs
+    void createXmppMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+    void joinXmppMuc(const QString &room_addr);
+
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
@@ -310,6 +320,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QVector<QString> m_blockList;
     std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>> m_rosterList;   // A list of all the bareJids, including the client themselves!
+    std::shared_ptr<QList<GekkoFyre::Network::GkXmpp::GkXmppMuc>> m_mucList;
 
     //
     // Filesystem & Directories
@@ -347,7 +358,6 @@ private:
     bool m_isMuc;
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
-    std::unique_ptr<QXmppMucRoom> m_pRoom;
     std::unique_ptr<QXmppArchiveManager> m_xmppArchiveMgr;
     std::unique_ptr<QXmppMamManager> m_xmppMamMgr;
     std::unique_ptr<QXmppTransferManager> m_transferManager;

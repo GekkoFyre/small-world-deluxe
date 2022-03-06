@@ -105,7 +105,7 @@ private slots:
     void on_pushButton_account_create_muc_submit_clicked();
     void on_pushButton_account_create_muc_reset_clicked();
     void on_pushButton_account_create_muc_cancel_clicked();
-    void on_comboBox_account_create_muc_server_type_currentIndexChanged(int index);
+    void on_lineEdit_account_create_muc_name_textChanged(const QString &arg1);
 
     //
     // User, roster and presence details
@@ -133,6 +133,9 @@ private slots:
 
 signals:
     void sendError(const QString &errorMsg);
+
+    void createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+    void joinMuc(const QString &room_addr);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;

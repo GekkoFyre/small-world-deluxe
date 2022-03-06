@@ -59,7 +59,6 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/gk_text_to_speech.hpp"
 #include "src/gk_multimedia.hpp"
 #include <marble/MarbleWidget.h>
 #include <boost/filesystem.hpp>
@@ -367,7 +366,7 @@ private:
     QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
     QPointer<GkIntroSetupWizard> gkIntroSetupWizard;
-    QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
+    // QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;

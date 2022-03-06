@@ -821,6 +821,8 @@ void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 {
     QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkStringFuncs, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     gkXmppRegistrationDlg->show();
 
     return;
@@ -874,6 +876,12 @@ void GkXmppRosterDialog::on_actionAdd_Contact_triggered()
  */
 void GkXmppRosterDialog::on_actionStart_Join_MUC_triggered()
 {
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreateMuc, gkConnDetails, m_xmppClient, gkDb, gkStringFuncs, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    gkXmppRegistrationDlg->show();
+
     return;
 }
 

@@ -118,7 +118,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         gkDekodeDb = std::move(gkDb);
         gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
-        m_xmppClient = std::move(xmppClient);
+        m_xmppClient = xmppClient;
 
         //
         // QXmpp and XMPP related
@@ -134,6 +134,9 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
+        QObject::connect(this, SIGNAL(createMuc(const QString &, const QString &, const QString &)),
+                         m_xmppClient, SLOT(createMuc(const QString &, const QString &, const QString &)));
+        QObject::connect(this, SIGNAL(joinMuc(const QString &)), xmppClient, SLOT(joinMuc(const QString &)));
 
         switch (gkRegUiRole) {
             case GkRegUiRole::AccountCreate:
@@ -151,6 +154,10 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             case GkRegUiRole::AccountChangeEmail:
                 // Change e-mail address for pre-existing user account on the given XMPP server
                 ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_email_ui);
+                break;
+            case GkRegUiRole::AccountCreateMuc:
+                // Change e-mail address for pre-existing user account on the given XMPP server
+                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_create_muc_ui);
                 break;
             default:
                 // What to do by default, if no information is otherwise given!
@@ -796,6 +803,10 @@ void GkXmppRegistrationDialog::on_comboBox_change_email_server_type_currentIndex
  */
 void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_public_toggled(bool checked)
 {
+    if (checked) {
+        ui->radioButton_account_create_muc_visibility_private->toggled(false);
+    }
+
     return;
 }
 
@@ -806,6 +817,10 @@ void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_publ
  */
 void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_private_toggled(bool checked)
 {
+    if (checked) {
+        ui->radioButton_account_create_muc_visibility_public->toggled(false);
+    }
+
     return;
 }
 
@@ -815,6 +830,31 @@ void GkXmppRegistrationDialog::on_radioButton_account_create_muc_visibility_priv
  */
 void GkXmppRegistrationDialog::on_pushButton_account_create_muc_submit_clicked()
 {
+    try {
+        const QString muc_name = ui->lineEdit_account_create_muc_name->text();
+        const QString muc_desc = ui->lineEdit_account_create_muc_desc->text();
+        const QString muc_addr = ui->lineEdit_account_create_muc_address->text();
+
+        bool isPublic;
+        if (ui->radioButton_account_create_muc_visibility_private->isChecked()) {
+            isPublic = false;
+        } else if (ui->radioButton_account_create_muc_visibility_public->isChecked()) {
+            isPublic = true;
+        } else {
+            throw std::invalid_argument(tr("Invalid public/private visibility option has been provided! Please update details and try again.").toStdString());
+        }
+
+        if (!muc_name.isEmpty()) {
+            emit createMuc(muc_name, muc_addr, muc_desc);
+        } else {
+            emit joinMuc(muc_addr);
+        }
+
+        this->close();
+    } catch (const std::exception &e) {
+        QMessageBox::critical(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
     return;
 }
 
@@ -824,6 +864,12 @@ void GkXmppRegistrationDialog::on_pushButton_account_create_muc_submit_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_account_create_muc_reset_clicked()
 {
+    ui->lineEdit_account_create_muc_name->clear();
+    ui->lineEdit_account_create_muc_desc->clear();
+    ui->radioButton_account_create_muc_visibility_private->toggled(true);
+    ui->radioButton_account_create_muc_visibility_public->toggled(false);
+    ui->lineEdit_account_create_muc_address->clear();
+
     return;
 }
 
@@ -833,15 +879,28 @@ void GkXmppRegistrationDialog::on_pushButton_account_create_muc_reset_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_account_create_muc_cancel_clicked()
 {
+    this->close();
+
     return;
 }
 
 /**
- * @brief GkXmppRegistrationDialog::on_comboBox_account_create_muc_server_type_currentIndexChanged
+ * @brief GkXmppRegistrationDialog::on_lineEdit_account_create_muc_name_textChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
  */
-void GkXmppRegistrationDialog::on_comboBox_account_create_muc_server_type_currentIndexChanged(int index)
+void GkXmppRegistrationDialog::on_lineEdit_account_create_muc_name_textChanged(const QString &arg1)
 {
+    ui->lineEdit_account_create_muc_address->setReadOnly(false);
+    ui->lineEdit_account_create_muc_address->setToolTip(tr("The MUC you wish to join instead of creating one."));
+    if (!arg1.isNull()) {
+        if (!arg1.isEmpty()) {
+            ui->lineEdit_account_create_muc_address->setReadOnly(true);
+            ui->lineEdit_account_create_muc_address->setToolTip(tr("Erase the, \"Name\", field to make this editable once more!"));
+            ui->lineEdit_account_create_muc_address->setText(QStringLiteral("%1@conference.%2").arg(arg1, m_connDetails.server.domain.toString()));
+        }
+    }
+
     return;
 }
 

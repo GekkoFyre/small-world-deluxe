@@ -1522,44 +1522,41 @@
             </property>
             <layout class="QFormLayout" name="formLayout_5">
              <item row="0" column="0">
-              <widget class="QLabel" name="label_account_create_muc_server">
-               <property name="text">
-                <string>Server: </string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="comboBox_account_create_muc_server_type"/>
-             </item>
-             <item row="1" column="0">
               <widget class="QLabel" name="label_account_create_muc_name">
                <property name="text">
                 <string>Name: </string>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="0" column="1">
               <widget class="QLineEdit" name="lineEdit_account_create_muc_name">
                <property name="placeholderText">
-                <string>My MUC...</string>
+                <string>My MUC (optional)...</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="1" column="0">
               <widget class="QLabel" name="label_account_create_muc_desc">
                <property name="text">
                 <string>Description: </string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="1" column="1">
               <widget class="QLineEdit" name="lineEdit_account_create_muc_desc">
                <property name="placeholderText">
                 <string>Where all the fun is at! (optional)...</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_account_create_muc_visibility">
+               <property name="text">
+                <string>Visibility: </string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
               <widget class="QFrame" name="frame_account_create_muc_visibility">
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
@@ -1627,30 +1624,20 @@
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="label_account_create_muc_visibility">
-               <property name="text">
-                <string>Visibility: </string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
               <widget class="QLabel" name="label_account_create_muc_address">
                <property name="text">
                 <string>Address: </string>
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="3" column="1">
               <widget class="QLineEdit" name="lineEdit_account_create_muc_address">
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
                <property name="placeholderText">
                 <string>my_muc@conference.vk3vkk.chat</string>
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
+             <item row="4" column="1">
               <spacer name="verticalSpacer_6">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>

@@ -796,7 +796,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
         gkModem = new GkModem(gkAudioDevices, gkDb, gkEventLogger, gkStringFuncs, this);
-        gkTextToSpeech = new GkTextToSpeech(gkDb, gkEventLogger, this);
+        // gkTextToSpeech = new GkTextToSpeech(gkDb, gkEventLogger, this);
 
         QPointer<GkActiveMsgsTableViewModel> gkActiveMsgsTableViewModel = new GkActiveMsgsTableViewModel(gkDb, this);
         QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(gkDb, this);
@@ -1015,8 +1015,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                gkSysInputAudioDevs, gkSysOutputAudioDevs, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, m_mapWidget, gkTextToSpeech, settingsDlgTab,
-                                                               this);
+                                                               gkEventLogger, m_mapWidget, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));

@@ -103,7 +103,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<Marble::MarbleWidget> mapWidget,
-                               QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -125,7 +124,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         m_xmppClient = std::move(xmppClient);
         gkEventLogger = std::move(eventLogger);
         m_mapWidget = std::move(mapWidget);
-        gkTextToSpeech = std::move(textToSpeechPtr);
         gkSerialPortMap = com_ports;
 
         //
@@ -318,33 +316,22 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         prefill_event_logger();
 
         //
-        // Initialize Text-to-Speech GUI widgets
-        //
-        ui->comboBox_access_stt_engine->addItem(tr("Default"), tr("Default"));
-        const auto engines = QTextToSpeech::availableEngines();
-        for (const QString &engine: engines) {
-            ui->comboBox_access_stt_engine->addItem(engine, engine);
-        }
-
-        ui->comboBox_access_stt_engine->setCurrentIndex(0);
-
-        //
         // Initialize Text-to-Speech signals/slots
         //
-        QObject::connect(ui->pushButton_access_stt_speak, SIGNAL(clicked()), gkTextToSpeech, SLOT(speak()));
-        QObject::connect(ui->horizontalSlider_access_stt_pitch, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setPitch(const int &)));
-        QObject::connect(ui->horizontalSlider_access_stt_rate, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setRate(const int &)));
-        QObject::connect(ui->horizontalSlider_access_stt_volume, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setVolume(const int &)));
-        QObject::connect(ui->comboBox_access_stt_engine, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(engineSelected(int)));
-        QObject::connect(this, SIGNAL(changeSelectedTTSEngine(const QString &)), gkTextToSpeech, SLOT(engineSelected(const QString &)));
-        QObject::connect(gkTextToSpeech, SIGNAL(addLangItem(const QString &, const QVariant &)), this, SLOT(ttsAddLanguageItem(const QString &, const QVariant &)));
-        QObject::connect(gkTextToSpeech, SIGNAL(addVoiceItem(const QString &, const QVariant &)), this, SLOT(ttsAddPresetVoiceItem(const QString &, const QVariant &)));
-        QObject::connect(gkTextToSpeech, SIGNAL(clearLangItems()), ui->comboBox_access_stt_language, SLOT(clear()));
-        QObject::connect(gkTextToSpeech, SIGNAL(clearVoiceItems()), ui->comboBox_access_stt_preset_voice, SLOT(clear()));
-        QObject::connect(gkTextToSpeech, SIGNAL(setVoiceCurrentIndex(int)), ui->comboBox_access_stt_preset_voice, SLOT(setCurrentIndex(int)));
-        QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
-        QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
-        QObject::connect(ui->comboBox_access_stt_language, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(languageSelected(int)));
+        // QObject::connect(ui->pushButton_access_stt_speak, SIGNAL(clicked()), gkTextToSpeech, SLOT(speak()));
+        // QObject::connect(ui->horizontalSlider_access_stt_pitch, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setPitch(const int &)));
+        // nQObject::connect(ui->horizontalSlider_access_stt_rate, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setRate(const int &)));
+        // QObject::connect(ui->horizontalSlider_access_stt_volume, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setVolume(const int &)));
+        // QObject::connect(ui->comboBox_access_stt_engine, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(engineSelected(int)));
+        // QObject::connect(this, SIGNAL(changeSelectedTTSEngine(const QString &)), gkTextToSpeech, SLOT(engineSelected(const QString &)));
+        // QObject::connect(gkTextToSpeech, SIGNAL(addLangItem(const QString &, const QVariant &)), this, SLOT(ttsAddLanguageItem(const QString &, const QVariant &)));
+        // QObject::connect(gkTextToSpeech, SIGNAL(addVoiceItem(const QString &, const QVariant &)), this, SLOT(ttsAddPresetVoiceItem(const QString &, const QVariant &)));
+        // QObject::connect(gkTextToSpeech, SIGNAL(clearLangItems()), ui->comboBox_access_stt_language, SLOT(clear()));
+        // QObject::connect(gkTextToSpeech, SIGNAL(clearVoiceItems()), ui->comboBox_access_stt_preset_voice, SLOT(clear()));
+        // QObject::connect(gkTextToSpeech, SIGNAL(setVoiceCurrentIndex(int)), ui->comboBox_access_stt_preset_voice, SLOT(setCurrentIndex(int)));
+        // QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
+        // QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
+        // QObject::connect(ui->comboBox_access_stt_language, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(languageSelected(int)));
 
         //
         // Validate inputs for the Email Address

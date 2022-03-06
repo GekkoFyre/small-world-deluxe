@@ -58,6 +58,7 @@
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppRosterIq.h>
 #include <qxmpp/QXmppArchiveIq.h>
+#include <qxmpp/QXmppMucManager.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -533,7 +534,8 @@ namespace Network {
             AccountCreate,
             AccountLogin,
             AccountChangePassword,
-            AccountChangeEmail
+            AccountChangeEmail,
+            AccountCreateMuc
         };
 
         enum GkOnlineStatus {                               // The online availability of the user in question.
@@ -610,6 +612,14 @@ namespace Network {
             qint32 msg_window_idx;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
+        };
+
+        struct GkXmppMuc {
+            std::shared_ptr<QXmppMucRoom> room_ptr;
+            QString jid;
+            QString desc;
+            QString addr;
+            QList<GkXmppCallsign> roster;
         };
 
         struct GkXmppBlocklist {
