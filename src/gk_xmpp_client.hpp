@@ -253,7 +253,6 @@ signals:
     void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
 
-    void updateRoster();
     void updateProgressBar(const qint32 &percentage); // Progress bar for monitoring connection status towards a given XMPP server!
 
     //

@@ -46,7 +46,8 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/models/xmpp/gk_xmpp_msg_handler.hpp"
+#include "src/ui/xmpp/widgets/gkxmppmsgtab.hpp"
+#include "src/ui/xmpp/widgets/gkxmppmuctab.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
 #include "src/models/spelling/gk_text_edit_spelling_highlight.hpp"
 #include <qxmpp/QXmppMessage.h>
@@ -80,40 +81,20 @@ public:
 
 public slots:
     void openMsgDlg(const QString &bareJid, const qint32 &tabIdx);
+    void closeMsgDlg(const QString &bareJid, const qint32 &tabIdx);
     void openMucDlg(const QString &mucJid, const qint32 &tabIdx);
+    void closeMucDlg(const QString &mucJid, const qint32 &tabIdx);
 
 private slots:
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
     void on_textEdit_tx_msg_dialog_textChanged();
     void on_lineEdit_message_search_returnPressed();
 
-    //
-    // Individual one-on-one chat
-    void on_toolButton_view_roster_triggered(QAction *arg1);
-    void on_toolButton_font_triggered(QAction *arg1);
-    void on_toolButton_font_reset_triggered(QAction *arg1);
-    void on_toolButton_insert_triggered(QAction *arg1);
-    void on_toolButton_attach_file_triggered(QAction *arg1);
-    void on_comboBox_tx_msg_shortcut_cmds_currentIndexChanged(int index);
-
-    //
-    // MUC rooms
-    void on_toolButton_muc_view_roster_triggered(QAction *arg1);
-    void on_toolButton_muc_font_triggered(QAction *arg1);
-    void on_toolButton_muc_font_reset_triggered(QAction *arg1);
-    void on_toolButton_muc_insert_triggered(QAction *arg1);
-    void on_toolButton_muc_attach_file_triggered(QAction *arg1);
-    void on_comboBox_muc_tx_msg_shortcut_cmds_currentIndexChanged(int index);
-
-    void updateInterface(const QStringList &bareJids);
     void determineNickname();
     void submitMsgEnterKey();
-    void updateToolbarStatus(const QString &value);
 
     //
     // Message handling and QXmppArchiveManager-related
-    void recvXmppMsg(const QXmppMessage &msg);
-    void procMsgArchive(const QString &bareJid);
     void updateMsgHistory();
     QXmppMessage createXmppMessageIq(const QString &to, const QString &from, const QString &message) const;
 
@@ -121,57 +102,47 @@ private slots:
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
     void dlArchivedMessages();
-    void getArchivedMessagesFromDb(const QXmppMessage &message, const bool &wipeExistingHistory = false);
 
-    //
-    // XMPP Roster management and related
-    void procGlobal(const QString &bareJid, const qint32 &tabIdx);
-    void procGlobal(const QStringList &bareJids, const qint32 &tabIdx);
+    // Tab window management
+    void on_tabWidget_chat_window_tabCloseRequested(int index);
 
 signals:
     void updateToolbar(const QString &value);
-    void updateGlobal(const QString &bareJid, const qint32 &tabIdx);
-    void updateGlobal(const QStringList &bareJids, const qint32 &tabIdx);
 
     //
     // Message handling and QXmppArchiveManager-related
     void sendXmppMsg(const QXmppMessage &msg);
+    void procMsgArchive(const QString &bareJid);
+    void procMsgArchive(const QStringList &bareJids);
 
     //
     // QXmppMamManager handling
     void updateTableModel();
 
+    //
+    // QXmpp Roster handling and related
+    void updateRoster(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &gkMsgTabRoster);
+
 private:
     Ui::GkXmppMessageDialog *ui;
-
-    //
-    // QTableView and related
-    //
-    QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
-    QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMucChatTableViewModel;
-    // QPointer<GekkoFyre::GkXmppMsgEngine> gkXmppMsgEngine;
 
     //
     // Widgets
     QPointer<GekkoFyre::GkTextEditSpellHighlight> gkSpellCheckerHighlighter;
 
-    //4
-    // Multithreading, mutexes, etc.
     //
+    // Multithreading, mutexes, etc.
     std::mutex m_archivedMsgsFromDbMtx;
     std::vector<std::thread> m_archivedMsgsBulkThreadVec;
 
     //
     // Miscellaneous
-    //
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    std::queue<QString> m_toolBarTextQueue;
 
     //
     // QXmpp and XMPP related
-    //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
@@ -179,7 +150,12 @@ private:
     QStringList m_bareJids;
     QString m_clientNickname;
 
+    //
+    // QTabWidget related
+    QPointer<GkXmppMsgTab> gkXmppMsgTab;
+    QPointer<GkXmppMucTab> gkXmppMucTab;
+    QMap<quint16, GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster> gkTabMap;                    // A QMap of all the opened tabs, with the key being the QTabWidget index.
+
     void updateUsersHelper();
 
 };
-

@@ -86,14 +86,14 @@ SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
 
-SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor")
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-deprecated-copy -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor -Wno-unused-but-set-variable")
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
 SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor -Wno-unused-but-set-variable)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -764,6 +764,8 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui
+	src/ui/xmpp/widgets/gkxmppmsgtab.ui
+	src/ui/xmpp/widgets/gkxmppmuctab.ui
 	src/ui/weather/signal-propagation/gksolarweatherforecast.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
@@ -790,6 +792,8 @@ set(GALAXY_UI_CPP
     src/ui/xmpp/gkxmpprosterdialog.cpp
     src/ui/xmpp/gkxmppmessagedialog.cpp
     src/ui/xmpp/gkxmppregistrationdialog.cpp
+	src/ui/xmpp/widgets/gkxmppmsgtab.cpp
+	src/ui/xmpp/widgets/gkxmppmuctab.cpp
 	src/ui/weather/signal-propagation/gksolarweatherforecast.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
@@ -895,6 +899,8 @@ set(GALAXY_OBJ_HEADERS
     src/ui/xmpp/gkxmpprosterdialog.hpp
     src/ui/xmpp/gkxmppmessagedialog.hpp
     src/ui/xmpp/gkxmppregistrationdialog.hpp
+	src/ui/xmpp/widgets/gkxmppmsgtab.hpp
+	src/ui/xmpp/widgets/gkxmppmuctab.hpp
 	src/ui/weather/signal-propagation/gksolarweatherforecast.hpp
     src/radiolibs.hpp
     src/dek_db.hpp

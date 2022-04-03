@@ -622,6 +622,12 @@ namespace Network {
             QList<GkXmppCallsign> roster;
         };
 
+        struct GkXmppMsgTabRoster {
+            bool isMuc;                                     // Are we dealing with an MUC-style chat?
+            GkXmppMuc mucCtx;                               // To be used within an MUC situation.
+            QList<GkXmppCallsign> ono_roster;               // Only for one-on-one chats.
+        };
+
         struct GkXmppBlocklist {
             GkHost server;
             QString jid;

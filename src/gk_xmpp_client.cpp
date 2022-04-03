@@ -1207,7 +1207,6 @@ void GkXmppClient::clientConnected()
     client_callsign.msg_window_idx = GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX;
     client_callsign.party = GkXmppParty::FirstParty;
     m_rosterList->push_back(client_callsign);
-    emit updateRoster();
 
     return;
 }
@@ -1256,7 +1255,6 @@ void GkXmppClient::handleRosterReceived()
         }
     }
 
-    emit updateRoster();
     return;
 }
 
@@ -1436,7 +1434,6 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
         for (auto iter = m_rosterList->begin(); iter != m_rosterList->end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
-                emit updateRoster();
                 emit updateProgressBar((4 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                 gkEventLogger->publishEvent(tr("Presence changed for user, \"%1\", towards: %2")
                                                     .arg(bareJid).arg(resource));
@@ -1463,7 +1460,6 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
                 m_presence->setType(pres);
                 iter->presence.reset();
                 iter->presence = std::make_shared<QXmppPresence>(pres);
-                emit updateRoster();
 
                 gkEventLogger->publishEvent(tr("You have successfully changed your presence status towards: %1"), GkSeverity::Info, "",
                                             true, true, false, false);
@@ -2141,7 +2137,6 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
             callsign.msg_window_idx = GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX;
             callsign.party = GkXmppParty::ThirdParty;
             m_rosterList->push_back(callsign);
-            emit updateRoster();
             if (!presence.statusText().isEmpty()) {
                 emit sendSubscriptionRequest(bareJid, presence.statusText());
             } else {
