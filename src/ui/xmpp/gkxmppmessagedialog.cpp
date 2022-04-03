@@ -99,14 +99,14 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkXmppMsgTab = new GkXmppMsgTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
         gkXmppMucTab = new GkXmppMucTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
 
+        QObject::connect(this, SIGNAL(closeMsgTab(const QString &, const qint32 &)),
+                         gkXmppMsgTab, SLOT(closeMsgDlg(const QString &, const qint32 &)));
+        QObject::connect(this, SIGNAL(closeMucTab(const QString &, const qint32 &)),
+                         gkXmppMucTab, SLOT(closeMucDlg(const QString &, const qint32 &)));
         QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
                          gkXmppMsgTab, SLOT(updateToolbarStatus(const QString &)));
         QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
                          gkXmppMucTab, SLOT(updateToolbarStatus(const QString &)));
-        QObject::connect(this, SIGNAL(updateRoster(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
-                         gkXmppMsgTab, SLOT(updateRosterStatus(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
-        QObject::connect(this, SIGNAL(updateRoster(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
-                         gkXmppMucTab, SLOT(updateRosterStatus(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
                          gkXmppMsgTab, SLOT(recvXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
@@ -119,8 +119,15 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
                          gkXmppMsgTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
         QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
                          gkXmppMucTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
+        QObject::connect(this, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         gkXmppMsgTab, SLOT(openMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+        QObject::connect(this, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         gkXmppMucTab, SLOT(openMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+        QObject::connect(this, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         this, SLOT(openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+        QObject::connect(this, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         this, SLOT(openMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
 
-        //
         //
         // Setup and initialize signals and slots...
         QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
@@ -148,14 +155,12 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
 }
 
 /**
- * @brief GkXmppMessageDialog::openMsgDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * @brief GkXmppMessageDialog::openMsgTab opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
  * manager, so that the end-user may send/receive messages to other end-users.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The end-user to open the one-on-one message dialog we are in communiqué with!
- * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
- * a new tab should be opened for a brand new chat.
+ * @param msgRoster
  */
-void GkXmppMessageDialog::openMsgDlg(const QString &bareJid, const qint32 &tabIdx)
+void GkXmppMessageDialog::openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster)
 {
     //
     // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
@@ -163,33 +168,23 @@ void GkXmppMessageDialog::openMsgDlg(const QString &bareJid, const qint32 &tabId
     // to false prior to changes; remember to set the property to true when the changes are done, making the
     // widget receive paint events again.
     //
-    ui->tabWidget_chat_window->addTab(gkXmppMsgTab, QString::number(tabIdx));
+    quint16 max_idx = findLargestNum(gkTabMap);
+    ++max_idx;
+
+    gkTabMap.insert(max_idx, msgRoster);
+    ui->tabWidget_chat_window->addTab(gkXmppMsgTab, QString::number(max_idx));
 
     return;
 }
 
 /**
- * @brief GkXmppMessageDialog::closeMsgDlg closes a previously used message dialog, created at one point to engage in
- * one-on-one communications with a specified end-user on the given Xmpp server.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The end-user to close the one-on-one message dialog we were in communiqué with!
- * @param tabIdx The tab index in relation to the aforementioned!
- */
-void GkXmppMessageDialog::closeMsgDlg(const QString &bareJid, const qint32 &tabIdx)
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::openMucDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * @brief GkXmppMessageDialog::openMucTab opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
  * manager, based upon a MUC so that the end-user may send/receive messages to others within the framework of a
  * chat-room.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param mucJid The MUC to open the message dialog we are in communiqué with, as a IRC-styled chat-room.
- * @param tabIdx The tab index we should open up a new or existing chat window within. If a value of, -1, is given, then
- * a new tab should be opened for a brand new chat.
+ * @param mucRoster
  */
-void GkXmppMessageDialog::openMucDlg(const QString &mucJid, const qint32 &tabIdx)
+void GkXmppMessageDialog::openMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster)
 {
     //
     // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
@@ -197,20 +192,12 @@ void GkXmppMessageDialog::openMucDlg(const QString &mucJid, const qint32 &tabIdx
     // to false prior to changes; remember to set the property to true when the changes are done, making the
     // widget receive paint events again.
     //
-    ui->tabWidget_chat_window->addTab(gkXmppMucTab, QString::number(tabIdx));
+    quint16 max_idx = findLargestNum(gkTabMap);
+    ++max_idx;
 
-    return;
-}
+    gkTabMap.insert(max_idx, mucRoster);
+    ui->tabWidget_chat_window->addTab(gkXmppMucTab, QString::number(max_idx));
 
-/**
- * @brief GkXmppMessageDialog::closeMucDlg closes a previously used MUC dialog, created at one point to engage in
- * multi-user communications with specified end-users on the given Xmpp server or servers.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param mucJid The MUC to close message dialog we were in communiqué with!
- * @param tabIdx The tab index in relation to the aforementioned!
- */
-void GkXmppMessageDialog::closeMucDlg(const QString &mucJid, const qint32 &tabIdx)
-{
     return;
 }
 
@@ -282,7 +269,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
         msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.setIcon(QMessageBox::Icon::Warning);
-        int ret = msgBox.exec();
+        qint32 ret = msgBox.exec();
 
         switch (ret) {
             case QMessageBox::Ok:
@@ -387,10 +374,35 @@ void GkXmppMessageDialog::dlArchivedMessages()
  * @brief GkXmppMessageDialog::on_tabWidget_chat_window_tabCloseRequested closes the given, specified tab window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index The specified tab window to close.
- * @see GkXmppMessageDialog::closeMsgDlg(), GkXmppMessageDialog::closeMucDlg().
+ * @see GkXmppMsgTab::closeMsgDlg(), GkXmppMucTab::closeMucDlg().
  */
-void GkXmppMessageDialog::on_tabWidget_chat_window_tabCloseRequested(int index)
+void GkXmppMessageDialog::on_tabWidget_chat_window_tabCloseRequested(qint32 index)
 {
+    for (const auto &tab_idx: gkTabMap.toStdMap()) {
+        if (tab_idx.first == index) {
+            //
+            // We have found an associated tab window's index!
+            if (tab_idx.second.isMuc) {
+                //
+                // We are dealing with a MUC-style of chat session.
+                ui->tabWidget_chat_window->removeTab(index);
+                emit closeMucTab(m_xmppClient->getJidNickname(tab_idx.second.mucCtx.jid), index);
+            } else {
+                if (!tab_idx.second.roster.isEmpty()) {
+                    //
+                    // We are dealing with a one-on-one style of chat session.
+                    ui->tabWidget_chat_window->removeTab(index);
+                    emit closeMsgTab(tab_idx.second.roster.last().bareJid, index);
+                } else {
+                    gkEventLogger->publishEvent(tr("XMPP roster is unexpectedly empty! Must contain at least one element."),
+                                                GkSeverity::Error, "", false, true, false, true, false);
+                }
+            }
+
+            break;
+        }
+    }
+
     return;
 }
 
@@ -398,7 +410,7 @@ void GkXmppMessageDialog::on_tabWidget_chat_window_tabCloseRequested(int index)
  * @brief GkXmppMessageDialog::updateUsersHelper is simply a helper function for processing updates with regard to the
  * variable, `m_bareJids`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @see GkXmppMessageDialog::openMsgDlg().
+ * @see GkXmppMessageDialog::openMsgTab().
  */
 void GkXmppMessageDialog::updateUsersHelper()
 {
@@ -428,4 +440,26 @@ void GkXmppMessageDialog::updateUsersHelper()
     }
 
     return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::findLargestNum finds the largest possible number/index used within the, gkTabMap(), variable
+ * so that it maybe safely incremented.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param tab_map
+ * @return The largest possible index/number that was found within the, gkTabMap(), variable.
+ */
+quint16 GkXmppMessageDialog::findLargestNum(const QMap<quint16, GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster> &tab_map)
+{
+    if (!tab_map.isEmpty()) {
+        std::vector<quint16> tmp_vec;
+        for (const auto &tab_idx: tab_map.toStdMap()) {
+            tmp_vec.emplace_back(tab_idx.first);
+        }
+
+        const quint16 max_idx = *std::max_element(tmp_vec.begin(), tmp_vec.end());
+        return max_idx;
+    }
+
+    return 0;
 }

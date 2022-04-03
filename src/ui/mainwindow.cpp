@@ -137,6 +137,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioState>("GekkoFyre::GkAudioFramework::GkAudioState");
     qRegisterMetaType<GekkoFyre::Network::GkDataState>("GekkoFyre::Network::GkDataState");
+    qRegisterMetaType<GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster>("GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<std::shared_ptr<aria2::DownloadHandle>>("std::shared_ptr<aria2::DownloadHandle>");
     qRegisterMetaType<RIG>("RIG");

@@ -556,6 +556,7 @@ Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioState);
 Q_DECLARE_METATYPE(GekkoFyre::Network::GkDataState);
+Q_DECLARE_METATYPE(GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(std::shared_ptr<aria2::DownloadHandle>);
 Q_DECLARE_METATYPE(RIG);

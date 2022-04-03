@@ -109,17 +109,6 @@ GkXmppMucTab::~GkXmppMucTab()
 }
 
 /**
- * @brief GkXmppMucTab::updateRosterStatus
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMucTab::updateRosterStatus(const GkXmpp::GkXmppMsgTabRoster &gkMsgTabRoster)
-{
-    gkTabRoster = gkMsgTabRoster;
-
-    return;
-}
-
-/**
  * @brief GkXmppMucTab::updateToolbarStatus
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -177,9 +166,9 @@ void GkXmppMucTab::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMucTab::recvMsgArchive(const QStringList &bareJids)
 {
     // TODO: Refactor this code!
-    if (!gkTabRoster.mucCtx.roster.isEmpty()) {
+    if (!gkTabRoster.roster.isEmpty()) {
         gkXmppRecvMsgsTableViewModel.clear();
-        for (const auto &roster: gkTabRoster.mucCtx.roster) {
+        for (const auto &roster: gkTabRoster.roster) {
             for (const auto &bareJid: bareJids) {
                 if (roster.bareJid == bareJid) {
                     if (!roster.archive_messages.isEmpty()) {
@@ -223,6 +212,32 @@ void GkXmppMucTab::getArchivedMessagesFromDb(const QXmppMessage &message, const 
         std::throw_with_nested(std::runtime_error(e.what()));
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppMucTab::openMucDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * manager, based upon a MUC so that the end-user may send/receive messages to others within the framework of a
+ * chat-room.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mucRoster
+ */
+void GkXmppMucTab::openMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster)
+{
+    gkTabRoster = mucRoster;
+
+    return;
+}
+
+/**
+ * @brief GkXmppMucTab::closeMucDlg closes a previously used MUC dialog, created at one point to engage in
+ * multi-user communications with specified end-users on the given Xmpp server or servers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mucJid The MUC to close message dialog we were in communiqué with!
+ * @param tabIdx The tab index in relation to the aforementioned!
+ */
+void GkXmppMucTab::closeMucDlg(const QString &mucJid, const qint32 &tabIdx)
+{
     return;
 }
 
@@ -313,7 +328,7 @@ void GkXmppMucTab::updateInterface(const QStringList &bareJids)
 {
     ui->label_muc_callsign_1_stats->setText(tr("%1 users in chat").arg(QString::number(bareJids.count() + 1))); // Includes both the user in communique and the client themselves!
     for (const auto &bareJid: bareJids) {
-        for (const auto &rosterJid: gkTabRoster.mucCtx.roster) {
+        for (const auto &rosterJid: gkTabRoster.roster) {
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
                     emit updateTabHeader(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));

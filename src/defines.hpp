@@ -372,7 +372,6 @@ namespace GekkoFyre {
 
 //
 // (Q)Xmpp messaging window
-#define GK_XMPP_MSG_WINDOW_NEW_TAB_IDX (-1)
 #define GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX (-1000)
 #define GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX (-2)
 #define GK_XMPP_MSG_WINDOW_EXISTING_EQUAL_OR_GREATER_RANGE_TAB_IDX (0)
@@ -615,17 +614,16 @@ namespace Network {
         };
 
         struct GkXmppMuc {
-            std::shared_ptr<QXmppMucRoom> room_ptr;
-            QString jid;
-            QString desc;
-            QString addr;
-            QList<GkXmppCallsign> roster;
+            std::shared_ptr<QXmppMucRoom> room_ptr;         // Specific to QXmpp's internals.
+            QString jid;                                    // The JID of the MUC in question.
+            QString desc;                                   // A (downloaded or uploaded) description for the given MUC in this case.
+            QString addr;                                   // The network address of the given MUC.
         };
 
         struct GkXmppMsgTabRoster {
             bool isMuc;                                     // Are we dealing with an MUC-style chat?
             GkXmppMuc mucCtx;                               // To be used within an MUC situation.
-            QList<GkXmppCallsign> ono_roster;               // Only for one-on-one chats.
+            QList<GkXmppCallsign> roster;                   // A roster of the end-users involved within this specific chat, whether it be a one-on-one or a MUC!
         };
 
         struct GkXmppBlocklist {

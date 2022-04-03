@@ -122,18 +122,6 @@ GkXmppMsgTab::~GkXmppMsgTab()
 }
 
 /**
- * @brief GkXmppMsgTab::updateRosterStatus
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param gkMsgTabRoster
- */
-void GkXmppMsgTab::updateRosterStatus(const GkXmpp::GkXmppMsgTabRoster &gkMsgTabRoster)
-{
-    gkTabRoster = gkMsgTabRoster;
-
-    return;
-}
-
-/**
  * @brief GkXmppMsgTab::updateToolbarStatus
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -191,9 +179,9 @@ void GkXmppMsgTab::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMsgTab::recvMsgArchive(const QString &bareJid)
 {
     // TODO: Refactor this code!
-    if (!gkTabRoster.ono_roster.isEmpty()) {
+    if (!gkTabRoster.roster.isEmpty()) {
         gkXmppRecvMsgsTableViewModel.clear();
-        for (const auto &roster: gkTabRoster.ono_roster) {
+        for (const auto &roster: gkTabRoster.roster) {
             if (roster.bareJid == bareJid) {
                 if (!roster.archive_messages.isEmpty()) {
                     for (const auto &message: roster.archive_messages) {
@@ -235,6 +223,31 @@ void GkXmppMsgTab::getArchivedMessagesFromDb(const QXmppMessage &message, const 
         std::throw_with_nested(std::runtime_error(e.what()));
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppMsgTab::openMsgDlg opens a new dialog from within this classes own UI, via the (Q)Xmpp roster
+ * manager, so that the end-user may send/receive messages to other end-users.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msgRoster
+ */
+void GkXmppMsgTab::openMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster)
+{
+    gkTabRoster = msgRoster;
+
+    return;
+}
+
+/**
+ * @brief GkXmppMsgTab::closeMsgDlg closes a previously used message dialog, created at one point to engage in
+ * one-on-one communications with a specified end-user on the given Xmpp server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The end-user to close the one-on-one message dialog we were in communiqué with!
+ * @param tabIdx The tab index in relation to the aforementioned!
+ */
+void GkXmppMsgTab::closeMsgDlg(const QString &bareJid, const qint32 &tabIdx)
+{
     return;
 }
 
@@ -326,7 +339,7 @@ void GkXmppMsgTab::updateInterface(const QStringList &bareJids)
 {
     ui->label_callsign_1_stats->setText(tr("%1 users in chat").arg(QString::number(bareJids.count() + 1))); // Includes both the user in communique and the client themselves!
     for (const auto &bareJid: bareJids) {
-        for (const auto &rosterJid: gkTabRoster.ono_roster) {
+        for (const auto &rosterJid: gkTabRoster.roster) {
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
                     emit updateTabHeader(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));

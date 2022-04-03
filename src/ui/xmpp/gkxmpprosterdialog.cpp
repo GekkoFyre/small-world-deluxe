@@ -42,7 +42,6 @@
 #include "gkxmpprosterdialog.hpp"
 #include "ui_gkxmpprosterdialog.h"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
-#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include <qxmpp/QXmppPresence.h>
 #include <string>
 #include <utility>
@@ -129,10 +128,12 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
         //
         // Message dialog signals/slots and actions!
-        QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails,
-                                                                             m_xmppClient, m_rosterList, this);
-        QObject::connect(this, SIGNAL(launchMsgDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMsgDlg(const QString &, const qint32 &)));
-        QObject::connect(this, SIGNAL(launchMucDlg(const QString &, const qint32 &)), gkXmppMsgDlg, SLOT(openMucDlg(const QString &, const qint32 &)));
+        gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, gkConnDetails, m_xmppClient,
+                                               m_rosterList, this);
+        QObject::connect(this, SIGNAL(launchMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         gkXmppMsgDlg, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+        QObject::connect(this, SIGNAL(launchMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                         gkXmppMsgDlg, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
@@ -1543,12 +1544,24 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QMode
 {
     updateActions();
     QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    GkXmpp::GkXmppMsgTabRoster tab_roster;
+    tab_roster.isMuc = false;
+
     QString username = retrieve.data().toString();
     if (!username.isEmpty()) {
         enablePresenceTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            emit launchMsgDlg(bareJid, GK_XMPP_MSG_WINDOW_NEW_TAB_IDX); // TODO: Improve upon this so it works as it should!
+            GkXmppCallsign callsign;
+            callsign.bareJid = bareJid;
+            tab_roster.roster.push_back(callsign);
+            emit launchMsgDlg(tab_roster);
+
+            gkXmppMsgDlg->setWindowFlags(Qt::Window);
+            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+            gkXmppMsgDlg->show();
+
             return;
         }
 
@@ -1593,12 +1606,24 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QMod
 {
     updateActions();
     QModelIndex retrieve = gkXmppBlockedTableViewModel->index(index.row(), GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    GkXmpp::GkXmppMsgTabRoster tab_roster;
+    tab_roster.isMuc = false;
+
     QString username = retrieve.data().toString();
     if (!username.isEmpty()) {
         enableBlockedTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            emit launchMsgDlg(bareJid, GK_XMPP_MSG_WINDOW_NEW_TAB_IDX); // TODO: Improve upon this so it works as it should!
+            GkXmppCallsign callsign;
+            callsign.bareJid = bareJid;
+            tab_roster.roster.push_back(callsign);
+            emit launchMsgDlg(tab_roster);
+
+            gkXmppMsgDlg->setWindowFlags(Qt::Window);
+            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+            gkXmppMsgDlg->show();
+
             return;
         }
 

@@ -79,12 +79,6 @@ public:
                                  QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
-public slots:
-    void openMsgDlg(const QString &bareJid, const qint32 &tabIdx);
-    void closeMsgDlg(const QString &bareJid, const qint32 &tabIdx);
-    void openMucDlg(const QString &mucJid, const qint32 &tabIdx);
-    void closeMucDlg(const QString &mucJid, const qint32 &tabIdx);
-
 private slots:
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
     void on_textEdit_tx_msg_dialog_textChanged();
@@ -104,7 +98,9 @@ private slots:
     void dlArchivedMessages();
 
     // Tab window management
-    void on_tabWidget_chat_window_tabCloseRequested(int index);
+    void on_tabWidget_chat_window_tabCloseRequested(qint32 index);
+    void openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster);
+    void openMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster);
 
 signals:
     void updateToolbar(const QString &value);
@@ -120,8 +116,11 @@ signals:
     void updateTableModel();
 
     //
-    // QXmpp Roster handling and related
-    void updateRoster(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &gkMsgTabRoster);
+    // Window management
+    void addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster);
+    void addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster);
+    void closeMsgTab(const QString &bareJid, const qint32 &tabIdx);
+    void closeMucTab(const QString &mucJid, const qint32 &tabIdx);
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -157,5 +156,6 @@ private:
     QMap<quint16, GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster> gkTabMap;                    // A QMap of all the opened tabs, with the key being the QTabWidget index.
 
     void updateUsersHelper();
+    [[nodiscard]] quint16 findLargestNum(const QMap<quint16, GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster> &tab_map);
 
 };

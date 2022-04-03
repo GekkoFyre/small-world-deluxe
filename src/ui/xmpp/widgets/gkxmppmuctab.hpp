@@ -72,7 +72,6 @@ public:
 public slots:
     //
     // QXmpp Roster handling and related
-    void updateRosterStatus(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &gkMsgTabRoster);
     void updateToolbarStatus(const QString &value);
 
     //
@@ -80,6 +79,11 @@ public slots:
     void recvXmppMsg(const QXmppMessage &msg);
     void recvMsgArchive(const QStringList &bareJids);
     void getArchivedMessagesFromDb(const QXmppMessage &message, const bool &wipeExistingHistory = false);
+
+    //
+    // Window management
+    void openMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster);
+    void closeMucDlg(const QString &mucJid, const qint32 &tabIdx);
 
 private slots:
     //

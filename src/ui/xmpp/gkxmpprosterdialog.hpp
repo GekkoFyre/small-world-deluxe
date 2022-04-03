@@ -46,6 +46,7 @@
 #include "src/gk_system.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
@@ -165,8 +166,8 @@ signals:
     void updatePendingTableViewModel();
     void updateBlockedTableViewModel();
 
-    void launchMsgDlg(const QString &bareJid, const qint32 &tabIdx);
-    void launchMucDlg(const QString &mucJid, const qint32 &tabIdx);
+    void launchMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster);
+    void launchMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster);
 
 private:
     Ui::GkXmppRosterDialog *ui;
@@ -175,6 +176,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
     bool shownXmppPreviewNotice;
 
     //
