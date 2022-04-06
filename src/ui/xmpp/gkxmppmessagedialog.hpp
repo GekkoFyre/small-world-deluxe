@@ -151,8 +151,6 @@ private:
 
     //
     // QTabWidget related
-    QPointer<GkXmppMsgTab> gkXmppMsgTab;
-    QPointer<GkXmppMucTab> gkXmppMucTab;
     QMap<quint16, GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster> gkTabMap;                    // A QMap of all the opened tabs, with the key being the QTabWidget index.
 
     void updateUsersHelper();

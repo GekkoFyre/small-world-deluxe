@@ -17,8 +17,10 @@ The instructions for performing a compilation with [MSYS2](https://www.msys2.org
 * `mingw-w64-x86_64-extra-cmake-modules`
 * `zlib-devel`
 * `openssl-devel`
+* `git`
 * `mingw-w64-x86_64-snappy`
 * `mingw-w64-x86_64-libusb-compat-git `
+* `mingw-w64-x86_64-git-lfs`
 * `mingw-w64-x86_64-hidapi`
 * `mingw-w64-x86_64-libvorbis`
 * `mingw-w64-x86_64-opus`
@@ -87,9 +89,7 @@ If you require the *debug* libraries for performing development work on the sour
 * `mingw-w64-x86_64-qt5-websockets-debug`
 * `mingw-w64-x86_64-qt5-winextras-debug`
 
-Now that you have installed all the `Qt` library dependencies, if you wish to compile `FFmpeg` yourself from their own source code, then please note we only provide light instructions at best, and that's for Debian-based distributions right now. [You may find those instructions here](#ffmpeg-for-linux-based-systems). `FFmpeg` is a very complex set of tools, binaries, and libraries and we highly recommend that you try and get it through a package manager where possible.
-
-Once you have compiled [Boost C++](#compilation-of-boost-c-under-mingw-via-msys2), [Hamlib](#compilation-of-hamlib-under-mingw-via-msys2), and then [Codec2](#compilation-of-codec2-under-mingw-via-msys2) for the [MSYS2](https://www.msys2.org/) subsystem, you may proceed with the compilation and installation of `Small World Deluxe` itself! [CMake](https://cmake.org/) is required for this operation and we recommend that you create a separate `build` directory for the compilation (as shown below). Once the dependencies have all been set up, you only need to execute the following commands under an MSYS2 shell, from within the root of the `Small World Deluxe` project directory:
+Once you have compiled [Boost C++](#compilation-of-boost-c-under-mingw-via-msys2), [Hamlib](#compilation-of-hamlib-under-mingw-via-msys2), [KDE Marble](#kde-marble-geographical-mapping-coordinates), and then [Codec2](#compilation-of-codec2-under-mingw-via-msys2) for the [MSYS2](https://www.msys2.org/) subsystem, you may proceed with the compilation and installation of `Small World Deluxe` itself! [CMake](https://cmake.org/) is required for this operation and we recommend that you create a separate `build` directory for the compilation (as shown below). Once the dependencies have all been set up, you only need to execute the following commands under an MSYS2 shell, from within the root of the `Small World Deluxe` project directory:
 
 ```bash
 sh bootstrap.sh
@@ -248,7 +248,6 @@ And the following is a *recommended* list of the required packages in regards to
 - `qtcreator`
 - `qtcreator-data`
 - `qtcreator-doc`
-- `qt5-default`
 - `qttools5-dev`
 - `libqwt-qt5-dev`
 - `libqt5svg5-dev`
@@ -271,29 +270,6 @@ sudo make install
 ```
 
 That's it! You may now begin using `Small World Deluxe` but please note we are very much in the pre-alpha stages right now, and there is much development going on. The look and feel of the application may change somewhat as the months wear on.
-
-##### FFmpeg for Linux-based systems
-
-Regarding the usage of [FFmpeg](https://www.ffmpeg.org/) within `Small World Deluxe`, you will further require the following dependencies listed just below if you make use of a Debian-based distribution.
-
-- `libavcodec-dev`
-- `libavformat-dev`
-- `libavutil-dev`
-- `libswresample-dev`
-
-If doing a compilation of `FFmpeg` of your own, then you will need to specify the following flags *at least*, otherwise you may encounter incompatibility issues, especially when trying to build a copy of `Small World Deluxe` yourself without resorting to one of the binaries we provide (either in the future or now):
-
-```bash
--lavcodec-ffmpeg -lavformat-ffmpeg -lavutil -lswresample
-```
-
-Depending on your system and installation, it could also be the following that you may need to specify:
-
-```bash
--lavcodec -lavformat -lavutil -lswresample
-```
-
-Please feel free to contact us if you encounter any troubles and/or require assistance or advice.
 
 ##### Compilation of `libopusenc` for Linux-based systems
 

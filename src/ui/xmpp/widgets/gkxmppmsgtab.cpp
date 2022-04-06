@@ -78,8 +78,8 @@ GkXmppMsgTab::GkXmppMsgTab(QPointer<GekkoFyre::GkTextEditSpellHighlight> spellCh
     //
     // Initialize spelling and grammar checker, dictionaries, etc.
     gkSpellCheckerHighlighter = std::move(spellCheckWidget);
-    ui->verticalLayout_4->removeWidget(ui->textEdit_tx_msg_dialog);
-    ui->verticalLayout_4->addWidget(gkSpellCheckerHighlighter);
+    ui->verticalLayout_18->removeWidget(ui->textEdit_tx_msg_dialog);
+    ui->verticalLayout_18->addWidget(gkSpellCheckerHighlighter);
 
     //
     // Setup and initialize QTableView's...

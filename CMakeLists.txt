@@ -105,7 +105,7 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor -Wno-unused-but-set-variable)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
 

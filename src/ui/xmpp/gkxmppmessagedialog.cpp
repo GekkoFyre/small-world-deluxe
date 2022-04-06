@@ -74,6 +74,7 @@ using namespace Security;
  * @param xmppClient The XMPP client object.
  * @param bareJid The user we are in communiqué with!
  * @param parent The parent to this dialog.
+ * @note Gediminas <https://stackoverflow.com/a/41975620/4293625>.
  */
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                          QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
@@ -96,33 +97,8 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
         //
         // QTabWidget initialization!
-        gkXmppMsgTab = new GkXmppMsgTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
-        gkXmppMucTab = new GkXmppMucTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
+        ui->tabWidget_chat_window->removeTab(0);
 
-        QObject::connect(this, SIGNAL(closeMsgTab(const QString &, const qint32 &)),
-                         gkXmppMsgTab, SLOT(closeMsgDlg(const QString &, const qint32 &)));
-        QObject::connect(this, SIGNAL(closeMucTab(const QString &, const qint32 &)),
-                         gkXmppMucTab, SLOT(closeMucDlg(const QString &, const qint32 &)));
-        QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
-                         gkXmppMsgTab, SLOT(updateToolbarStatus(const QString &)));
-        QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
-                         gkXmppMucTab, SLOT(updateToolbarStatus(const QString &)));
-        QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
-                         gkXmppMsgTab, SLOT(recvXmppMsg(const QXmppMessage &)));
-        QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
-                         gkXmppMucTab, SLOT(recvXmppMsg(const QXmppMessage &)));
-        QObject::connect(this, SIGNAL(procMsgArchive(const QString &)),
-                         gkXmppMsgTab, SLOT(recvMsgArchive(const QString &)));
-        QObject::connect(this, SIGNAL(procMsgArchive(const QStringList &)),
-                         gkXmppMucTab, SLOT(recvMsgArchive(const QStringList &)));
-        QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
-                         gkXmppMsgTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
-        QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
-                         gkXmppMucTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
-        QObject::connect(this, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
-                         gkXmppMsgTab, SLOT(openMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
-        QObject::connect(this, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
-                         gkXmppMucTab, SLOT(openMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
         QObject::connect(this, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
                          this, SLOT(openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
         QObject::connect(this, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
@@ -163,16 +139,32 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
 void GkXmppMessageDialog::openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &msgRoster)
 {
     //
-    // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
+    // QTabWidget initialization!
+    QPointer<GkXmppMsgTab> gkXmppMsgTab = new GkXmppMsgTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
+
+    QObject::connect(this, SIGNAL(closeMsgTab(const QString &, const qint32 &)),
+                     gkXmppMsgTab, SLOT(closeMsgDlg(const QString &, const qint32 &)));
+    QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
+                     gkXmppMsgTab, SLOT(updateToolbarStatus(const QString &)));
+    QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
+                     gkXmppMsgTab, SLOT(recvXmppMsg(const QXmppMessage &)));
+    QObject::connect(this, SIGNAL(procMsgArchive(const QString &)),
+                     gkXmppMsgTab, SLOT(recvMsgArchive(const QString &)));
+    QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
+                     gkXmppMsgTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
+    QObject::connect(this, SIGNAL(addMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                     gkXmppMsgTab, SLOT(openMsgDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+
+    //
+    // NOTE: If you call insertTab() after show(), the layout system will try to adjust to the changes in its
     // widgets hierarchy and may cause flicker. To prevent this, you can set the QWidget::updatesEnabled property
     // to false prior to changes; remember to set the property to true when the changes are done, making the
     // widget receive paint events again.
     //
-    quint16 max_idx = findLargestNum(gkTabMap);
-    ++max_idx;
-
-    gkTabMap.insert(max_idx, msgRoster);
-    ui->tabWidget_chat_window->addTab(gkXmppMsgTab, QString::number(max_idx));
+    const qint32 tab_idx = ui->tabWidget_chat_window->count();
+    gkTabMap.insert(tab_idx, msgRoster);
+    ui->tabWidget_chat_window->insertTab(tab_idx, gkXmppMsgTab, QString::number(tab_idx));
+    ui->tabWidget_chat_window->setCurrentIndex(tab_idx - 1);
 
     return;
 }
@@ -187,16 +179,32 @@ void GkXmppMessageDialog::openMsgTab(const GekkoFyre::Network::GkXmpp::GkXmppMsg
 void GkXmppMessageDialog::openMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &mucRoster)
 {
     //
-    // NOTE: If you call addTab() after show(), the layout system will try to adjust to the changes in its
+    // QTabWidget initialization!
+    QPointer<GkXmppMucTab> gkXmppMucTab = new GkXmppMucTab(gkSpellCheckerHighlighter, gkConnDetails, gkEventLogger, gkStringFuncs, this);
+
+    QObject::connect(this, SIGNAL(closeMucTab(const QString &, const qint32 &)),
+                     gkXmppMucTab, SLOT(closeMucDlg(const QString &, const qint32 &)));
+    QObject::connect(this, SIGNAL(updateToolbar(const QString &)),
+                     gkXmppMucTab, SLOT(updateToolbarStatus(const QString &)));
+    QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)),
+                     gkXmppMucTab, SLOT(recvXmppMsg(const QXmppMessage &)));
+    QObject::connect(this, SIGNAL(procMsgArchive(const QStringList &)),
+                     gkXmppMucTab, SLOT(recvMsgArchive(const QStringList &)));
+    QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
+                     gkXmppMucTab, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
+    QObject::connect(this, SIGNAL(addMucTab(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)),
+                     gkXmppMucTab, SLOT(openMucDlg(const GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster &)));
+
+    //
+    // NOTE: If you call insertTab() after show(), the layout system will try to adjust to the changes in its
     // widgets hierarchy and may cause flicker. To prevent this, you can set the QWidget::updatesEnabled property
     // to false prior to changes; remember to set the property to true when the changes are done, making the
     // widget receive paint events again.
     //
-    quint16 max_idx = findLargestNum(gkTabMap);
-    ++max_idx;
-
-    gkTabMap.insert(max_idx, mucRoster);
-    ui->tabWidget_chat_window->addTab(gkXmppMucTab, QString::number(max_idx));
+    const qint32 tab_idx = ui->tabWidget_chat_window->count();
+    gkTabMap.insert(tab_idx, mucRoster);
+    ui->tabWidget_chat_window->insertTab(tab_idx, gkXmppMucTab, QString::number(tab_idx));
+    ui->tabWidget_chat_window->setCurrentIndex(tab_idx - 1);
 
     return;
 }
