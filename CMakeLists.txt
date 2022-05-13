@@ -137,6 +137,7 @@ option(GFYRE_ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analys
 option(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
+option(BUILD_SOAPYSDR_SUPPORT "Enable support for 'SoapySDR' open source software defined radio drivers." ON)
 
 #
 # Install / copy directory for CMake modules...
@@ -344,6 +345,21 @@ if(WIN32 OR MSYS OR MINGW)
 		message(FATAL_ERROR "The 'Marble' virtual globe and world atlas libraries could not be found!")
 	endif(MARBLE_FOUND)
 endif()
+
+if (BUILD_SOAPYSDR_SUPPORT)
+    if (MSYS OR MINGW OR LINUX OR UNIX)
+        message(STATUS "Support for 'SoapySDR' has been enabled! Finding package...")
+        find_package(SoapySDR REQUIRED)
+        if (SOAPYSDR_FOUND)
+            include_directories(${SOAPYSDR_INCLUDE_DIRS})
+            set(LIBS ${LIBS} ${SOAPYSDR_LIBRARIES})
+        else()
+            message(FATAL_ERROR "The 'SoapySDR' open source vendor and platform neutral SDR support library could not be found!")
+        endif(SOAPYSDR_FOUND)
+    else()
+        message(WARNING "Support for 'SoapySDR' is only possible with *nix systems or Macintosh OS/X! MinGW is another option if you're using Microsoft Windows.")
+    endif()
+endif(BUILD_SOAPYSDR_SUPPORT)
 
 install_qxmpp() # Install QXmpp as non-static!
 
@@ -646,45 +662,6 @@ set(CARES_BUILD_TOOLS OFF CACHE BOOL "Build tools for the c-ares set of librarie
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/c-ares")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/c-ares/include")
 message(STATUS "The 'c-ares' library for asynchronous DNS requests has been configured!")
-
-#
-# WSJT-X
-#
-set(GALAXY_WSJTX_QRA64_C
-    ${GALAXY_WSJTX_QRA64_C}
-    src/contrib/wsjt-x/lib/ftrsd/int.h
-    src/contrib/wsjt-x/lib/qra/qra64/main.c
-    src/contrib/wsjt-x/lib/qra/qra64/fadengauss.c
-    src/contrib/wsjt-x/lib/qra/qra64/fadenlorentz.c
-    src/contrib/wsjt-x/lib/qra/qra64/qra64_subs.c
-    src/contrib/wsjt-x/lib/qra/qra64/qra64.c
-    src/contrib/wsjt-x/lib/qra/qra64/qra64.h
-    src/contrib/wsjt-x/lib/qra/qracodes/normrnd.c
-    src/contrib/wsjt-x/lib/qra/qracodes/normrnd.h
-    src/contrib/wsjt-x/lib/qra/qracodes/npfwht.c
-    src/contrib/wsjt-x/lib/qra/qracodes/npfwht.h
-    src/contrib/wsjt-x/lib/qra/qracodes/pdmath.c
-    src/contrib/wsjt-x/lib/qra/qracodes/pdmath.h
-    src/contrib/wsjt-x/lib/qra/qracodes/qra12_63_64_irr_b.c
-    src/contrib/wsjt-x/lib/qra/qracodes/qra12_63_64_irr_b.h
-    src/contrib/wsjt-x/lib/qra/qracodes/qra13_64_64_irr_e.c
-    src/contrib/wsjt-x/lib/qra/qracodes/qra13_64_64_irr_e.h
-    src/contrib/wsjt-x/lib/qra/qracodes/qracodes.c
-    src/contrib/wsjt-x/lib/qra/qracodes/qracodes.h)
-
-set_property(SOURCE ${GALAXY_WSJTX_QRA64_C} PROPERTY SKIP_AUTOUIC ON)
-
-set(GALAXY_WSJTX_WSPR_C
-    ${GALAXY_WSJTX_WSPR_C}
-    src/contrib/wsjt-x/lib/wsprd/nhash.c
-    src/contrib/wsjt-x/lib/wsprd/wsprd_utils.c
-    src/contrib/wsjt-x/lib/wsprd/wsprd_utils.h
-    src/contrib/wsjt-x/lib/wsprd/fano.c
-    src/contrib/wsjt-x/lib/wsprd/fano.h
-    src/contrib/wsjt-x/lib/wsprd/jelinek.c
-    src/contrib/wsjt-x/lib/wsprd/jelinek.h)
-
-set_property(SOURCE ${GALAXY_WSJTX_WSPR_C} PROPERTY SKIP_AUTOUIC ON)
 
 set(GALAXY_GIST_CPP
     ${GALAXY_GIST_CPP}
@@ -1065,7 +1042,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     if(WIN32 OR MSYS OR MINGW)
         target_link_libraries(galaxy PUBLIC "-static")
     endif()
@@ -1078,9 +1055,8 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     
-    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)

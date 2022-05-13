@@ -371,6 +371,10 @@ namespace GekkoFyre {
 #define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (3)
 
 //
+// QTreeWidget for enumerated SDR devices under QSettingsDialog!
+#define GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX (0)
+
+//
 // (Q)Xmpp messaging window
 #define GK_XMPP_MSG_WINDOW_UNSET_TAB_IDX (-1000)
 #define GK_XMPP_MSG_WINDOW_CLIENT_SELF_TAB_IDX (-2)

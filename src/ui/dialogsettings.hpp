@@ -47,6 +47,9 @@
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <marble/MarbleWidget.h>
 #include <marble/GeoDataCoordinates.h>
+#include <SoapySDR/Device.hpp>
+#include <SoapySDR/Types.hpp>
+#include <SoapySDR/Formats.hpp>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <mutex>
@@ -68,6 +71,7 @@
 #include <QComboBox>
 #include <QGeoCoordinate>
 #include <QSharedPointer>
+#include <QTreeWidgetItem>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <KF5/SonnetUI/Sonnet/DictionaryComboBox>
@@ -392,8 +396,14 @@ private:
     void prefill_xmpp_ignore_ssl_errors();
     void prefill_uri_lookup_method();
     void prefill_lang_dictionaries();
+    void prefill_sdr_devices();
     void prefill_ui_lang();
     void init_station_info();
+
+    //
+    // QTreeWidgets
+    void addEnumSdrDevsTreeRoot(const QString &device);
+    void addEnumSdrDevsTreeChild(std::shared_ptr<QTreeWidgetItem> parent, const QString &device);
 
     //
     // Mapping, location, maidenhead, etc.

@@ -353,6 +353,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         QRegularExpression rxUsername(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)", QRegularExpression::CaseInsensitiveOption);
         ui->lineEdit_xmpp_client_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+
+        prefill_sdr_devices();
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -939,6 +941,29 @@ void DialogSettings::prefill_lang_dictionaries()
 }
 
 /**
+ * @brief DialogSettings::prefill_sdr_devices enumerates out any discovered SDR devices found on the end-user's computer
+ * or device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_sdr_devices()
+{
+    //
+    // Setup the QTreeWidget object firstly!
+
+    //
+    // Enumerate any discovered SDR devices (list all devices' information)!
+    SoapySDR::KwargsList results = SoapySDR::Device::enumerate();
+    SoapySDR::Kwargs::iterator it;
+    for (const auto &sdr_dev: results) {
+        //
+        // Print the discovered SDR device to the relevant QComboBox along with any discovered information!
+        addEnumSdrDevsTreeRoot(QString("%1 (%2)").arg(QString::fromStdString(it->first.c_str()), QString::fromStdString(it->second.c_str())));
+    }
+
+    return;
+}
+
+/**
  * @brief DialogSettings::prefill_ui_lang prefills the combobox, `ui->comboBox_accessibility_lang_ui()`, with all the
  * available languages for the User Interface itself of Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -973,6 +998,50 @@ void DialogSettings::init_station_info()
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::addEnumSdrDevsTreeRoot
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device
+ * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
+ */
+void DialogSettings::addEnumSdrDevsTreeRoot(const QString &device)
+{
+    //
+    // QTreeWidgetItem(QTreeWidget *parent, qint32 type = Type)
+    std::shared_ptr<QTreeWidgetItem> treeItem = std::make_shared<QTreeWidgetItem>(ui->treeWidget_radio_sdr_device_enum);
+
+    //
+    // QTreeWidgetItem::setText(qint32 column, const QString &text)
+    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, tr("Device"));
+    addEnumSdrDevsTreeChild(treeItem, device);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::addEnumSdrDevsTreeChild
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ * @param device
+ * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
+ */
+void DialogSettings::addEnumSdrDevsTreeChild(std::shared_ptr<QTreeWidgetItem> parent, const QString &device)
+{
+    //
+    // QTreeWidgetItem(QTreeWidget *parent, qint32 type = Type)
+    std::unique_ptr<QTreeWidgetItem> treeItem = std::make_unique<QTreeWidgetItem>();
+
+    //
+    // QTreeWidgetItem::setText(qint32 column, const QString &text)
+    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, device);
+
+    //
+    // QTreeWidgetItem::addChild(QTreeWidgetItem *child)
+    parent->addChild(treeItem.get());
 
     return;
 }
