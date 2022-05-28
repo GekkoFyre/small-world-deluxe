@@ -74,9 +74,6 @@ public:
     void write_initial_settings(const QString &value, const GekkoFyre::Database::Settings::init_cfg &key);
     QString read_initial_settings(const GekkoFyre::Database::Settings::init_cfg &key);
 
-    [[nodiscard]] size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
-                               const size_t &desired_result_less_than) const;
-
     std::string get_file_contents(const boost::filesystem::path &filePath);
     QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false,
                              const QString &append_dir = QString(General::companyName + QString("/") + Filesystem::defaultDirAppend));

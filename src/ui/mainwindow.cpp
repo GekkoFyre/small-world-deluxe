@@ -655,6 +655,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         #endif
 
         //
+        // Initialize SoapySDR modules!
+        //
+        SoapySDR::loadModules();
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         #ifndef ENBL_VALGRIND_SUPPORT

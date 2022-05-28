@@ -45,6 +45,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QString>
+#include <QPixmap>
 #include <QPointer>
 #include <QPainter>
 #include <QApplication>
@@ -52,7 +53,43 @@
 
 namespace GekkoFyre {
 
-class GkSplashDispModel : public QSplashScreen {
+class GkSplashScreen : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit GkSplashScreen(const QPixmap &pixmap = QPixmap(), Qt::WindowFlags f = Qt::WindowFlags());
+    GkSplashScreen(QWidget *parent, const QPixmap &pixmap = QPixmap(), Qt::WindowFlags f = Qt::WindowFlags());
+    virtual ~GkSplashScreen();
+
+    void finish(QWidget *mainWin);
+    void repaint();
+    QString message() const;
+
+    QPixmap pixmap;
+    QString currStatus;
+    QColor currColor;
+    int currAlign;
+    void setPixmap(const QPixmap &p, const QScreen *screen = nullptr);
+    static const QScreen *screenFor(const QWidget *w);
+
+public slots:
+    void showMessage(const QString &message, int alignment = Qt::AlignLeft, const QColor &color = Qt::black);
+    void clearMessage();
+
+signals:
+    void messageChanged(const QString &message);
+
+protected:
+    bool event(QEvent *e) override;
+    virtual void drawContents(QPainter *painter);
+    void mousePressEvent(QMouseEvent *) override;
+
+private:
+    Q_DISABLE_COPY(GkSplashScreen);
+
+};
+
+class GkSplashDispModel : public GkSplashScreen {
     Q_OBJECT
 
 public:

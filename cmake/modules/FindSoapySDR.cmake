@@ -52,6 +52,10 @@ find_library(SOAPYSDR_LIBRARY
     HINTS ${PC_SOAPYSDR_LIBDIR} ${PC_SOAPYSDR_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
+find_path(SOAPYSDR_MODULES
+    NAMES "libremoteSupport.so" "remoteSupport.so" "librtlsdrSupport.so" "rtlsdrSupport.so" "libremoteSupport.a" "remoteSupport.a" "librtlsdrSupport.a" "rtlsdrSupport.a" "libremoteSupport.dll" "remoteSupport.dll" "librtlsdrSupport.dll" "rtlsdrSupport.dll"
+    PATHS "/usr/local/lib/SoapySDR/modules0.8" "/usr/local/lib64/SoapySDR/modules0.8" "/usr/lib/SoapySDR/modules0.8" "/usr/lib64/SoapySDR/modules0.8" "/mingw64/bin/SoapySDR/modules0.8" "/mingw64/lib/SoapySDR/modules0.8" "/usr/lib/x86_64-linux-gnu/SoapySDR/modules0.8" "/sw/lib/SoapySDR/modules0.8" "/opt/local/lib/SoapySDR/modules0.8" "/usr/local/lib/SoapySDR/modules" "/usr/local/lib64/SoapySDR/modules" "/usr/lib/SoapySDR/modules" "/usr/lib64/SoapySDR/modules" "/mingw64/bin/SoapySDR/modules" "/mingw64/lib/SoapySDR/modules" "/usr/lib/x86_64-linux-gnu/SoapySDR/modules" "/sw/lib/SoapySDR/modules" "/opt/local/lib/SoapySDR/modules")
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SoapySDR DEFAULT_MSG SOAPYSDR_LIBRARY SOAPYSDR_INCLUDE_DIR)
 

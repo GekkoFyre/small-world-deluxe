@@ -40,13 +40,293 @@
  ****************************************************************************************************/
 
 #include "src/models/splash/gk_splash_disp_model.hpp"
-#include <QPixmap>
+#include <QScreen>
+#include <QWindow>
+#include <QTextCursor>
+#include <QApplication>
 #include <QStyleOption>
+#include <QTextDocument>
+#include <QElapsedTimer>
+#include <QDesktopWidget>
 
 using namespace GekkoFyre;
 using namespace System;
 
-GkSplashDispModel::GkSplashDispModel(QApplication *aApp, QWidget *parent, const bool &drawProgressBar) : QSplashScreen(parent), app(aApp), m_progress(0),
+/**
+ * @brief GkSplashScreen::
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param pixmap
+ * @param f
+ */
+GkSplashScreen::GkSplashScreen(const QPixmap &pixmap, Qt::WindowFlags f) : QWidget(0, Qt::SplashScreen | Qt::FramelessWindowHint | f)
+{
+    setPixmap(pixmap);
+
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::GkSplashScreen copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param parent
+ * @param pixmap
+ * @param f
+ */
+GkSplashScreen::GkSplashScreen(QWidget *parent, const QPixmap &pixmap, Qt::WindowFlags f) : QWidget(parent, Qt::SplashScreen | Qt::FramelessWindowHint | f)
+{
+    setPixmap(pixmap, GkSplashScreen::screenFor(parent));
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::~GkSplashScreen copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ */
+GkSplashScreen::~GkSplashScreen()
+{
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::setPixmap copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param pixmap
+ */
+void GkSplashScreen::setPixmap(const QPixmap &p, const QScreen *screen)
+{
+    pixmap = p;
+    setAttribute(Qt::WA_TranslucentBackground, pixmap.hasAlpha());
+    QRect r(QPoint(), pixmap.size() / pixmap.devicePixelRatio());
+    resize(r.size());
+    if (screen) {
+        move(screen->geometry().center() - r.center());
+    }
+
+    if (isVisible()) {
+        repaint();
+    }
+
+    return;
+}
+
+/**
+ * @brief @brief GkSplashScreen::screenNumberOf copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param dsw
+ * @return
+ */
+static inline int screenNumberOf(const QDesktopWidget *dsw)
+{
+    auto desktopWidget = static_cast<QDesktopWidget *>(QApplication::desktop());
+    return desktopWidget->screenNumber();
+}
+
+/**
+ * @brief GkSplashScreen::screenFor copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param w
+ * @return
+ */
+const QScreen *GkSplashScreen::screenFor(const QWidget *w)
+{
+    for (const QWidget *p = w; p != nullptr; p = p->parentWidget()) {
+        if (auto dsw = qobject_cast<const QDesktopWidget *>(p)) {
+            return QGuiApplication::screens().value(screenNumberOf(dsw));
+        }
+
+        if (QWindow *window = p->windowHandle()) {
+            return window->screen();
+        }
+    }
+
+    #if QT_CONFIG(cursor)
+    // Note: We could rely on QPlatformWindow::initialGeometry() to center it
+    // over the cursor, but not all platforms (namely Android) use that.
+    if (QGuiApplication::screens().size() > 1) {
+        if (auto screenAtCursor = QGuiApplication::screenAt(QCursor::pos())) {
+            return screenAtCursor;
+        }
+    }
+    #endif // cursor
+
+    return QGuiApplication::primaryScreen();
+}
+
+/**
+ * @brief GkSplashScreen::waitForWindowExposed copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param window
+ * @param timeout
+ * @return
+ */
+inline static bool waitForWindowExposed(QWindow *window, int timeout = 1000)
+{
+    enum { TimeOutMs = 10 };
+    QElapsedTimer timer;
+    timer.start();
+    while (!window->isExposed()) {
+        const int remaining = timeout - int(timer.elapsed());
+        if (remaining <= 0) {
+            break;
+        }
+
+        QCoreApplication::processEvents(QEventLoop::AllEvents, remaining);
+        QCoreApplication::sendPostedEvents(0, QEvent::DeferredDelete);
+        #if defined(Q_OS_WINRT)
+        WaitForSingleObjectEx(GetCurrentThread(), TimeOutMs, false);
+        #elif defined(Q_OS_WIN)
+        Sleep(uint(TimeOutMs));
+        #else
+        struct timespec ts = { TimeOutMs / 1000, (TimeOutMs % 1000) * 1000 * 1000 };
+        nanosleep(&ts, NULL);
+        #endif
+    }
+
+    return window->isExposed();
+}
+
+/**
+ * @brief GkSplashScreen::finish copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param w
+ */
+void GkSplashScreen::finish(QWidget *mainWin)
+{
+    if (mainWin) {
+        if (!mainWin->windowHandle())
+            mainWin->createWinId();
+        waitForWindowExposed(mainWin->windowHandle());
+    }
+
+    close();
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::repaint copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ */
+void GkSplashScreen::repaint()
+{
+    QWidget::repaint();
+    QCoreApplication::processEvents();
+
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::message copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @return
+ */
+QString GkSplashScreen::message() const
+{
+    return currStatus;
+}
+
+/**
+ * @brief GkSplashScreen::showMessage copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param message
+ * @param alignment
+ * @param color
+ */
+void GkSplashScreen::showMessage(const QString &message, int alignment, const QColor &color)
+{
+    currStatus = message;
+    currAlign = alignment;
+    currColor = color;
+    emit messageChanged(currStatus);
+    repaint();
+
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::clearMessage copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ */
+void GkSplashScreen::clearMessage()
+{
+    currStatus.clear();
+    emit messageChanged(currStatus);
+
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::event copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param e
+ * @return
+ */
+bool GkSplashScreen::event(QEvent *e)
+{
+    if (e->type() == QEvent::Paint) {
+        QPainter painter(this);
+        painter.setLayoutDirection(layoutDirection());
+        if (!pixmap.isNull()) {
+            painter.drawPixmap(QPoint(), pixmap);
+        }
+
+        drawContents(&painter);
+    }
+
+    return QWidget::event(e);
+}
+
+/**
+ * @brief GkSplashScreen::drawContents copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ * @param painter
+ */
+void GkSplashScreen::drawContents(QPainter *painter)
+{
+    painter->setPen(currColor);
+    QRect r = rect().adjusted(5, 5, -5, -5);
+    if (Qt::mightBeRichText(currStatus)) {
+        QTextDocument doc;
+        #ifdef QT_NO_TEXTHTMLPARSER
+        doc.setPlainText(d->currStatus);
+        #else
+        doc.setHtml(currStatus);
+        #endif
+        doc.setTextWidth(r.width());
+        QTextCursor cursor(&doc);
+        cursor.select(QTextCursor::Document);
+        QTextBlockFormat fmt;
+        fmt.setAlignment(Qt::Alignment(currAlign));
+        fmt.setLayoutDirection(layoutDirection());
+        cursor.mergeBlockFormat(fmt);
+        const QSizeF txtSize = doc.size();
+        if (currAlign & Qt::AlignBottom) {
+            r.setTop(r.height() - txtSize.height());
+        } else if (currAlign & Qt::AlignVCenter) {
+            r.setTop(r.height() / 2 - txtSize.height() / 2);
+        }
+
+        painter->save();
+        painter->translate(r.topLeft());
+        doc.drawContents(painter);
+        painter->restore();
+    } else {
+        painter->drawText(r, currAlign, currStatus);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkSplashScreen::mousePressEvent copied from the Qt5 source code since it is now deprecated in Qt6.
+ * @author Qt5 source code <https://www.qt.io/>.
+ */
+void GkSplashScreen::mousePressEvent(QMouseEvent *)
+{
+    hide();
+    return;
+}
+
+GkSplashDispModel::GkSplashDispModel(QApplication *aApp, QWidget *parent, const bool &drawProgressBar) : GkSplashScreen(parent), app(aApp), m_progress(0),
                                                                                                          m_drawProgressBar(drawProgressBar)
 {
     QPixmap pixmap(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg");
@@ -98,7 +378,7 @@ void GkSplashDispModel::setProgress(const qint32 &value)
 void GkSplashDispModel::drawContents(QPainter *painter)
 {
     if (m_drawProgressBar) {
-        QSplashScreen::drawContents(painter);
+        GkSplashScreen::drawContents(painter);
 
         // Set a style for the QProgressBar...
         QStyleOptionProgressBar pbStyle;

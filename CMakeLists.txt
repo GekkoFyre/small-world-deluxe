@@ -137,7 +137,12 @@ option(GFYRE_ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analys
 option(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
-option(BUILD_SOAPYSDR_SUPPORT "Enable support for 'SoapySDR' open source software defined radio drivers." ON)
+
+if (MSYS OR MINGW OR LINUX OR UNIX)
+    option(BUILD_SOAPYSDR_SUPPORT "Enable support for 'SoapySDR' open source software defined radio drivers." ON)
+else()
+    option(BUILD_SOAPYSDR_SUPPORT "Enable support for 'SoapySDR' open source software defined radio drivers." OFF)
+endif()
 
 #
 # Install / copy directory for CMake modules...
@@ -353,6 +358,7 @@ if (BUILD_SOAPYSDR_SUPPORT)
         if (SOAPYSDR_FOUND)
             include_directories(${SOAPYSDR_INCLUDE_DIRS})
             set(LIBS ${LIBS} ${SOAPYSDR_LIBRARIES})
+            set(SOAPYSDR_MODULE_PATH ${SOAPYSDR_MODULES})
         else()
             message(FATAL_ERROR "The 'SoapySDR' open source vendor and platform neutral SDR support library could not be found!")
         endif(SOAPYSDR_FOUND)
@@ -1134,6 +1140,14 @@ add_custom_command(TARGET smallworld
 				COMMAND ${CMAKE_COMMAND} -E copy_directory
 				${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/marble/data
 				${CMAKE_CURRENT_BINARY_DIR}/marble/data)
+
+#
+# Copy over the SoapySDR modules!
+#
+add_custom_command(TARGET smallworld
+				COMMAND ${CMAKE_COMMAND} -E copy_directory
+				${SOAPYSDR_MODULE_PATH}
+				${CMAKE_CURRENT_BINARY_DIR}/modules)
 
 #
 # Setup the pathways for installing Small World Deluxe to the proper directories on the end-user's 

@@ -49,10 +49,6 @@ cd ./../..
 
 cd sentry-native/external
 git submodule update --init --recursive
-cd ./../..
-
-cd nuspell/external
-git submodule update --init --recursive
 cd ./../../../..
 
 echo "Grabbing of all Git sub-directories has been successful! Please check aforementioned logs for any errors."

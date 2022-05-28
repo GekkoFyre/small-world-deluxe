@@ -214,21 +214,6 @@ QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
     return value.toString();
 }
 
-size_t FileIo::generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
-                                   const size_t &desired_result_less_than) const
-{
-    std::random_device dev;
-    boost::mt19937 rng(dev());
-    std::uniform_int_distribution<size_t> dist(min_integer_size, max_integer_size);
-    const size_t result = dist(rng);
-
-    if (result <= desired_result_less_than) {
-        return result;
-    }
-
-    return generateRandInteger(min_integer_size, max_integer_size, desired_result_less_than);
-}
-
 /**
  * @brief FileIo::get_file_contents Grabs the contents of a file and adds it to a std::string(), in
  * a way that should be portable across operating systems.

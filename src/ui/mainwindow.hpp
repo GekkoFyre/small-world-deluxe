@@ -61,6 +61,10 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_multimedia.hpp"
 #include <marble/MarbleWidget.h>
+#include <SoapySDR/Modules.hpp>
+#include <SoapySDR/Formats.hpp>
+#include <SoapySDR/Device.hpp>
+#include <SoapySDR/Types.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>

@@ -952,12 +952,21 @@ void DialogSettings::prefill_sdr_devices()
 
     //
     // Enumerate any discovered SDR devices (list all devices' information)!
-    SoapySDR::KwargsList results = SoapySDR::Device::enumerate();
+    bool isRemote = false;
+    SoapySDR::Kwargs enumArgs;
+    enumArgs["driver"] = "local";
+
+    SoapySDR::KwargsList results = SoapySDR::Device::enumerate(enumArgs);
     SoapySDR::Kwargs::iterator it;
-    for (const auto &sdr_dev: results) {
-        //
-        // Print the discovered SDR device to the relevant QComboBox along with any discovered information!
-        addEnumSdrDevsTreeRoot(QString("%1 (%2)").arg(QString::fromStdString(it->first.c_str()), QString::fromStdString(it->second.c_str())));
+    if (!results.empty()) {
+        for (qint32 i = 0; i < results.size(); ++i) {
+            for (it = results[i].begin(); it != results[i].end(); ++it) {
+                const auto rootItem = addEnumSdrDevsTreeRoot(QString::fromStdString(it->first.c_str()));
+                addEnumSdrDevsTreeChild(rootItem, QString::fromStdString(it->second.c_str()));
+            }
+        }
+    } else {
+        addEnumSdrDevsTreeRoot(tr("No devices or drivers detected!"));
     }
 
     return;
@@ -1008,18 +1017,12 @@ void DialogSettings::init_station_info()
  * @param device
  * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
  */
-void DialogSettings::addEnumSdrDevsTreeRoot(const QString &device)
+QTreeWidgetItem *DialogSettings::addEnumSdrDevsTreeRoot(const QString &device)
 {
-    //
-    // QTreeWidgetItem(QTreeWidget *parent, qint32 type = Type)
-    std::shared_ptr<QTreeWidgetItem> treeItem = std::make_shared<QTreeWidgetItem>(ui->treeWidget_radio_sdr_device_enum);
+    QTreeWidgetItem *treeItem = new QTreeWidgetItem(ui->treeWidget_radio_sdr_device_enum);
 
-    //
-    // QTreeWidgetItem::setText(qint32 column, const QString &text)
-    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, tr("Device"));
-    addEnumSdrDevsTreeChild(treeItem, device);
-
-    return;
+    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, device);
+    return treeItem;
 }
 
 /**
@@ -1029,19 +1032,12 @@ void DialogSettings::addEnumSdrDevsTreeRoot(const QString &device)
  * @param device
  * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
  */
-void DialogSettings::addEnumSdrDevsTreeChild(std::shared_ptr<QTreeWidgetItem> parent, const QString &device)
+void DialogSettings::addEnumSdrDevsTreeChild(QTreeWidgetItem *parent, const QString &device)
 {
-    //
-    // QTreeWidgetItem(QTreeWidget *parent, qint32 type = Type)
-    std::unique_ptr<QTreeWidgetItem> treeItem = std::make_unique<QTreeWidgetItem>();
+    QTreeWidgetItem *treeItem = new QTreeWidgetItem();
 
-    //
-    // QTreeWidgetItem::setText(qint32 column, const QString &text)
     treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, device);
-
-    //
-    // QTreeWidgetItem::addChild(QTreeWidgetItem *child)
-    parent->addChild(treeItem.get());
+    parent->addChild(treeItem);
 
     return;
 }
