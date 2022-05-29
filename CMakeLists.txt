@@ -93,7 +93,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor -Wno-unused-but-set-variable)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-unused-but-set-variable)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 elseif(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -105,7 +105,7 @@ elseif(WIN32)
         endif()
     endif()
 else()
-	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-reorder -Wno-reorder-ctor -Wno-unused-but-set-variable)
+	add_compile_options(-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-deprecated -Wno-unused-local-typedefs -Wno-unused-but-set-variable)
 	remove_definitions(-Werror) # https://stackoverflow.com/a/41192283
 endif()
 

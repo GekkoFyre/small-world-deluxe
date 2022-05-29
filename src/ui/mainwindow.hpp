@@ -165,6 +165,33 @@ private slots:
     void on_actionCW_toggled(bool arg1);
 
     //
+    // [ Main Menu ] General - Bookmarks
+    //
+    void on_comboBox_general_settings_favs_bookmark_category_currentIndexChanged(const QString &arg1);
+    void on_toolButton_general_settings_favs_rename_category_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_add_category_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_delete_category_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_add_bookmark_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_delete_bookmark_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_edit_bookmark_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_apply_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_import_triggered(QAction *arg1);
+    void on_toolButton_general_settings_favs_export_triggered(QAction *arg1);
+
+    //
+    // [ Main Menu ] SoapySDR - Radio
+    //
+    void on_radioButton_soapysdr_source_modulation_nfm_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_am_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_usb_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_lsb_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_wfm_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_dsb_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_cw_clicked(bool checked);
+    void on_radioButton_soapysdr_source_modulation_raw_clicked(bool checked);
+    void repaint_soapysdr_source_modulation_radiobuttons();
+
+    //
     // QXmpp and XMPP related
     //
     void on_actionView_Roster_triggered();
@@ -195,8 +222,6 @@ private slots:
     //
     // Custom context-menu
     //
-    void on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos);
-    void on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos);
     void on_tableView_maingui_logs_customContextMenuRequested(const QPoint &pos);
 
     //
@@ -328,6 +353,11 @@ signals:
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
+    // [ Main Menu ] SoapySDR - Radio
+    //
+    void repaintSoapySdrRadioButtons();
+
+    //
     // FFT & Spectrograph related
     //
     void initSpectrograph();
@@ -365,7 +395,7 @@ private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
+    // QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkMultimedia> gkMultimedia;

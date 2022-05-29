@@ -139,6 +139,14 @@ namespace GekkoFyre {
 #define GK_SPLASH_SCREEN_START_SIZE_HEIGHT (0.08)               // The vertical size of the QProgressBar itself.
 
 //
+// Regards the QIcon references for the QToolBox to the left of the QMainWindow UI!
+//
+#define GK_MAINWINDOW_UI_TOOLBOX_MENU_AUDIO_DEVS_IDX (0)
+#define GK_MAINWINDOW_UI_TOOLBOX_MENU_GENERAL_IDX (1)
+#define GK_MAINWINDOW_UI_TOOLBOX_MENU_HAMLIBPP_IDX (2)
+#define GK_MAINWINDOW_UI_TOOLBOX_MENU_SOAPYSDR_IDX (3)
+
+//
 // Downloads, network, and file transfers
 //
 #define GK_NETWORK_FILE_TRANSFER_REFRESH_MSECS (500)

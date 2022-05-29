@@ -194,6 +194,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/xmpp.svg"));
 
         //
+        // Set the QIcon references for the QToolBox to the left of the QMainWindow UI!
+        //
+        ui->toolBox_main_ui_controls->setItemIcon(GK_MAINWINDOW_UI_TOOLBOX_MENU_AUDIO_DEVS_IDX, QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
+        ui->toolBox_main_ui_controls->setItemIcon(GK_MAINWINDOW_UI_TOOLBOX_MENU_GENERAL_IDX, QIcon(":/resources/contrib/images/vector/no-attrib/virtual.svg"));
+        ui->toolBox_main_ui_controls->setItemIcon(GK_MAINWINDOW_UI_TOOLBOX_MENU_HAMLIBPP_IDX, QIcon(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+        ui->toolBox_main_ui_controls->setItemIcon(GK_MAINWINDOW_UI_TOOLBOX_MENU_SOAPYSDR_IDX, QIcon(":/resources/contrib/images/vector/no-attrib/radio-waves.svg"));
+        ui->toolBox_main_ui_controls->setCurrentIndex(GK_MAINWINDOW_UI_TOOLBOX_MENU_AUDIO_DEVS_IDX);
+
+        //
         // Create a status bar at the bottom of the window with a default message
         // https://doc.qt.io/qt-5/qstatusbar.html
         //
@@ -202,8 +211,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Configure the volume meter!
         //
-        gkVuMeter = new GkVuMeter(ui->frame_spect_vu_meter);
-        ui->verticalLayout_8->addWidget(gkVuMeter);
+        // gkVuMeter = new GkVuMeter(ui->frame_spect_vu_meter);
+        // ui->verticalLayout_8->addWidget(gkVuMeter);
 
         //
         // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
@@ -659,6 +668,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         SoapySDR::loadModules();
 
+        ui->radioButton_soapysdr_source_modulation_nfm->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_am->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setAutoExclusive(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setAutoExclusive(false);
+
+        QObject::connect(this, SIGNAL(repaintSoapySdrRadioButtons()), this, SLOT(repaint_soapysdr_source_modulation_radiobuttons()));
+
         //
         // Initialize the Waterfall / Spectrograph
         //
@@ -709,8 +729,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkMultimedia = new GkMultimedia(gkAudioDevices, gkSysOutputAudioDevs, gkSysInputAudioDevs, gkDb, gkStringFuncs,
                                         gkEventLogger, this);
-        QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
-                         gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
+        // QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
+        //                  gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                          this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
@@ -783,17 +803,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         emit setStartupProgress(80);
         #endif
 
-        //
-        // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
-        //
-        QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
-        ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
-        // m_spellChecker->setTextEdit(widget_mesg_outgoing);
-        widget_mesg_outgoing->setTabChangesFocus(true);
-        widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
-        QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
-                         this, SLOT(msgOutgoingProcess(const QString &)));
-
         QPointer<GkComboBoxSubmit> widget_change_freq = new GkComboBoxSubmit(ui->frame_spect_buttons_top);
         ui->horizontalLayout_10->addWidget(widget_change_freq);
         widget_change_freq->setEditable(true);
@@ -803,11 +812,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gkModem = new GkModem(gkAudioDevices, gkDb, gkEventLogger, gkStringFuncs, this);
         // gkTextToSpeech = new GkTextToSpeech(gkDb, gkEventLogger, this);
-
-        QPointer<GkActiveMsgsTableViewModel> gkActiveMsgsTableViewModel = new GkActiveMsgsTableViewModel(gkDb, this);
-        QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(gkDb, this);
-        ui->tableView_mesg_active->setModel(gkActiveMsgsTableViewModel);
-        ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
 
         //
         // Initialize mapping routines, atlas, etc.
@@ -2567,32 +2571,6 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
 }
 
 /**
- * @brief MainWindow::on_tableView_mesg_active_customContextMenuRequested
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
- */
-void MainWindow::on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos)
-{
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_active);
-    contextMenu->exec(ui->tableView_mesg_active->mapToGlobal(pos));
-
-    return;
-}
-
-/**
- * @brief MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
- */
-void MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos)
-{
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_callsigns);
-    contextMenu->exec(ui->tableView_mesg_callsigns->mapToGlobal(pos));
-
-    return;
-}
-
-/**
  * @brief MainWindow::on_tableView_maingui_logs_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
@@ -2911,6 +2889,307 @@ void MainWindow::on_actionFM_toggled(bool arg1)
 void MainWindow::on_actionCW_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_comboBox_general_settings_favs_bookmark_category_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_comboBox_general_settings_favs_bookmark_category_currentIndexChanged(const QString &arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_rename_category_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_rename_category_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_add_category_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_toolButton_general_settings_favs_add_category_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_delete_category_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_delete_category_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_add_bookmark_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_add_bookmark_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_delete_bookmark_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_delete_bookmark_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_edit_bookmark_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_edit_bookmark_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_apply_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_apply_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_import_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_import_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_toolButton_general_settings_favs_export_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_toolButton_general_settings_favs_export_triggered(QAction *arg1)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_nfm_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_nfm_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_am_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_am_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_usb_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_usb_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_lsb_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_lsb_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_wfm_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_wfm_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_dsb_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_dsb_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_cw_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_cw_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_raw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::on_radioButton_soapysdr_source_modulation_raw_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void MainWindow::on_radioButton_soapysdr_source_modulation_raw_clicked(bool checked)
+{
+    //
+    // Untoggle the other radio buttons, in order to prevent a race condition!
+    if (checked) {
+        ui->radioButton_soapysdr_source_modulation_nfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_am->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_usb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_lsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_wfm->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_dsb->setChecked(false);
+        ui->radioButton_soapysdr_source_modulation_cw->setChecked(false);
+    }
+
+    emit repaintSoapySdrRadioButtons();
+    return;
+}
+
+/**
+ * @brief MainWindow::repaint_soapysdr_source_modulation_radiobuttons
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::repaint_soapysdr_source_modulation_radiobuttons()
+{
+    ui->radioButton_soapysdr_source_modulation_nfm->repaint();
+    ui->radioButton_soapysdr_source_modulation_am->repaint();
+    ui->radioButton_soapysdr_source_modulation_usb->repaint();
+    ui->radioButton_soapysdr_source_modulation_lsb->repaint();
+    ui->radioButton_soapysdr_source_modulation_wfm->repaint();
+    ui->radioButton_soapysdr_source_modulation_dsb->repaint();
+    ui->radioButton_soapysdr_source_modulation_cw->repaint();
+    ui->radioButton_soapysdr_source_modulation_raw->repaint();
 
     return;
 }
