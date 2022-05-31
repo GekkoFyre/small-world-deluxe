@@ -42,9 +42,11 @@
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/gk_sdr.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/ui/gkatlasdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include "src/models/tableview/gk_settings_dlg_sdr_devices.hpp"
 #include <marble/MarbleWidget.h>
 #include <marble/GeoDataCoordinates.h>
 #include <SoapySDR/Formats.hpp>
@@ -71,7 +73,6 @@
 #include <QComboBox>
 #include <QGeoCoordinate>
 #include <QSharedPointer>
-#include <QTreeWidgetItem>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <KF5/SonnetUI/Sonnet/DictionaryComboBox>
@@ -104,6 +105,7 @@ public:
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<Marble::MarbleWidget> mapWidget,
+                            QPointer<GekkoFyre::GkSdrDev> gkSdrPtr,
                             const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
@@ -318,6 +320,13 @@ private:
     // QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
     QPointer<GekkoFyre::GkAudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QPointer<GekkoFyre::GkSdrDev> gkSdrDev;
+
+    //
+    // SoapySDR and related
+    QPointer<GekkoFyre::GkSettingsDlgSdrDevs> gkSettingsDlgSdrDevsTableModel;
+    QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> m_sdrDevs;         // Any applicable SDR devices that have been enumerated via SoapySDR!
+    void discSoapySdrDevs();
 
     //
     // QXmpp and XMPP related
@@ -376,12 +385,6 @@ private:
     QPointer<Sonnet::DictionaryComboBox> m_sonnetDcb;
 
     //
-    // SDR's
-    //
-    QMap<QString, QTreeWidgetItem *> m_sdrRootTreeMap;      // Key: Root string, Value: Root Tree Item
-    QMultiMap<QString, QString> m_sdrChildTreeMap;          // Key: Child string, Value: Root string
-
-    //
     // Mapping and atlas APIs, etc.
     //
     QPointer<Marble::MarbleWidget> m_mapWidget;
@@ -402,14 +405,8 @@ private:
     void prefill_xmpp_ignore_ssl_errors();
     void prefill_uri_lookup_method();
     void prefill_lang_dictionaries();
-    void prefill_sdr_devices();
     void prefill_ui_lang();
     void init_station_info();
-
-    //
-    // QTreeWidgets
-    QTreeWidgetItem *addEnumSdrDevsTreeRoot(const QString &device);
-    void addEnumSdrDevsTreeChild(QTreeWidgetItem *parent, const QString &device);
 
     //
     // Mapping, location, maidenhead, etc.

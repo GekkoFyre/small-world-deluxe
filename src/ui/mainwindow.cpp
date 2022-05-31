@@ -51,6 +51,7 @@
 #include <marble/AbstractFloatItem.h>
 #include <marble/MarbleDirs.h>
 #include <marble/GeoDataCoordinates.h>
+#include <SoapySDR/Version.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
 #include <chrono>
@@ -95,7 +96,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
-using namespace Security;
+using namespace GkSdr;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -140,6 +141,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster>("GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<std::shared_ptr<aria2::DownloadHandle>>("std::shared_ptr<aria2::DownloadHandle>");
+    qRegisterMetaType<SoapySDR::Kwargs>("SoapySDR::Kwargs");
+    qRegisterMetaType<GekkoFyre::System::GkSdr::GkSoapySdrTableView>("GekkoFyre::System::GkSdr::GkSoapySdrTableView");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
@@ -246,6 +249,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
         gkSystem = new GkSystem(gkStringFuncs, this);
+
+        //
+        // SoapySDR and related
+        gkSdrDev = new GkSdrDev(this);
+        QObject::connect(this, SIGNAL(searchSoapySdrDevs()), this, SLOT(findSoapySdrDevs()));
+        QObject::connect(this, SIGNAL(foundSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &)),
+                         this, SLOT(discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &)));
 
         //
         // Settings database-related logic
@@ -665,8 +675,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize SoapySDR modules!
+        // Notes: https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.cpp
         //
+        gkEventLogger->publishEvent(tr("SoapySDR init..."), GkSeverity::Verbose, "", false, true, false, false, false);
+        if (!SoapySDR::getAPIVersion().empty()) {
+            gkEventLogger->publishEvent(tr("SoapySDR API version: ").arg(QString::fromStdString(SoapySDR::getAPIVersion())), GkSeverity::Debug, "", false, true, false, false, false);
+        }
+
+        if (!SoapySDR::getABIVersion().empty()) {
+            gkEventLogger->publishEvent(tr("SoapySDR ABI version: ").arg(QString::fromStdString(SoapySDR::getABIVersion())), GkSeverity::Debug, "", false, true, false, false, false);
+        }
+
+        if (!SoapySDR::getRootPath().empty()) {
+            gkEventLogger->publishEvent(tr("SoapySDR install root: ").arg(QString::fromStdString(SoapySDR::getRootPath())), GkSeverity::Debug, "", false, true, false, false, false);
+        }
+
+        gkEventLogger->publishEvent(tr("Loading SoapySDR modules..."), GkSeverity::Verbose, "", false, true, true, false, false);
+
+        const QString soapySdrModPath = (QCoreApplication::applicationDirPath() + "/" + Filesystem::soapySdrModDir);
         SoapySDR::loadModules();
+        std::vector<std::string> localMods = SoapySDR::listModules(soapySdrModPath.toStdString());
+        for (std::vector<std::string>::iterator mods_i = localMods.begin(); mods_i != localMods.end(); mods_i++) {
+            gkEventLogger->publishEvent(tr("Initializing user specified SoapySDR module %1...").arg(QString::fromStdString(*mods_i)), GkSeverity::Debug, "", false, false, true, false, false);
+            SoapySDR::loadModule(*mods_i);
+        }
 
         ui->radioButton_soapysdr_source_modulation_nfm->setAutoExclusive(false);
         ui->radioButton_soapysdr_source_modulation_am->setAutoExclusive(false);
@@ -678,6 +710,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->radioButton_soapysdr_source_modulation_raw->setAutoExclusive(false);
 
         QObject::connect(this, SIGNAL(repaintSoapySdrRadioButtons()), this, SLOT(repaint_soapysdr_source_modulation_radiobuttons()));
+
+        //
+        // Initiate SoapySDR device enumeration
+        emit searchSoapySdrDevs();
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -1025,7 +1061,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                gkSysInputAudioDevs, gkSysOutputAudioDevs, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, m_mapWidget, settingsDlgTab, this);
+                                                               gkEventLogger, m_mapWidget, gkSdrDev, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -2631,6 +2667,44 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 }
 
 /**
+ * @brief MainWindow::findSoapySdrDevs enumerates any discovered SDR devices found through the end-user's local machine
+ * via SoapySDR and any provided, applicable drivers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param kwargs Arguments to be provided to SoapySDR itself in the enumeration of any SDR devices, if applicable.
+ */
+void MainWindow::findSoapySdrDevs()
+{
+    try {
+        //
+        // Enumerate any discovered SDR devices (and applicable information)!
+        m_sdrDevs.clear();
+        const auto devsFound = gkSdrDev->enumSoapySdrDevs();
+        if (!devsFound.isEmpty()) {
+            m_sdrDevs = devsFound;
+            emit foundSoapySdrDevs(m_sdrDevs);
+        }
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::discSoapySdrDevs processes any SDR devices that have been enumerated via SoapySDR.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param sdr_devs A QList of SDR devices that have been enumerated via SoapySDR.
+ * @see MainWindow::foundSoapySdrDevs().
+ */
+void MainWindow::discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs)
+{
+    //
+    // Setup any SDR table-views!
+
+    return;
+}
+
+/**
  * @brief MainWindow::restartInputAudioInterface restarts the input audio device interface with a newly chosen audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_device The newly chosen input audio device to restart the interface with.
@@ -3566,7 +3640,7 @@ void MainWindow::on_actionConnect_triggered()
  */
 void MainWindow::print_exception(const std::exception &e, const bool &displayMsgBox, int level)
 {
-    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Error, "", false);
     if (displayMsgBox) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }

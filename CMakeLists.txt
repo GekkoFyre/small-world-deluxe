@@ -794,6 +794,7 @@ set(GALAXY_UI_CPP
     src/gk_logger.cpp
     src/gk_system.cpp
 	src/gk_multimedia.cpp
+	src/gk_sdr.cpp
     src/gk_sinewave.cpp
 	src/gk_exception.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
@@ -807,6 +808,7 @@ set(GALAXY_UI_CPP
     src/models/tableview/gk_callsign_msgs_model.cpp
     src/models/tableview/gk_xmpp_recv_msgs_model.cpp
 	src/models/tableview/gk_xmpp_roster_presence_model.cpp
+	src/models/tableview/gk_settings_dlg_sdr_devices.cpp
 	src/models/tableview/gk_qdatetime_filter_proxy_model.cpp
 	src/models/tableview/gk_solar_weather_forecast_model.cpp
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
@@ -901,6 +903,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_logger.hpp
     src/gk_system.hpp
 	src/gk_multimedia.hpp
+	src/gk_sdr.hpp
     src/gk_sinewave.hpp
 	src/gk_exception.hpp
     src/gk_waterfall_data.hpp
@@ -915,6 +918,7 @@ set(GALAXY_OBJ_HEADERS
     src/models/tableview/gk_callsign_msgs_model.hpp
     src/models/tableview/gk_xmpp_recv_msgs_model.hpp
 	src/models/tableview/gk_xmpp_roster_presence_model.hpp
+	src/models/tableview/gk_settings_dlg_sdr_devices.hpp
 	src/models/tableview/gk_qdatetime_filter_proxy_model.hpp
 	src/models/tableview/gk_solar_weather_forecast_model.hpp
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp

@@ -146,6 +146,10 @@ namespace GekkoFyre {
 #define GK_MAINWINDOW_UI_TOOLBOX_MENU_HAMLIBPP_IDX (2)
 #define GK_MAINWINDOW_UI_TOOLBOX_MENU_SOAPYSDR_IDX (3)
 
+#define GK_TABLEVIEW_SOAPYSDR_DEVICE_NAME_IDX (0)               // https://github.com/pothosware/SoapySDR/wiki/FAQ#how-to-identify-a-specific-device
+#define GK_TABLEVIEW_SOAPYSDR_DEVICE_HWARE_KEY_IDX (1)          // Device::getHardwareKey()
+#define GK_TABLEVIEW_SOAPYSDR_DEVICE_TOTAL_IDX (2)              // The total number of indexes employed.
+
 //
 // Downloads, network, and file transfers
 //
@@ -468,6 +472,7 @@ namespace Filesystem {
     constexpr char marbleDir[] = "marble";                              // The primary directory for where all Marble-related files are situated.
     constexpr char marblePlugins[] = "plugins";                         // The name of the folder where the plugins reside for the Marble API.
     constexpr char marbleData[] = "data";                               // The directory name for where the Marble-related data itself is situated.
+    constexpr char soapySdrModDir[] = "modules";                        // The directory name for where the SoapySDR-related modules/libraries are located; needed for the functioning of SoapySDR itself!
     constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
@@ -723,6 +728,14 @@ namespace System {
         }
     };
 
+    namespace GkSdr {
+        struct GkSoapySdrTableView {
+            qint32 event_no;
+            QString dev_name;
+            QString dev_hw_key;
+        };
+    }
+
     namespace UserInterface {
         enum GkSettingsDlgTab {
             GkGeneralStation,
@@ -789,36 +802,6 @@ namespace System {
                 bool show;                              // Whether to show this event within the UI interface(s) or not.
             };
         }
-    }
-
-    namespace Security {
-        enum GkFirewallStatus {
-            Enabled,
-            Disabled,
-            Unsupported,
-            NotFound,
-            Unknown
-        };
-
-        enum GkFirewallCfg {
-            GkAddPort,
-            GkDelPort,
-            GkAddApp,
-            GkDelApp,
-            GkIsPortAdded,
-            GkIsAppAdded,
-            GkReadPorts,
-            GkReadApps,
-            GkActivateFirewall,
-            GkDisableFirewall,
-            GkIsFirewallActive
-        };
-
-        struct GkFirewallSettings {
-            bool sys_firewall_enabled;                                                          // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
-            bool swd_app_added;                                                                 // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
-            std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> network_ports;        // The value determines required TCP and/or UDP (or even Any) ports for Small World Deluxe to operate properly, that need to be enabled. The key signifies the port number in-question, while the value signifies the network protocol and whether the port is already enabled.
-        };
     }
 }
 

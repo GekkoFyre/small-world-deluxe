@@ -59,7 +59,6 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
-using namespace Security;
 
 GkSolarWeatherForecast::GkSolarWeatherForecast(QWidget *parent) : QWidget(parent), ui(new Ui::GkSolarWeatherForecast)
 {

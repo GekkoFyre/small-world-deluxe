@@ -61,7 +61,6 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
-using namespace Security;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database, QPointer<GekkoFyre::GkMultimedia> multimedia,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,

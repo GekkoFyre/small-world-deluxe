@@ -60,6 +60,7 @@
 #include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_multimedia.hpp"
+#include "src/gk_sdr.hpp"
 #include <marble/MarbleWidget.h>
 #include <SoapySDR/Modules.hpp>
 #include <SoapySDR/Formats.hpp>
@@ -315,15 +316,17 @@ protected slots:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
     //
-    // Radio and Hamlib specific functions
+    // Radio, Hamlib, and SoapySDR specific functions
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
+    void findSoapySdrDevs();
+    void discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs);
 
 public slots:
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
     //
-    // Radio and Hamlib specific functions
+    // Radio, Hamlib, and SoapySDR specific functions
     //
     void gatherRigCapabilities(const rig_model_t &rig_model_update,
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
@@ -345,12 +348,14 @@ signals:
     void setStartupProgress(const qint32 &value);
 
     //
-    // Radio and Hamlib specific functions
+    // Radio, Hamlib, and SoapySDR specific functions
     //
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void searchSoapySdrDevs();                                                                         // Instruction to begin searching for SDR devices via SoapySDR!
+    void foundSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs);      // Any SDR devices that have been found via SoapySDR.
 
     //
     // [ Main Menu ] SoapySDR - Radio
@@ -399,6 +404,7 @@ private:
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkMultimedia> gkMultimedia;
+    QPointer<GekkoFyre::GkSdrDev> gkSdrDev;
     QPointer<GkIntroSetupWizard> gkIntroSetupWizard;
     // QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
 
@@ -450,14 +456,15 @@ private:
     //
     // USB & RS232
     //
-    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap; // This is used for making connections to radio rigs with Hamlib!
-    std::vector<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap; // This variable is responsible for managing the COM/RS232/Serial ports!
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap;   // This is used for making connections to radio rigs with Hamlib!
+    std::vector<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap;  // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
     // Radio and Hamlib related
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> m_sdrDevs;         // Any applicable SDR devices that have been enumerated via SoapySDR!
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //
@@ -593,6 +600,8 @@ Q_DECLARE_METATYPE(GekkoFyre::Network::GkDataState);
 Q_DECLARE_METATYPE(GekkoFyre::Network::GkXmpp::GkXmppMsgTabRoster);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(std::shared_ptr<aria2::DownloadHandle>);
+Q_DECLARE_METATYPE(SoapySDR::Kwargs);
+Q_DECLARE_METATYPE(GekkoFyre::System::GkSdr::GkSoapySdrTableView);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);

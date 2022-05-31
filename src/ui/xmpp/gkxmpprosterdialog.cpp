@@ -73,7 +73,6 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
-using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
                                        QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,

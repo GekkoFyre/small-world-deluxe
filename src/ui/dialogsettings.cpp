@@ -69,7 +69,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
-using namespace Security;
+using namespace GkSdr;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -103,6 +103,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<Marble::MarbleWidget> mapWidget,
+                               QPointer<GekkoFyre::GkSdrDev> gkSdrPtr,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -124,6 +125,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         m_xmppClient = std::move(xmppClient);
         gkEventLogger = std::move(eventLogger);
         m_mapWidget = std::move(mapWidget);
+        gkSdrDev = std::move(gkSdrPtr);
         gkSerialPortMap = com_ports;
 
         //
@@ -155,6 +157,10 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         // Initialize any profile fields related to mapping, geography, etc.
         readGpsCoords();
+
+        //
+        // Enumerate any discovered SDR devices (and applicable information)!
+        discSoapySdrDevs();
 
         //
         // Miscellaneous
@@ -353,8 +359,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         QRegularExpression rxUsername(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)", QRegularExpression::CaseInsensitiveOption);
         ui->lineEdit_xmpp_client_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
-
-        prefill_sdr_devices();
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -941,38 +945,6 @@ void DialogSettings::prefill_lang_dictionaries()
 }
 
 /**
- * @brief DialogSettings::prefill_sdr_devices enumerates out any discovered SDR devices found on the end-user's computer
- * or device.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void DialogSettings::prefill_sdr_devices()
-{
-    //
-    // Setup the QTreeWidget object firstly!
-
-    //
-    // Enumerate any discovered SDR devices (list all devices' information)!
-    bool isRemote = false;
-    SoapySDR::Kwargs enumArgs;
-    enumArgs["driver"] = "local";
-
-    SoapySDR::KwargsList results = SoapySDR::Device::enumerate(enumArgs);
-    SoapySDR::Kwargs::iterator it;
-    if (!results.empty()) {
-        for (qint32 i = 0; i < results.size(); ++i) {
-            for (it = results[i].begin(); it != results[i].end(); ++it) {
-                const auto rootItem = addEnumSdrDevsTreeRoot(QString::fromStdString(it->first.c_str()));
-                addEnumSdrDevsTreeChild(rootItem, QString::fromStdString(it->second.c_str()));
-            }
-        }
-    } else {
-        addEnumSdrDevsTreeRoot(tr("No devices or drivers detected!"));
-    }
-
-    return;
-}
-
-/**
  * @brief DialogSettings::prefill_ui_lang prefills the combobox, `ui->comboBox_accessibility_lang_ui()`, with all the
  * available languages for the User Interface itself of Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1007,37 +979,6 @@ void DialogSettings::init_station_info()
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
-
-    return;
-}
-
-/**
- * @brief DialogSettings::addEnumSdrDevsTreeRoot
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param device
- * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
- */
-QTreeWidgetItem *DialogSettings::addEnumSdrDevsTreeRoot(const QString &device)
-{
-    QTreeWidgetItem *treeItem = new QTreeWidgetItem(ui->treeWidget_radio_sdr_device_enum);
-
-    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, device);
-    return treeItem;
-}
-
-/**
- * @brief DialogSettings::addEnumSdrDevsTreeChild
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- * @param device
- * @note Qt5 Tutorial QTreeWidget <https://www.bogotobogo.com/Qt/Qt5_QTreeWidget.php>.
- */
-void DialogSettings::addEnumSdrDevsTreeChild(QTreeWidgetItem *parent, const QString &device)
-{
-    QTreeWidgetItem *treeItem = new QTreeWidgetItem();
-
-    treeItem->setText(GK_SETTINGS_DLG_TREEWIDGET_ENUM_SDR_ITEM_DEV_IDX, device);
-    parent->addChild(treeItem);
 
     return;
 }
@@ -3269,6 +3210,39 @@ void DialogSettings::on_horizontalSlider_access_stt_rate_valueChanged(int value)
 
 void DialogSettings::on_horizontalSlider_access_stt_pitch_valueChanged(int value)
 {
+    return;
+}
+
+/**
+ * @brief DialogSettings::discSoapySdrDevs enumerates any discovered SDR devices found through the end-user's local machine
+ * via SoapySDR and any provided, applicable drivers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param kwargs Any SDR devices that have been found via SoapySDR.
+ * @see MainWindow::findSoapySdrDevs().
+ */
+void DialogSettings::discSoapySdrDevs()
+{
+    try {
+        //
+        // Enumerate any discovered SDR devices (and applicable information)!
+        m_sdrDevs.clear();
+        const auto devsFound = gkSdrDev->enumSoapySdrDevs();
+        if (!devsFound.isEmpty()) {
+            m_sdrDevs = devsFound;
+        }
+
+        //
+        // Setup any SDR table-views!
+        gkSettingsDlgSdrDevsTableModel = new GkSettingsDlgSdrDevs(nullptr);
+        gkSettingsDlgSdrDevsTableModel->populateData(m_sdrDevs);
+        ui->tableView_radio_sdr_device_enum->setModel(gkSettingsDlgSdrDevsTableModel);
+        ui->tableView_radio_sdr_device_enum->horizontalHeader()->setVisible(true);
+        ui->tableView_radio_sdr_device_enum->horizontalHeader()->setSectionResizeMode(GK_TABLEVIEW_SOAPYSDR_DEVICE_NAME_IDX, QHeaderView::Stretch);
+        ui->tableView_radio_sdr_device_enum->show();
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     return;
 }
 
