@@ -2626,7 +2626,7 @@ void MainWindow::on_tableView_maingui_logs_customContextMenuRequested(const QPoi
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
-void MainWindow::on_comboBox_select_frequency_activated(int index)
+void MainWindow::on_comboBox_select_frequency_activated(qint32 index)
 {
     Q_UNUSED(index);
     return;
@@ -3161,47 +3161,65 @@ void MainWindow::on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged
     emit refreshSoapySdrBandwidthComboBoxes();
     emit refreshSoapySdrGainComboBoxes();
 
+    for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
+        it->dev_ptr.reset();
+    }
+
+    //
+    // Initiate SoapySDR device enumeration and thusly new pointer creation now we are attempting a new RX channel!
+    emit searchSoapySdrDevs();
+
     const qint32 idx = arg1.toInt();
     for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
         it->curr_rx_channel = idx;
     }
 
-    for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
-        const auto avail_bw = it->dev_ptr->listBandwidths(SOAPY_SDR_RX, idx);
-        it->avail_bwidth_views = avail_bw;
-        QList<qreal> added_bwidth_views;
-        for (const auto &bw: avail_bw) {
-            if (!added_bwidth_views.contains(bw)) {
-                //
-                // Enumerate available bandwidth options!
-                ui->comboBox_main_soapysdr_source_viewable_bw->addItem(gkStringFuncs->convHertzToHumanReadable(bw), bw);
-                ui->comboBox_main_soapysdr_source_viewable_bw->setToolTip(tr("Spectrograph bandwidth (Channel #%1).").arg(QString::number(idx)));
+    try {
+        for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
+            const auto avail_bw = it->dev_ptr->listBandwidths(SOAPY_SDR_RX, idx);
+            it->avail_bwidth_views = avail_bw;
+            QList<qreal> added_bwidth_views;
+            for (const auto &bw: avail_bw) {
+                if (!added_bwidth_views.contains(bw)) {
+                    //
+                    // Enumerate available bandwidth options!
+                    ui->comboBox_main_soapysdr_source_viewable_bw->addItem(gkStringFuncs->convHertzToHumanReadable(bw), bw);
+                    ui->comboBox_main_soapysdr_source_viewable_bw->setToolTip(tr("Spectrograph bandwidth (Channel #%1).").arg(QString::number(idx)));
 
-                added_bwidth_views.push_back(bw);
+                    added_bwidth_views.push_back(bw);
+                }
             }
-        }
 
-        const auto avail_sr = it->dev_ptr->listSampleRates(SOAPY_SDR_RX, idx);
-        it->avail_sample_rates = avail_sr;
-        QList<qreal> added_sample_rates;
-        for (const auto &sr: avail_sr) {
-            if (!added_sample_rates.contains(sr)) {
-                //
-                // Enumerate available sample rate options!
-                ui->comboBox_main_soapysdr_source_samplerate->addItem(gkStringFuncs->convHertzToHumanReadable(sr), sr);
-                ui->comboBox_main_soapysdr_source_samplerate->setToolTip(tr("Sample rate (Channel #%1).").arg(QString::number(idx)));
+            const auto avail_sr = it->dev_ptr->listSampleRates(SOAPY_SDR_RX, idx);
+            it->avail_sample_rates = avail_sr;
+            QList<qreal> added_sample_rates;
+            for (const auto &sr: avail_sr) {
+                if (!added_sample_rates.contains(sr)) {
+                    //
+                    // Enumerate available sample rate options!
+                    ui->comboBox_main_soapysdr_source_samplerate->addItem(gkStringFuncs->convHertzToHumanReadable(sr), sr);
+                    ui->comboBox_main_soapysdr_source_samplerate->setToolTip(tr("Sample rate (Channel #%1).").arg(QString::number(idx)));
 
-                added_sample_rates.push_back(sr);
+                    added_sample_rates.push_back(sr);
+                }
             }
-        }
 
-        const auto avail_gain_modes = it->dev_ptr->listGains(SOAPY_SDR_RX, idx);
-        for (const auto &gain_m: avail_gain_modes) {
+            const auto avail_gain_modes = it->dev_ptr->listGains(SOAPY_SDR_RX, idx);
+            for (const auto &gain_m: avail_gain_modes) {
+                //
+                // Enumerate available signal gain options!
+                ui->comboBox_main_soapysdr_source_gain_control_mode->addItem(QString::fromStdString(gain_m));
+                ui->comboBox_main_soapysdr_source_gain_control_mode->setToolTip(tr("Signal gain (Channel #%1).").arg(QString::number(idx)));
+            }
+
             //
-            // Enumerate available signal gain options!
-            ui->comboBox_main_soapysdr_source_gain_control_mode->addItem(QString::fromStdString(gain_m));
-            ui->comboBox_main_soapysdr_source_gain_control_mode->setToolTip(tr("Signal gain (Channel #%1).").arg(QString::number(idx)));
+            // Enable the flag to let other parts of the program know that the most important parts of the SoapySDR library
+            // code are now initialized and ready to be interacted with!
+            it->initialized = true;
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An unexpected error has occurred whilst enumerating SoapySDR device information. Error: %1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -3214,18 +3232,25 @@ void MainWindow::on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged
  * @param index The index of the bandwidth setting itself, as it relates to the QComboBox.
  * @see MainWindow::on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged().
  */
-void MainWindow::on_comboBox_main_soapysdr_source_viewable_bw_currentIndexChanged(int index)
+void MainWindow::on_comboBox_main_soapysdr_source_viewable_bw_activated(qint32 index)
 {
-    const auto curr_sel_dev = ui->comboBox_main_soapysdr_source_hw_id_enum->currentText();
+    try {
+        const auto curr_sel_dev = ui->comboBox_main_soapysdr_source_hw_id_enum->currentText();
 
-    //
-    // Engage the new setting for the SoapySDR device in question
-    for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
-        if (it->dev_name == curr_sel_dev) {
-            it->dev_ptr->setBandwidth(SOAPY_SDR_RX, it->curr_rx_channel, ui->comboBox_main_soapysdr_source_viewable_bw->currentData().toInt());
+        //
+        // Engage the new setting for the SoapySDR device in question
+        for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
+            if (it->initialized) {
+                if (it->dev_name == curr_sel_dev) {
+                    it->dev_ptr->setBandwidth(SOAPY_SDR_RX, it->curr_rx_channel, ui->comboBox_main_soapysdr_source_viewable_bw->currentData().toInt());
 
-            break;
+                    break;
+                }
+            }
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An unexpected error has occurred whilst configuring the bandwidth setting. Error: %1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -3238,18 +3263,25 @@ void MainWindow::on_comboBox_main_soapysdr_source_viewable_bw_currentIndexChange
  * @param index The index of the sample rate setting itself, as it relates to the QComboBox.
  * @see MainWindow::on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged().
  */
-void MainWindow::on_comboBox_main_soapysdr_source_samplerate_currentIndexChanged(int index)
+void MainWindow::on_comboBox_main_soapysdr_source_samplerate_activated(qint32 index)
 {
-    const auto curr_sel_dev = ui->comboBox_main_soapysdr_source_hw_id_enum->currentText();
+    try {
+        const auto curr_sel_dev = ui->comboBox_main_soapysdr_source_hw_id_enum->currentText();
 
-    //
-    // Engage the new setting for the SoapySDR device in question
-    for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
-        if (it->dev_name == curr_sel_dev) {
-            it->dev_ptr->setSampleRate(SOAPY_SDR_RX, it->curr_rx_channel, ui->comboBox_main_soapysdr_source_samplerate->currentData().toInt());
+        //
+        // Engage the new setting for the SoapySDR device in question
+        for (auto it = m_sdrDevs.begin(), end = m_sdrDevs.end(); it != end; ++it) {
+            if (it->initialized) {
+                if (it->dev_name == curr_sel_dev) {
+                    it->dev_ptr->setSampleRate(SOAPY_SDR_RX, it->curr_rx_channel, ui->comboBox_main_soapysdr_source_samplerate->currentData().toInt());
 
-            break;
+                    break;
+                }
+            }
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An unexpected error has occurred whilst configuring the sample rate setting. Error: %1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;

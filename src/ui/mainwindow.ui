@@ -733,7 +733,7 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         <item row="1" column="0">
                          <widget class="QLabel" name="label_main_soapysdr_source_bandwidth">
                           <property name="text">
-                           <string>Bandwidth: </string>
+                           <string>S/R: </string>
                           </property>
                          </widget>
                         </item>

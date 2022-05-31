@@ -185,8 +185,8 @@ private slots:
     void on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged(const QString &arg1);
     void on_comboBox_main_soapysdr_source_hw_id_enum_currentIndexChanged(const QString &arg1);
     void on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged(const QString &arg1);
-    void on_comboBox_main_soapysdr_source_viewable_bw_currentIndexChanged(int index);
-    void on_comboBox_main_soapysdr_source_samplerate_currentIndexChanged(int index);
+    void on_comboBox_main_soapysdr_source_viewable_bw_activated(qint32 index);
+    void on_comboBox_main_soapysdr_source_samplerate_activated(qint32 index);
     void on_comboBox_main_soapysdr_source_gain_control_mode_currentIndexChanged(const QString &arg1);
     void on_tableView_main_soapysdr_module_mgr_customContextMenuRequested(const QPoint &pos);
     void on_radioButton_soapysdr_source_modulation_nfm_clicked(bool checked);
@@ -244,7 +244,7 @@ private slots:
     //
     // QComboBox'es
     //
-    void on_comboBox_select_frequency_activated(int index);
+    void on_comboBox_select_frequency_activated(qint32 index);
 
     void infoBar();
     void uponExit();
