@@ -734,9 +734,14 @@ namespace System {
     namespace GkSdr {
         struct GkSoapySdrTableView {
             qint32 event_no;
+            bool running;
+            bool initialized;
             std::shared_ptr<SoapySDR::Device> dev_ptr;
             QString dev_name;
             QString dev_hw_key;
+            qint32 curr_rx_channel;
+            std::vector<qreal> avail_sample_rates;
+            std::vector<qreal> avail_bwidth_views;
         };
     }
 

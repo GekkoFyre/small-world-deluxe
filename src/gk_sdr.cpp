@@ -136,6 +136,9 @@ QList<GkSoapySdrTableView> GkSdrDev::findSoapySdrDevs() const
                         GkSoapySdrTableView soapySdrTableView;
                         soapySdrTableView.event_no = idx;
                         soapySdrTableView.dev_hw_key = hw_key;
+                        soapySdrTableView.running = false;
+                        soapySdrTableView.initialized = false;
+                        soapySdrTableView.curr_rx_channel = -1;
                         if (it->first == "label" || it->first == "device") {
                             if (!it->second.empty()) {
                                 soapySdrTableView.dev_name = QString::fromStdString(it->second);
