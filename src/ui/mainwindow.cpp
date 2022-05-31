@@ -256,6 +256,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(searchSoapySdrDevs()), this, SLOT(findSoapySdrDevs()));
         QObject::connect(this, SIGNAL(foundSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &)),
                          this, SLOT(discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &)));
+        QObject::connect(this, SIGNAL(refreshSoapySdrBandwidthComboBoxes()), this, SLOT(updateSoapySdrBandwidthComboBoxes()));
+        QObject::connect(this, SIGNAL(refreshSoapySdrGainComboBoxes()), this, SLOT(updateSoapySdrGainComboBoxes()));
 
         //
         // Settings database-related logic
@@ -2699,7 +2701,44 @@ void MainWindow::findSoapySdrDevs()
 void MainWindow::discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs)
 {
     //
-    // Setup any SDR table-views!
+    // Setup any SDR QComboBoxes and/or QTableViews!
+    if (!sdr_devs.isEmpty()) {
+        for (const auto &dev: sdr_devs) {
+            ui->comboBox_main_soapysdr_source_hw_key->addItem(dev.dev_hw_key);
+        }
+
+        return;
+    }
+
+    //
+    // No devices were detected through enumeration!
+    ui->comboBox_main_soapysdr_source_hw_key->addItem(Filesystem::soapySdrNoDevsFound);
+    ui->comboBox_main_soapysdr_source_hw_id_enum->addItem(Filesystem::soapySdrNoDevsFoundAlt);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateSoapySdrBandwidthComboBoxes refreshes any QComboBoxes that relate to the display and/or
+ * control of bandwidth settings for SoapySDR-related drivers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::updateSoapySdrBandwidthComboBoxes()
+{
+    ui->comboBox_main_soapysdr_source_viewable_bw->clear();
+    ui->comboBox_main_soapysdr_source_bandwidth->clear();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateSoapySdrGainComboBoxes refreshes any QComboBoxes that relate to the display and/or
+ * control of signal gain settings for SoapySDR-related drivers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::updateSoapySdrGainComboBoxes()
+{
+    ui->comboBox_main_soapysdr_source_gain_control_mode->clear();
 
     return;
 }
@@ -3063,6 +3102,86 @@ void MainWindow::on_toolButton_general_settings_favs_import_triggered(QAction *a
  */
 void MainWindow::on_toolButton_general_settings_favs_export_triggered(QAction *arg1)
 {
+    return;
+}
+
+/**
+ * @brief MainWindow::on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged(const QString &arg1)
+{
+    if (arg1.isEmpty()) {
+        return;
+    }
+
+    ui->comboBox_main_soapysdr_source_hw_id_enum->clear();
+    for (const auto &dev: m_sdrDevs) {
+        if (dev.dev_hw_key == arg1) {
+            ui->comboBox_main_soapysdr_source_hw_id_enum->addItem(dev.dev_name);
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_comboBox_main_soapysdr_source_hw_id_enum_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_comboBox_main_soapysdr_source_hw_id_enum_currentIndexChanged(const QString &arg1)
+{
+    if (arg1.isEmpty()) {
+        return;
+    }
+
+    for (const auto &dev: m_sdrDevs) {
+        const auto num_chan = dev.dev_ptr->getNumChannels(SOAPY_SDR_RX);
+        for (size_t i = 0; i < num_chan; ++i) {
+            ui->comboBox_main_soapysdr_source_rx_channel->addItem(QString::number(i));
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void MainWindow::on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged(const QString &arg1)
+{
+    if (arg1.isEmpty()) {
+        return;
+    }
+
+    //
+    // Clear any pre-existing data!
+    emit refreshSoapySdrBandwidthComboBoxes();
+    emit refreshSoapySdrGainComboBoxes();
+
+    const qint32 idx = arg1.toInt();
+    for (const auto &dev: m_sdrDevs) {
+        const auto avail_bw = dev.dev_ptr->listBandwidths(SOAPY_SDR_RX, idx);
+        for (const auto &bw: avail_bw) {
+            ui->comboBox_main_soapysdr_source_viewable_bw->addItem(gkStringFuncs->convHertzToHumanReadable(bw));
+            ui->comboBox_main_soapysdr_source_bandwidth->addItem(gkStringFuncs->convHertzToHumanReadable(bw));
+
+            ui->comboBox_main_soapysdr_source_viewable_bw->setToolTip(tr("Spectrograph bandwidth (Channel #%1).").arg(QString::number(idx)));
+            ui->comboBox_main_soapysdr_source_bandwidth->setToolTip(tr("Raw bandwidth (Channel #%1).").arg(QString::number(idx)));
+        }
+
+        const auto avail_gain_modes = dev.dev_ptr->listGains(SOAPY_SDR_RX, idx);
+        for (const auto &gain_m: avail_gain_modes) {
+            ui->comboBox_main_soapysdr_source_gain_control_mode->addItem(QString::fromStdString(gain_m));
+
+            ui->comboBox_main_soapysdr_source_gain_control_mode->setToolTip(tr("Signal gain (Channel #%1).").arg(QString::number(idx)));
+        }
+    }
+
     return;
 }
 

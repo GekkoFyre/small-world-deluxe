@@ -69,12 +69,15 @@ public:
 
     //
     // SoapySDR
-    [[nodiscard]] QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> enumSoapySdrDevs();
-    [[nodiscard]] QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> findSoapySdrDevs();
+    [[nodiscard]] QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> enumSoapySdrDevs() const;
+    [[nodiscard]] QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> findSoapySdrDevs() const;
+    [[nodiscard]] bool filterSoapySdrDevs(const QString &sdr_dev) const;
     [[nodiscard]] QString findSoapySdrHwKey(const QString &input_args) const;
     [[nodiscard]] QString findSoapySdrHwKey(const SoapySDR::Kwargs &input_args) const;
+    [[nodiscard]] QString findSoapySdrHwKey(std::shared_ptr<SoapySDR::Device> dev_ptr) const;
     [[nodiscard]] SoapySDR::Kwargs findSoapySdrHwInfo(const QString &input_args) const;
     [[nodiscard]] SoapySDR::Kwargs findSoapySdrHwInfo(const SoapySDR::Kwargs &input_args) const;
+    [[nodiscard]] SoapySDR::Kwargs findSoapySdrHwInfo(std::shared_ptr<SoapySDR::Device> dev_ptr) const;
 
 };
 };

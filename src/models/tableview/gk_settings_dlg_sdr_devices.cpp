@@ -96,7 +96,7 @@ void GkSettingsDlgSdrDevs::populateData(const QList<GkSoapySdrTableView> sdr_dev
         QList<GkSoapySdrTableView> noDevsFound;
         GkSoapySdrTableView sdr_none_found;
         sdr_none_found.event_no = 0;
-        sdr_none_found.dev_name = tr("No devices found.");
+        sdr_none_found.dev_name = Filesystem::soapySdrNoDevsFound;
         sdr_none_found.dev_hw_key = "";
         noDevsFound.push_back(sdr_none_found);
 
