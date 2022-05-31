@@ -738,9 +738,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_bandwidth">
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_samplerate">
                           <property name="toolTip">
-                           <string>Raw bandwidth.</string>
+                           <string>Sample rate.</string>
                           </property>
                          </widget>
                         </item>
