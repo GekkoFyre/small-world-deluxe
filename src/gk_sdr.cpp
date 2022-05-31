@@ -80,8 +80,9 @@ GkSdrDev::~GkSdrDev()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param kwargs Arguments to be provided to SoapySDR itself in the enumeration of any SDR devices, if applicable.
  * @return SDR devices, if any, that have been enumerated via the SoapySDR set of libraries.
+ * @see GkSdrDev::findSoapySdrDevs().
  */
-QList<GkSoapySdrTableView> GkSdrDev::enumSoapySdrDevs()
+QList<GkSoapySdrTableView> GkSdrDev::enumSoapySdrDevs() const
 {
     try {
         //
@@ -92,7 +93,9 @@ QList<GkSoapySdrTableView> GkSdrDev::enumSoapySdrDevs()
         if (!devsFound.isEmpty()) {
             for (const auto &dev: devsFound) {
                 if (!dev.dev_name.isEmpty()) {
-                    sdr_devs.push_back(dev);
+                    if (filterSoapySdrDevs(dev.dev_name)) {
+                        sdr_devs.push_back(dev);
+                    }
                 }
             }
         }
@@ -113,8 +116,9 @@ QList<GkSoapySdrTableView> GkSdrDev::enumSoapySdrDevs()
  * @param kwargs Arguments to be provided to SoapySDR itself in the enumeration of any SDR devices, if applicable.
  * @return SDR devices, if any, that have been found via the SoapySDR set of libraries.
  * @note SdrPlusPlus <https://github.com/AlexandreRouma/SDRPlusPlus/blob/master/source_modules/soapy_source/src/main.cpp>.
+ * @see GkSdrDev::enumSoapySdrDevs().
  */
-QList<GkSoapySdrTableView> GkSdrDev::findSoapySdrDevs()
+QList<GkSoapySdrTableView> GkSdrDev::findSoapySdrDevs() const
 {
     try {
         QList<GkSoapySdrTableView> devsFound;
@@ -135,6 +139,8 @@ QList<GkSoapySdrTableView> GkSdrDev::findSoapySdrDevs()
                         if (it->first == "label" || it->first == "device") {
                             if (!it->second.empty()) {
                                 soapySdrTableView.dev_name = QString::fromStdString(it->second);
+                                void (*unmake)(SoapySDR::Device *) = &SoapySDR::Device::unmake; // Ensure to select the right overload!
+                                soapySdrTableView.dev_ptr = { SoapySDR::Device::make(deviceArgs), unmake };
                             }
                         }
 
@@ -158,11 +164,30 @@ QList<GkSoapySdrTableView> GkSdrDev::findSoapySdrDevs()
 }
 
 /**
+ * @brief GkSdrDev::filterSoapySdrDevs filters out any unnecessary and/or garbage data as outputted by
+ * the GkSdrDev::findSoapySdrDevs() function, allowing for a clearer picture of the attached SDR devices (if any)
+ * present on the end-user's computer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param sdr_dev Data as outputted by the GkSdrDev::findSoapySdrDevs() function.
+ * @return The filtered information. Returns, `true`, if we have a valid result but otherwise, will return, `false`.
+ * @see GkSdrDev::enumSoapySdrDevs().
+ */
+bool GkSdrDev::filterSoapySdrDevs(const QString &sdr_dev) const
+{
+    if (sdr_dev.startsWith("0x", Qt::CaseInsensitive)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * @brief GkSdrDev::findSoapySdrHwKey queries a key that uniquely identifies the hardware. This key should be meaningful
  * to the user to optimize for the underlying hardware.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_args Arguments to be provided to SoapySDR itself in the enumeration of any SDR devices, if applicable.
  * @return A key that uniquely identifies the hardware.
+ * @see GkSdrDev::enumSoapySdrDevs().
  */
 QString GkSdrDev::findSoapySdrHwKey(const QString &input_args) const
 {
@@ -185,6 +210,7 @@ QString GkSdrDev::findSoapySdrHwKey(const QString &input_args) const
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_args Arguments to be provided to SoapySDR itself in the enumeration of any SDR devices, if applicable.
  * @return A key that uniquely identifies the hardware.
+ * @see GkSdrDev::enumSoapySdrDevs().
  */
 QString GkSdrDev::findSoapySdrHwKey(const SoapySDR::Kwargs &input_args) const
 {
@@ -202,6 +228,27 @@ QString GkSdrDev::findSoapySdrHwKey(const SoapySDR::Kwargs &input_args) const
 }
 
 /**
+ * @brief GkSdrDev::findSoapySdrHwKey queries a key that uniquely identifies the hardware. This key should be meaningful
+ * to the user to optimize for the underlying hardware.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dev_ptr The pointer to the enumerated SDR device itself.
+ * @return A key that uniquely identifies the hardware.
+ * @see GkSdrDev::enumSoapySdrDevs().
+ */
+QString GkSdrDev::findSoapySdrHwKey(std::shared_ptr<SoapySDR::Device> dev_ptr) const
+{
+    try {
+        const std::string hw_key = dev_ptr->getHardwareKey();
+
+        return QString::fromStdString(hw_key);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QString();
+}
+
+/**
  * @brief GkSdrDev::findSoapySdrHwInfo queries a dictionary of available device information. This dictionary can any
  * number of values like vendor name, product name, revisions, serials... This information can be displayed to the user
  * to help identify the instantiated device.
@@ -210,6 +257,7 @@ QString GkSdrDev::findSoapySdrHwKey(const SoapySDR::Kwargs &input_args) const
  * @return Unique SDR device information gathered by querying a dictionary of available SDRs.
  * @note CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.h>,
  * CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.cpp>.
+ * @see GkSdrDev::enumSoapySdrDevs().
  */
 SoapySDR::Kwargs GkSdrDev::findSoapySdrHwInfo(const QString &input_args) const
 {
@@ -235,6 +283,7 @@ SoapySDR::Kwargs GkSdrDev::findSoapySdrHwInfo(const QString &input_args) const
  * @return Unique SDR device information gathered by querying a dictionary of available SDRs.
  * @note CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.h>,
  * CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.cpp>.
+ * @see GkSdrDev::enumSoapySdrDevs().
  */
 SoapySDR::Kwargs GkSdrDev::findSoapySdrHwInfo(const SoapySDR::Kwargs &input_args) const
 {
@@ -243,6 +292,30 @@ SoapySDR::Kwargs GkSdrDev::findSoapySdrHwInfo(const SoapySDR::Kwargs &input_args
         const SoapySDR::Kwargs info = device->getHardwareInfo();
 
         SoapySDR::Device::unmake(device);
+        return info;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return SoapySDR::Kwargs();
+}
+
+/**
+ * @brief GkSdrDev::findSoapySdrHwInfo queries a dictionary of available device information. This dictionary can any
+ * number of values like vendor name, product name, revisions, serials... This information can be displayed to the user
+ * to help identify the instantiated device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dev_ptr The pointer to the enumerated SDR device itself.
+ * @return Unique SDR device information gathered by querying a dictionary of available SDRs.
+ * @note CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.h>,
+ * CubicSDR <https://github.com/cjcliffe/CubicSDR/blob/master/src/sdr/SDREnumerator.cpp>.
+ * @see GkSdrDev::enumSoapySdrDevs().
+ */
+SoapySDR::Kwargs GkSdrDev::findSoapySdrHwInfo(std::shared_ptr<SoapySDR::Device> dev_ptr) const
+{
+    try {
+        const SoapySDR::Kwargs info = dev_ptr->getHardwareInfo();
+
         return info;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

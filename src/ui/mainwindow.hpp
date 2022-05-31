@@ -182,6 +182,9 @@ private slots:
     //
     // [ Main Menu ] SoapySDR - Radio
     //
+    void on_comboBox_main_soapysdr_source_hw_key_currentIndexChanged(const QString &arg1);
+    void on_comboBox_main_soapysdr_source_hw_id_enum_currentIndexChanged(const QString &arg1);
+    void on_comboBox_main_soapysdr_source_rx_channel_currentIndexChanged(const QString &arg1);
     void on_radioButton_soapysdr_source_modulation_nfm_clicked(bool checked);
     void on_radioButton_soapysdr_source_modulation_am_clicked(bool checked);
     void on_radioButton_soapysdr_source_modulation_usb_clicked(bool checked);
@@ -321,6 +324,8 @@ protected slots:
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void findSoapySdrDevs();
     void discSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs);
+    void updateSoapySdrBandwidthComboBoxes();
+    void updateSoapySdrGainComboBoxes();
 
 public slots:
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
@@ -356,6 +361,8 @@ signals:
     void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void searchSoapySdrDevs();                                                                         // Instruction to begin searching for SDR devices via SoapySDR!
     void foundSoapySdrDevs(const QList<GekkoFyre::System::GkSdr::GkSoapySdrTableView> &sdr_devs);      // Any SDR devices that have been found via SoapySDR.
+    void refreshSoapySdrBandwidthComboBoxes();
+    void refreshSoapySdrGainComboBoxes();
 
     //
     // [ Main Menu ] SoapySDR - Radio

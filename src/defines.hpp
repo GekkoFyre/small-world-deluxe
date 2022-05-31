@@ -48,6 +48,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
+#include <SoapySDR/Device.hpp>
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
@@ -473,6 +474,8 @@ namespace Filesystem {
     constexpr char marblePlugins[] = "plugins";                         // The name of the folder where the plugins reside for the Marble API.
     constexpr char marbleData[] = "data";                               // The directory name for where the Marble-related data itself is situated.
     constexpr char soapySdrModDir[] = "modules";                        // The directory name for where the SoapySDR-related modules/libraries are located; needed for the functioning of SoapySDR itself!
+    constexpr char soapySdrNoDevsFound[] = "No devices found.";         // A message such as this will be shown to the end-user when no SDR devices have been found via enumeration through SoapySDR!
+    constexpr char soapySdrNoDevsFoundAlt[] = "N/A.";                   // An alternative message to be shown to the end-user when no SDR devices have been found via enumeration through SoapySDR; can be used in coincidence with, `Filesystem::soapySdrNoDevsFound`.
     constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
@@ -731,6 +734,7 @@ namespace System {
     namespace GkSdr {
         struct GkSoapySdrTableView {
             qint32 event_no;
+            std::shared_ptr<SoapySDR::Device> dev_ptr;
             QString dev_name;
             QString dev_hw_key;
         };

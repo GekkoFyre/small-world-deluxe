@@ -653,10 +653,18 @@ QToolBox::tab:selected { /* italicize selected tabs */
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_24">
                         <item>
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_brand_model"/>
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_hw_key">
+                          <property name="toolTip">
+                           <string>Hardware key.</string>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_hw_id_enum"/>
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_hw_id_enum">
+                          <property name="toolTip">
+                           <string>SDR device identifier.</string>
+                          </property>
+                         </widget>
                         </item>
                         <item>
                          <widget class="QFrame" name="frame_main_soapysdr_source_viewable_bw">
@@ -680,7 +688,11 @@ QToolBox::tab:selected { /* italicize selected tabs */
                             <number>0</number>
                            </property>
                            <item>
-                            <widget class="QComboBox" name="comboBox_main_soapysdr_source_viewable_bw"/>
+                            <widget class="QComboBox" name="comboBox_main_soapysdr_source_viewable_bw">
+                             <property name="toolTip">
+                              <string>Spectrograph bandwidth.</string>
+                             </property>
+                            </widget>
                            </item>
                            <item>
                             <widget class="QToolButton" name="toolButton_main_soapysdr_source_viewable_bw">
@@ -712,7 +724,11 @@ QToolBox::tab:selected { /* italicize selected tabs */
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_rx_channel"/>
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_rx_channel">
+                          <property name="toolTip">
+                           <string>Receive (RX) channel.</string>
+                          </property>
+                         </widget>
                         </item>
                         <item row="1" column="0">
                          <widget class="QLabel" name="label_main_soapysdr_source_bandwidth">
@@ -722,7 +738,11 @@ QToolBox::tab:selected { /* italicize selected tabs */
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_bandwidth"/>
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_bandwidth">
+                          <property name="toolTip">
+                           <string>Raw bandwidth.</string>
+                          </property>
+                         </widget>
                         </item>
                         <item row="2" column="0">
                          <widget class="QLabel" name="label_main_soapysdr_source_gain_control_mode">
@@ -732,7 +752,11 @@ QToolBox::tab:selected { /* italicize selected tabs */
                          </widget>
                         </item>
                         <item row="2" column="1">
-                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_gain_control_mode"/>
+                         <widget class="QComboBox" name="comboBox_main_soapysdr_source_gain_control_mode">
+                          <property name="toolTip">
+                           <string>Signal gain.</string>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </widget>
@@ -781,6 +805,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                        <layout class="QHBoxLayout" name="horizontalLayout_25">
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_nfm">
+                          <property name="toolTip">
+                           <string>Near-FM.</string>
+                          </property>
                           <property name="text">
                            <string>NFM</string>
                           </property>
@@ -791,6 +818,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_am">
+                          <property name="toolTip">
+                           <string>AM.</string>
+                          </property>
                           <property name="text">
                            <string>AM</string>
                           </property>
@@ -801,6 +831,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_usb">
+                          <property name="toolTip">
+                           <string>USB.</string>
+                          </property>
                           <property name="text">
                            <string>USB</string>
                           </property>
@@ -811,6 +844,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_lsb">
+                          <property name="toolTip">
+                           <string>LSB.</string>
+                          </property>
                           <property name="text">
                            <string>LSB</string>
                           </property>
@@ -833,6 +869,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                        <layout class="QHBoxLayout" name="horizontalLayout_24">
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_wfm">
+                          <property name="toolTip">
+                           <string>Wide-FM.</string>
+                          </property>
                           <property name="text">
                            <string>WFM</string>
                           </property>
@@ -843,6 +882,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_dsb">
+                          <property name="toolTip">
+                           <string>DSB.</string>
+                          </property>
                           <property name="text">
                            <string>DSB</string>
                           </property>
@@ -853,6 +895,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_cw">
+                          <property name="toolTip">
+                           <string>Continuous Wave.</string>
+                          </property>
                           <property name="text">
                            <string>CW</string>
                           </property>
@@ -863,6 +908,9 @@ QToolBox::tab:selected { /* italicize selected tabs */
                         </item>
                         <item>
                          <widget class="QRadioButton" name="radioButton_soapysdr_source_modulation_raw">
+                          <property name="toolTip">
+                           <string>Raw data.</string>
+                          </property>
                           <property name="text">
                            <string>RAW</string>
                           </property>
@@ -1375,8 +1423,8 @@ QToolBox::tab:selected { /* italicize selected tabs */
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>16</width>
-                                <height>16</height>
+                                <width>100</width>
+                                <height>30</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">

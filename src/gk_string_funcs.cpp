@@ -447,6 +447,34 @@ QString StringFuncs::trimStrToCharLength(const QString &value, const qint32 &pla
     return value;
 }
 
+QString StringFuncs::convHertzToHumanReadable(const qreal &input_freq) const
+{
+    QString hr_freq;
+    if (input_freq >= (1000ULL) && input_freq < (1000ULL * 1000)) {
+        //
+        // Kilohertz
+        const auto freq = input_freq / (1000ULL);
+        hr_freq = tr("%1 kHz").arg(QString::number(freq));
+    } else if (input_freq >= (1000ULL * 1000) && input_freq < (1000ULL * 1000 * 1000)) {
+        //
+        // Megahertz
+        const auto freq = input_freq / (1000ULL * 1000);
+        hr_freq = tr("%1 MHz").arg(QString::number(freq));
+    } else if (input_freq >= (1000ULL * 1000 * 1000) && input_freq < (1000ULL * 1000 * 1000 * 1000)) {
+        //
+        // Gigahertz
+        const auto freq = input_freq / (1000ULL * 1000 * 1000);
+        hr_freq = tr("%1 GHz").arg(QString::number(freq));
+    } else {
+        //
+        // Terahertz
+        const auto freq = input_freq / (1000ULL * 1000 * 1000 * 1000);
+        hr_freq = tr("%1 THz").arg(QString::number(freq));
+    }
+
+    return hr_freq;
+}
+
 /**
  * @brief StringFuncs::fileSizeHumanReadable will 'prettify' a given file-size, converting it to kilobytes, megabytes,
  * gigabytes, etc. as needed, thusly making it more human readable.

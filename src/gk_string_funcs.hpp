@@ -111,6 +111,10 @@ public:
     QString zeroPadding(const QVariant &num, const qint32 &places);
     QString trimStrToCharLength(const QString &value, const qint32 &places, const bool &ellipsis = false);
 
+    //
+    // Hamlib, SoapySDR, etc. and related
+    QString convHertzToHumanReadable(const qreal &input_freq) const;
+
     QString fileSizeHumanReadable(const qint64 &file_size);
 
     QString convSecondsToMinutes(const double &seconds);
